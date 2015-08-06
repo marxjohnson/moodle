@@ -193,6 +193,9 @@ class behat_files extends behat_base {
         $this->ensure_node_is_visible($add);
         $add->click();
 
+        // Wait for the default repository (if any) to load.
+        $this->wait_until_repository_loaded();
+
         // Getting the repository link and opening it.
         $repoexception = new ExpectationException('The "' . $repositoryname . '" repository has not been found', $this->getSession());
 
@@ -210,7 +213,11 @@ class behat_files extends behat_base {
 
         // Selecting the repo.
         $this->ensure_node_is_visible($repositorylink);
-        $repositorylink->click();
+        if (!$repositorylink->getParent()->getParent()->hasClass('active')) {
+            // If the repository link is active, then the repository is already loaded.
+            // Clicking it while it's active causes issues, so only click it when it isn't (see MDL-51014).
+            $repositorylink->click();
+        }
     }
 
     /**
@@ -261,6 +268,29 @@ class behat_files extends behat_base {
                 "[contains(@style, 'display: none;')]",
             $exception,
             $filepickernode
+        );
+    }
+
+    /**
+     * Checks that the repository content in the file picker is not being updated
+     *
+     * @throws ExpectationException
+     * @return void
+     */
+    protected function wait_until_repository_loaded() {
+
+        $exception = new ExpectationException(
+                'The file repository is too much time to be load',
+                $this->getSession()
+        );
+
+        // Looks for the loading image not being displayed.
+        $this->find(
+                'xpath',
+                "//div[contains(concat(' ', normalize-space(@class), ' '), ' file-picker ')]" .
+                "//div[contains(concat(' ', normalize-space(@class), ' '), ' fp-content ')]" .
+                "[not(descendant::div[contains(concat(' ', normalize-space(@class), ' '), ' fp-content-loading ')])]",
+                $exception
         );
     }
 
