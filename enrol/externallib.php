@@ -337,10 +337,6 @@ class core_enrol_external extends external_api {
                 continue;
             }
 
-            list($enrolledsqlselect, $enrolledparams) = get_enrolled_sql($context);
-            $enrolledsql = "SELECT COUNT('x') FROM ($enrolledsqlselect) enrolleduserids";
-            $enrolledusercount = $DB->count_records_sql($enrolledsql, $enrolledparams);
-
             $displayname = external_format_string(get_course_display_name_for_list($course), $context->id);
             list($course->summary, $course->summaryformat) =
                 external_format_text($course->summary, $course->summaryformat, $context->id, 'course', 'summary', null);
@@ -402,7 +398,6 @@ class core_enrol_external extends external_api {
                 'displayname' => $displayname,
                 'idnumber' => $course->idnumber,
                 'visible' => $course->visible,
-                'enrolledusercount' => $enrolledusercount,
                 'summary' => $course->summary,
                 'summaryformat' => $course->summaryformat,
                 'format' => $course->format,
@@ -439,7 +434,6 @@ class core_enrol_external extends external_api {
                     'shortname' => new external_value(PARAM_RAW, 'short name of course'),
                     'fullname'  => new external_value(PARAM_RAW, 'long name of course'),
                     'displayname' => new external_value(PARAM_TEXT, 'course display name for lists.', VALUE_OPTIONAL),
-                    'enrolledusercount' => new external_value(PARAM_INT, 'Number of enrolled users in this course'),
                     'idnumber'  => new external_value(PARAM_RAW, 'id number of course'),
                     'visible'   => new external_value(PARAM_INT, '1 means visible, 0 means not yet visible course'),
                     'summary'   => new external_value(PARAM_RAW, 'summary', VALUE_OPTIONAL),
