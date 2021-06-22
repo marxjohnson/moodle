@@ -180,7 +180,7 @@ class question_category_object_test extends \advanced_testcase {
 
         $this->qcobject->update_category($id, $this->topcat->id . ',' . $this->topcat->contextid,
             'New name', 'New description', FORMAT_HTML, '0', false);
-
+        $this->assertDebuggingCalled();
         $newcat = $DB->get_record('question_categories', ['id' => $id], '*', MUST_EXIST);
         $this->assertSame('New name', $newcat->name);
         $this->assertSame('0', $newcat->idnumber);
@@ -199,7 +199,7 @@ class question_category_object_test extends \advanced_testcase {
 
         $this->qcobject->update_category($id, $this->topcat->id . ',' . $this->topcat->contextid,
             'New name', 'New description', FORMAT_HTML, '', false);
-
+        $this->assertDebuggingCalled();
         $newcat = $DB->get_record('question_categories', ['id' => $id], '*', MUST_EXIST);
         $this->assertSame('New name', $newcat->name);
         $this->assertNull($newcat->idnumber);
@@ -218,7 +218,7 @@ class question_category_object_test extends \advanced_testcase {
 
         $this->qcobject->update_category($id, $this->topcat->id . ',' . $this->topcat->contextid,
             'New name', 'New description', FORMAT_HTML, 'frog', false);
-
+        $this->assertDebuggingCalled();
         $newcat = $DB->get_record('question_categories', ['id' => $id], '*', MUST_EXIST);
         $this->assertSame('New name', $newcat->name);
         $this->assertSame('frog', $newcat->idnumber);
@@ -240,7 +240,7 @@ class question_category_object_test extends \advanced_testcase {
 
         $this->qcobject->update_category($id, $this->topcat->id . ',' . $this->topcat->contextid,
             'New name', '', FORMAT_HTML, 'toad', false);
-
+        $this->assertDebuggingCalled();
         $newcat = $DB->get_record('question_categories', ['id' => $id], '*', MUST_EXIST);
         $this->assertSame('New name', $newcat->name);
         $this->assertNull($newcat->idnumber);
@@ -298,6 +298,8 @@ class question_category_object_test extends \advanced_testcase {
         // Trigger and capture the event.
         $sink = $this->redirectEvents();
         $this->qcobjectquiz->update_category($categoryid, $this->defaultcategory, 'updatedcategory', '', FORMAT_HTML, '', false);
+        $this->assertDebuggingCalled();
+        $this->resetDebugging();
         $events = $sink->get_events();
         $event = reset($events);
 
