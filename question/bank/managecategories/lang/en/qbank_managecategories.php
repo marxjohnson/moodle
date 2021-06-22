@@ -23,5 +23,18 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['after'] = 'After {$a}';
+$string['before'] = 'Before {$a}';
+$string['categoryincategory'] = 'Cannot move category in same category.';
+$string['categorymoved'] = 'The category has been moved successfully.';
+$string['descriptionnotdisplayed'] = 'Categories description not displayed';
+$string['displaydescription'] = 'Categories description displayed';
+$string['dragdrop'] = 'Drag and drop';
+$string['idnumberexists'] = 'ID number already in use, please change it to move or update category';
+$string['lastcategoryinthiscontext'] = 'This category is the only present under context,
+please add another category if this one is to be moved';
+$string['movecategory'] = 'Move {$a}';
+$string['movequestions'] = 'Move questions to category';
 $string['pluginname'] = 'Manage categories';
-$string['privacy:metadata'] = 'The Manage categories question bank plugin does not store any personal data.';
+$string['privacy:metadata'] = 'The Manage Categories question bank plugin does not store any personal data.';
+$string['showcategorydescription'] = 'Show descriptions';

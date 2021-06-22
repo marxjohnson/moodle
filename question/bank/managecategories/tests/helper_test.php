@@ -16,12 +16,10 @@
 
 namespace qbank_managecategories;
 
-defined('MOODLE_INTERNAL') || die();
-
-use moodle_url;
-use core_question\local\bank\question_edit_contexts;
+defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
+require_once($CFG->dirroot . '/question/bank/managecategories/tests/manage_category_test_base.php');
 require_once($CFG->dirroot . '/mod/quiz/tests/quiz_question_helper_test_trait.php');
 
 /**
@@ -33,8 +31,7 @@ require_once($CFG->dirroot . '/mod/quiz/tests/quiz_question_helper_test_trait.ph
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \qbank_managecategories\helper
  */
-class helper_test extends \advanced_testcase {
-
+final class helper_test extends manage_category_test_base {
     use \quiz_question_helper_test_trait;
 
     /**
@@ -72,16 +69,10 @@ class helper_test extends \advanced_testcase {
 
         $datagenerator = $this->getDataGenerator();
         $this->course = $datagenerator->create_course();
-        $this->quiz = $datagenerator->create_module('quiz',
-                ['course' => $this->course->id, 'name' => 'Quiz 1']);
-        $this->qgenerator = $datagenerator->get_plugin_generator('core_question');
-        $this->context = \context_module::instance($this->quiz->cmid);
-
-        $contexts = new question_edit_contexts($this->context);
-        $this->qcobject = new question_category_object(null,
-            new moodle_url('/question/bank/managecategories/category.php', ['courseid' => SITEID]),
-            $contexts->having_one_edit_tab_cap('categories'), 0, null, 0,
-            $contexts->having_cap('moodle/question:add'));
+        $this->quiz = $datagenerator->create_module(
+            'quiz',
+            ['course' => $this->course->id, 'name' => 'Quiz 1'],
+        );
     }
 
     /**
@@ -92,58 +83,74 @@ class helper_test extends \advanced_testcase {
     public function test_question_remove_stale_questions_from_category() {
         global $DB;
 
-        $qcat1 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
-        $q1a = $this->qgenerator->create_question('shortanswer', null, ['category' => $qcat1->id]);     // Will be hidden.
+        $this->setAdminUser();
+        $this->resetAfterTest();
+
+        // Quiz and its context.
+        $quiz = $this->create_quiz();
+
+        // Create category 1 and one question.
+        $qcat1 = $this->create_question_category_for_a_quiz($quiz);
+        $q1a = $this->create_question_in_a_category('shortanswer', $qcat1->id);
         $DB->set_field('question_versions', 'status', 'hidden', ['questionid' => $q1a->id]);
 
-        $qcat2 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
-        $q2a = $this->qgenerator->create_question('shortanswer', null, ['category' => $qcat2->id]);     // Will be hidden.
-        $q2b = $this->qgenerator->create_question('shortanswer', null, ['category' => $qcat2->id]);     // Will be hidden but used.
+        // Create category 2 and two questions.
+        $qcat2 = $this->create_question_category_for_a_quiz($quiz);
+        $q2a = $this->create_question_in_a_category('shortanswer', $qcat2->id);
+        $q2b = $this->create_question_in_a_category('shortanswer', $qcat2->id);
         $DB->set_field('question_versions', 'status', 'hidden', ['questionid' => $q2a->id]);
         $DB->set_field('question_versions', 'status', 'hidden', ['questionid' => $q2b->id]);
-        quiz_add_quiz_question($q2b->id, $this->quiz);
+
+        // Add question to the quiz.
+        quiz_add_quiz_question($q2b->id, $quiz);
 
         // Adding a new random question does not add a new question, adds a question_set_references record.
-        $this->add_random_questions($this->quiz->id, 0, $qcat2->id, 1);
+        $this->add_random_questions($quiz->id, 0, $qcat2->id, 1);
 
         // We added one random question to the quiz and we expect the quiz to have only one random question.
-        $q2d = $DB->get_record_sql("SELECT qsr.*
-                                      FROM {quiz_slots} qs
-                                      JOIN {question_set_references} qsr ON qsr.itemid = qs.id
-                                     WHERE qs.quizid = ?
-                                       AND qsr.component = ?
-                                       AND qsr.questionarea = ?",
-            [$this->quiz->id, 'mod_quiz', 'slot'], MUST_EXIST);
+        $q2d = $DB->get_record_sql(
+            "SELECT qsr.*
+               FROM {quiz_slots} qs
+               JOIN {question_set_references} qsr ON qsr.itemid = qs.id
+              WHERE qs.quizid = ?
+                AND qsr.component = ?
+                AND qsr.questionarea = ?",
+            [$quiz->id, 'mod_quiz', 'slot'],
+            MUST_EXIST
+        );
 
         // The following 2 lines have to be after the quiz_add_random_questions() call above.
         // Otherwise, quiz_add_random_questions() will to be "smart" and use them instead of creating a new "random" question.
-        $q1b = $this->qgenerator->create_question('random', null, ['category' => $qcat1->id]);          // Will not be used.
-        $q2c = $this->qgenerator->create_question('random', null, ['category' => $qcat2->id]);          // Will not be used.
+        $q1b = $this->create_question_in_a_category('random', $qcat1->id);
+        $q2c = $this->create_question_in_a_category('random', $qcat2->id);
 
-        $this->assertEquals(2, count($this->qcobject->get_real_question_ids_in_category($qcat1->id)));
-        $this->assertEquals(3, count($this->qcobject->get_real_question_ids_in_category($qcat2->id)));
+        $contexts = new \core_question\local\bank\question_edit_contexts(\context_module::instance($quiz->cmid));
+        $this->assertEquals(2, count($this->get_real_question_ids_in_category($qcat1->id, $contexts)));
+        $this->assertEquals(3, count($this->get_real_question_ids_in_category($qcat2->id, $contexts)));
 
         // Non-existing category, nothing will happen.
         helper::question_remove_stale_questions_from_category(0);
-        $this->assertEquals(2, count($this->qcobject->get_real_question_ids_in_category($qcat1->id)));
-        $this->assertEquals(3, count($this->qcobject->get_real_question_ids_in_category($qcat2->id)));
+        $this->assertEquals(2, count($this->get_real_question_ids_in_category($qcat1->id, $contexts)));
+        $this->assertEquals(3, count($this->get_real_question_ids_in_category($qcat2->id, $contexts)));
 
         // First category, should be empty afterwards.
         helper::question_remove_stale_questions_from_category($qcat1->id);
-        $this->assertEquals(0, count($this->qcobject->get_real_question_ids_in_category($qcat1->id)));
-        $this->assertEquals(3, count($this->qcobject->get_real_question_ids_in_category($qcat2->id)));
+        $this->assertEquals(0, count($this->get_real_question_ids_in_category($qcat1->id, $contexts)));
+        $this->assertEquals(3, count($this->get_real_question_ids_in_category($qcat2->id, $contexts)));
         $this->assertFalse($DB->record_exists('question', ['id' => $q1a->id]));
         $this->assertFalse($DB->record_exists('question', ['id' => $q1b->id]));
 
         // Second category, used questions should be left untouched.
         helper::question_remove_stale_questions_from_category($qcat2->id);
-        $this->assertEquals(0, count($this->qcobject->get_real_question_ids_in_category($qcat1->id)));
-        $this->assertEquals(1, count($this->qcobject->get_real_question_ids_in_category($qcat2->id)));
+        $this->assertEquals(0, count($this->get_real_question_ids_in_category($qcat1->id, $contexts)));
+        $this->assertEquals(1, count($this->get_real_question_ids_in_category($qcat2->id, $contexts)));
         $this->assertFalse($DB->record_exists('question', ['id' => $q2a->id]));
         $this->assertTrue($DB->record_exists('question', ['id' => $q2b->id]));
         $this->assertFalse($DB->record_exists('question', ['id' => $q2c->id]));
-        $this->assertTrue($DB->record_exists('question_set_references',
-            ['id' => $q2d->id, 'component' => 'mod_quiz', 'questionarea' => 'slot']));
+        $this->assertTrue($DB->record_exists(
+            'question_set_references',
+            ['id' => $q2d->id, 'component' => 'mod_quiz', 'questionarea' => 'slot'],
+        ));
     }
 
     /**
@@ -152,9 +159,13 @@ class helper_test extends \advanced_testcase {
      * @covers ::question_can_delete_cat
      * @covers ::question_is_top_category
      */
-    public function test_question_can_delete_cat_top_category() {
+    public function test_question_can_delete_cat_top_category(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
 
-        $qcategory1 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
+        // Create a category.
+        $quiz = $this->create_quiz();
+        $qcategory1 = $this->create_question_category_for_a_quiz($quiz);
 
         // Try to delete a top category.
         $categorytop = question_get_top_category($qcategory1->id, true)->id;
@@ -169,9 +180,13 @@ class helper_test extends \advanced_testcase {
      * @covers ::question_can_delete_cat
      * @covers ::question_is_only_child_of_top_category_in_context
      */
-    public function test_question_can_delete_cat_child_category() {
+    public function test_question_can_delete_cat_child_category(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
 
-        $qcategory1 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
+        // Create a category.
+        $quiz = $this->create_quiz();
+        $qcategory1 = $this->create_question_category_for_a_quiz($quiz);
 
         // Try to delete an only child of top category having also at least one child.
         $this->expectException('moodle_exception');
@@ -184,10 +199,14 @@ class helper_test extends \advanced_testcase {
      *
      * @covers ::question_can_delete_cat
      */
-    public function test_question_can_delete_cat_capability() {
+    public function test_question_can_delete_cat_capability(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
 
-        $qcategory1 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
-        $qcategory2 = $this->qgenerator->create_question_category(['contextid' => $this->context->id, 'parent' => $qcategory1->id]);
+        // Create 2 categories.
+        $quiz = $this->create_quiz();
+        $qcategory1 = $this->create_question_category_for_a_quiz($quiz);
+        $qcategory2 = $this->create_question_category_for_a_quiz($quiz, ['parent' => $qcategory1->id]);
 
         // This call should not throw an exception as admin user has the capabilities moodle/question:managecategory.
         helper::question_can_delete_cat($qcategory2->id);
@@ -207,10 +226,14 @@ class helper_test extends \advanced_testcase {
      * @covers ::question_category_select_menu
      * @covers ::question_category_options
      */
-    public function test_question_category_select_menu() {
+    public function test_question_category_select_menu(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
 
-        $this->qgenerator->create_question_category(['contextid' => $this->context->id, 'name' => 'Test this question category']);
-        $contexts = new \core_question\local\bank\question_edit_contexts($this->context);
+        // Create category.
+        $quiz = $this->create_quiz();
+        $this->create_question_category_for_a_quiz($quiz, ['name' => 'Test this question category']);
+        $contexts = new \core_question\local\bank\question_edit_contexts(\context_module::instance($quiz->cmid));
 
         ob_start();
         helper::question_category_select_menu($contexts->having_cap('moodle/question:add'));
@@ -230,18 +253,22 @@ class helper_test extends \advanced_testcase {
      * @covers ::question_add_context_in_key
      * @covers ::add_indented_names
      */
-    public function test_question_category_options() {
+    public function test_question_category_options(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
 
-        $qcategory1 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
-        $qcategory2 = $this->qgenerator->create_question_category(['contextid' => $this->context->id, 'parent' => $qcategory1->id]);
-        $qcategory3 = $this->qgenerator->create_question_category(['contextid' => $this->context->id]);
+        // Create categories.
+        $quiz = $this->create_quiz();
+        $qcategory1 = $this->create_question_category_for_a_quiz($quiz);
+        $this->create_question_category_for_a_quiz($quiz, ['parent' => $qcategory1->id]);
+        $this->create_question_category_for_a_quiz($quiz);
 
-        $contexts = new \core_question\local\bank\question_edit_contexts($this->context);
+        $contexts = new \core_question\local\bank\question_edit_contexts(\context_module::instance($quiz->cmid));
 
         // Validate that we have the array with the categories tree.
         $categorycontexts = helper::question_category_options($contexts->having_cap('moodle/question:add'));
         // The quiz name 'Quiz 1' is set in setUp function.
-        $categorycontext = $categorycontexts['Quiz: Quiz 1'];
+        $categorycontext = $categorycontexts['Quiz: ' . $quiz->name];
         $this->assertCount(3, $categorycontext);
 
         // Validate that we have the array with the categories tree and that top category is there.
@@ -251,5 +278,83 @@ class helper_test extends \advanced_testcase {
             $count = count($oldcategorycontext);
             $this->assertCount($count + 1, $categorycontext);
         }
+    }
+
+    /**
+     * Test get children.
+     *
+     * @covers ::get_children
+     */
+    public function test_get_children(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
+
+        $parents = [
+            1 => 0,
+            2 => 1,
+            3 => 1,
+            4 => 2,
+            5 => 2,
+            6 => 1,
+            7 => 5,
+        ];
+
+        // Child of 5.
+        $children = helper::get_children(5, $parents);
+        $this->assertSame([7], $children);
+
+        // Children of 2 (include child of 5).
+        $children = helper::get_children(2, $parents);
+        $this->assertSame([4, 5, 7], $children);
+
+        // Children of 1 (all categories).
+        $children = helper::get_children(1, $parents);
+        // Immediate children: 2,3,6 plus children of 2.
+        $this->assertSame([2, 3, 6, 4, 5, 7], $children);
+    }
+
+    /**
+     * Test get children.
+     *
+     * @covers ::create_ordered_tree
+     * @covers ::get_max_sortorder
+     */
+    public function test_create_order_tree(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
+
+        // Create question categories for a course.
+        $course = $this->create_course();
+        $context = \context_course::instance($course->id);
+        $qcat1 = $this->create_question_category_for_a_course($course);
+        $this->assertEquals(1, helper::get_max_sortorder($context->id));
+
+        $qcat2 = $this->create_question_category_for_a_course($course, ['parent' => $qcat1->id]);
+        $this->assertEquals(2, helper::get_max_sortorder($context->id));
+
+        $qcat3 = $this->create_question_category_for_a_course($course);
+        $this->assertEquals(3, helper::get_max_sortorder($context->id));
+
+        $qcat4 = $this->create_question_category_for_a_course($course, ['parent' => $qcat2->id]);
+        $this->assertEquals(4, helper::get_max_sortorder($context->id));
+
+        // Create ordered tree.
+        $items = helper::get_categories_for_contexts(\context_course::instance($course->id)->id);
+        $items = helper::create_ordered_tree($items);
+
+        // Two top categories (1 and 3) in the course.
+        $this->assertCount(2, $items);
+        $this->assertArrayHasKey($qcat1->id, $items);
+        $this->assertArrayHasKey($qcat3->id, $items);
+
+        // Category 2 is the only child of Category 1.
+        $children = $items[$qcat1->id]->children;
+        $this->assertCount(1, $children);
+        $this->assertArrayHasKey($qcat2->id, $children);
+
+        // Category 4 is the only child of Category 2.
+        $children = $children[$qcat2->id]->children;
+        $this->assertCount(1, $children);
+        $this->assertArrayHasKey($qcat4->id, $children);
     }
 }
