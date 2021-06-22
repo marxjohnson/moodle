@@ -31,7 +31,7 @@ use core_question\local\bank\question_version_status;
  */
 class custom_category_condition_helper extends \qbank_managecategories\helper {
 
-    public static function question_category_options(array $contexts, bool $top = false, int $currentcat = 0,
+    public static function question_category_options(array $contexts, bool $includetop = false, int $currentcat = 0,
         bool $popupform = false, int $nochildrenof = -1,
         bool $escapecontextnames = true): array {
         global $CFG;
@@ -41,9 +41,9 @@ class custom_category_condition_helper extends \qbank_managecategories\helper {
         }
         $contextslist = join(', ', $pcontexts);
 
-        $categories = self::get_categories_for_contexts($contextslist, 'parent, sortorder, name ASC', $top);
+        $categories = self::get_categories_for_contexts($contextslist, 'parent, sortorder, name ASC', $includetop);
 
-        if ($top) {
+        if ($includetop) {
             $categories = self::question_fix_top_names($categories);
         }
 

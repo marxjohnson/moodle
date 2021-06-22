@@ -12,20 +12,25 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Categories related functions.
+ *
+ * This file was created just because Fragment API expects callbacks to be defined on lib.php.
  *
  * @package   qbank_managecategories
  * @copyright 2021 Catalyst IT Australia Pty Ltd
- * @author    Guillermo Gomez Arias <guillermogomez@catalyst-au.net>
+ * @author    Marc-Alexandre Ghaly <marc-alexandreghaly@catalyst-ca.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'qbank_managecategories';
-$plugin->version = 2024060300;
-$plugin->requires = 2024041600;
-$plugin->maturity = MATURITY_STABLE;
+/**
+ * Fragment for rendering categories.
+ *
+ * @param array $args Arguments to the form.
+ * @return null|string The rendered form.
+ */
+function qbank_managecategories_output_fragment_categories(array $args): string {
+    return qbank_managecategories\output\fragment::categories($args);
+}
