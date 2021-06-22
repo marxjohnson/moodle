@@ -24,9 +24,9 @@ define('QUESTION_PAGE_LENGTH', 25);
 use context;
 use moodle_exception;
 use moodle_url;
-use qbank_managecategories\form\question_category_edit_form;
-use question_bank;
 use stdClass;
+use qbank_managecategories\form\question_category_edit_form;
+use qbank_managecategories\form\question_category_checkbox_form;
 
 /**
  * Class for performing operations on question categories.
@@ -36,26 +36,10 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class question_category_object {
-
-    /**
-     * @var array common language strings.
-     */
-    public $str;
-
     /**
      * @var array nested lists to display categories.
      */
     public $editlists = [];
-
-    /**
-     * @var string tab.
-     */
-    public $tab;
-
-    /**
-     * @var int tab size.
-     */
-    public $tabsize = 3;
 
     /**
      * @var moodle_url Object representing url for this page
@@ -68,6 +52,26 @@ class question_category_object {
     public $catform;
 
     /**
+     * @var question_category_checkbox_form Object representing form to display category description.
+     */
+    public $checkboxform;
+
+    /**
+     * @var int cmid.
+     */
+    public $cmid;
+
+    /**
+     * @var int courseid.
+     */
+    public $courseid;
+
+    /**
+     * @var ?int The context ID of the current page.
+     */
+    public $contextid;
+
+    /**
      * Constructor.
      *
      * @param int $page page number.
@@ -77,111 +81,84 @@ class question_category_object {
      * @param int|null $defaultcategory id of the current category. null if none.
      * @param int $todelete id of the category to delete. 0 if none.
      * @param context[] $addcontexts contexts where the current user can add questions.
+     * @param int|null $cmid course module id for the current page.
+     * @param int|null $courseid course id for the current page.
+     * @param ?int $thiscontext The context ID of the current page.
      */
-    public function __construct($page, $pageurl, $contexts, $currentcat, $defaultcategory, $todelete, $addcontexts) {
+    public function __construct(
+        $page,
+        $pageurl,
+        $contexts,
+        $currentcat,
+        $defaultcategory,
+        $todelete,
+        $addcontexts,
+        $cmid = null,
+        $courseid = null,
+        $thiscontext = null,
+    ) {
 
-        $this->tab = str_repeat('&nbsp;', $this->tabsize);
-
-        $this->str = new stdClass();
-        $this->str->course         = get_string('course');
-        $this->str->category       = get_string('category', 'question');
-        $this->str->categoryinfo   = get_string('categoryinfo', 'question');
-        $this->str->questions      = get_string('questions', 'question');
-        $this->str->add            = get_string('add');
-        $this->str->delete         = get_string('delete');
-        $this->str->moveup         = get_string('moveup');
-        $this->str->movedown       = get_string('movedown');
-        $this->str->edit           = get_string('editthiscategory', 'question');
-        $this->str->hide           = get_string('hide');
-        $this->str->order          = get_string('order');
-        $this->str->parent         = get_string('parent', 'question');
-        $this->str->add            = get_string('add');
-        $this->str->action         = get_string('action');
-        $this->str->top            = get_string('top');
-        $this->str->addcategory    = get_string('addcategory', 'question');
-        $this->str->editcategory   = get_string('editcategory', 'question');
-        $this->str->cancel         = get_string('cancel');
-        $this->str->editcategories = get_string('editcategories', 'question');
-        $this->str->page           = get_string('page');
+        $this->cmid = $cmid;
+        $this->courseid = $courseid;
 
         $this->pageurl = $pageurl;
-
-        $this->initialize($page, $contexts, $currentcat, $defaultcategory, $todelete, $addcontexts);
+        $this->contextid = $thiscontext;
+        $this->initialize($contexts, $currentcat, $defaultcategory, $todelete, $addcontexts, $cmid, $courseid);
     }
 
     /**
      * Initializes this classes general category-related variables
      *
-     * @param int $page page number.
      * @param context[] $contexts contexts where the current user can edit categories.
      * @param int $currentcat id of the category to be edited. 0 if none.
      * @param int|null $defaultcategory id of the current category. null if none.
      * @param int $todelete id of the category to delete. 0 if none.
      * @param context[] $addcontexts contexts where the current user can add questions.
+     * @param int|null $cmid course module id for the current page.
+     * @param int|null $courseid course id for the current page.
      */
-    public function initialize($page, $contexts, $currentcat, $defaultcategory, $todelete, $addcontexts): void {
-        $lastlist = null;
+    public function initialize(
+        $contexts,
+        $currentcat,
+        $defaultcategory,
+        $todelete,
+        $addcontexts,
+        $cmid,
+        $courseid,
+    ): void {
+
         foreach ($contexts as $context) {
-            $this->editlists[$context->id] =
-                new question_category_list('ul', '', true, $this->pageurl, $page, 'cpage', QUESTION_PAGE_LENGTH, $context);
-            $this->editlists[$context->id]->lastlist =& $lastlist;
-            if ($lastlist !== null) {
-                $lastlist->nextlist =& $this->editlists[$context->id];
-            }
-            $lastlist =& $this->editlists[$context->id];
+            $items = helper::get_categories_for_contexts($context->id);
+            $items = helper::create_ordered_tree($items);
+            $this->editlists[$context->id] = (object)[
+                'items' => $items,
+                'context' => $context,
+            ];
         }
 
-        $count = 1;
-        $paged = false;
-        foreach ($this->editlists as $key => $list) {
-            list($paged, $count) = $this->editlists[$key]->list_from_records($paged, $count);
-        }
-        $this->catform = new question_category_edit_form($this->pageurl,
-                ['contexts' => $contexts, 'currentcat' => $currentcat ?? 0]);
+        $this->catform = new question_category_edit_form($this->pageurl, compact('contexts', 'currentcat'));
         if (!$currentcat) {
             $this->catform->set_data(['parent' => $defaultcategory]);
         }
-    }
-
-    /**
-     * Displays the user interface.
-     *
-     */
-    public function display_user_interface(): void {
-        // Interface for editing existing categories.
-        $this->output_edit_lists();
+        // Checkbox Form.
+        $checked = get_user_preferences('qbank_managecategories_showdescr');
+        $customdata = ['checked' => $checked, 'cmid' => $cmid, 'courseid' => $courseid];
+        $this->checkboxform = new question_category_checkbox_form(null, $customdata, 'post', null, ['id' => 'qbshowdescr-form']);
     }
 
     /**
      * Outputs a table to allow entry of a new category
+     *
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
      */
     public function output_new_table(): void {
+        debugging(
+            'output_new_table() is deprecated. ' .
+            'Please use qbank_managecategories\form\question_category_edit_form instead.',
+            DEBUG_DEVELOPER,
+        );
         $this->catform->display();
-    }
-
-    /**
-     * Outputs a list to allow editing/rearranging of existing categories.
-     *
-     * $this->initialize() must have already been called
-     *
-     */
-    public function output_edit_lists(): void {
-        global $OUTPUT;
-
-        echo $OUTPUT->heading_with_help(get_string('questioncategories', 'question'), 'editcategories', 'question');
-
-        foreach ($this->editlists as $context => $list) {
-            $listhtml = $list->to_html(0, ['str' => $this->str]);
-            if ($listhtml) {
-                echo $OUTPUT->box_start('boxwidthwide boxaligncenter generalbox questioncategories contextlevel' .
-                    $list->context->contextlevel);
-                $fullcontext = context::instance_by_id($context);
-                echo $OUTPUT->heading(get_string('questioncatsfor', 'question', $fullcontext->get_context_name()), 3);
-                echo $listhtml;
-                echo $OUTPUT->box_end();
-            }
-        }
-        echo $list->display_page_numbers();
     }
 
     /**
@@ -189,8 +166,14 @@ class question_category_object {
      *
      * @param array $categories contains category objects in  a tree representation
      * @return array courseids flat array in form categoryid=>courseid
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
      */
     public function get_course_ids(array $categories): array {
+        debugging(
+            'get_course_ids() is deprecated and no longer used by internal code.',
+            DEBUG_DEVELOPER,
+        );
         $courseids = [];
         foreach ($categories as $key => $cat) {
             $courseids[$key] = $cat->course;
@@ -205,8 +188,16 @@ class question_category_object {
      * Edit a category, or add a new one if the id is zero.
      *
      * @param int $categoryid Category id.
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
+     * @see qbank_managecategories\form\question_category_edit_form::process_dynamic_submission()
      */
     public function edit_single_category(int $categoryid): void {
+        debugging(
+            'edit_single_category() is deprecated. ' .
+                'Please use qbank_managecategories\form\question_category_edit_form::process_dynamic_submission() instead.',
+            DEBUG_DEVELOPER,
+        );
         // Interface for adding a new category.
         global $DB;
 
@@ -219,7 +210,7 @@ class question_category_object {
 
             $category->parent = "{$category->parent},{$category->contextid}";
             $category->submitbutton = get_string('savechanges');
-            $category->categoryheader = $this->str->edit;
+            $category->categoryheader = get_string('editthiscategory', 'question');
             $this->catform->set_data($category);
         }
 
@@ -235,9 +226,14 @@ class question_category_object {
      *
      * @param array $parentstrings a list of parentstrings
      * @param object $category Category object
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
      */
     public function set_viable_parents(array &$parentstrings, object $category): void {
-
+        debugging(
+            'set_viable_parents() is deprecated and no longer used by internal code.',
+            DEBUG_DEVELOPER,
+        );
         unset($parentstrings[$category->id]);
         if (isset($category->children)) {
             foreach ($category->children as $child) {
@@ -252,8 +248,14 @@ class question_category_object {
      * @param int|null $parent - if given, restrict records to those with this parent id.
      * @param string $sort - [[sortfield [,sortfield]] {ASC|DESC}].
      * @return array categories.
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
      */
     public function get_question_categories(int $parent = null, string $sort = "sortorder ASC"): array {
+        debugging(
+            'get_question_categories() is deprecated and no longer used by internal code.',
+            DEBUG_DEVELOPER,
+        );
         global $COURSE, $DB;
         if (is_null($parent)) {
             $categories = $DB->get_records('question_categories', ['course' => $COURSE->id], $sort);
@@ -349,8 +351,14 @@ class question_category_object {
      * @param null $idnumber the idnumber. '' is converted to null.
      * @return bool|int New category id if successful, else false.
      */
-    public function add_category($newparent, $newcategory, $newinfo, $return = false, $newinfoformat = FORMAT_HTML,
-            $idnumber = null): int {
+    public function add_category(
+        $newparent,
+        $newcategory,
+        $newinfo,
+        $return = false,
+        $newinfoformat = FORMAT_HTML,
+        $idnumber = null,
+    ): int {
         global $DB;
         if (empty($newcategory)) {
             throw new moodle_exception('categorynamecantbeblank', 'question');
@@ -366,7 +374,7 @@ class question_category_object {
             }
         }
 
-        if ((string) $idnumber === '') {
+        if ((string)$idnumber === '') {
             $idnumber = null;
         } else if (!empty($contextid)) {
             // While this check already exists in the form validation, this is a backstop preventing unnecessary errors.
@@ -382,7 +390,7 @@ class question_category_object {
         $cat->name = $newcategory;
         $cat->info = $newinfo;
         $cat->infoformat = $newinfoformat;
-        $cat->sortorder = 999;
+        $cat->sortorder = helper::get_max_sortorder($contextid) + 1;
         $cat->stamp = make_unique_id_code();
         $cat->idnumber = $idnumber;
         $categoryid = $DB->insert_record("question_categories", $cat);
@@ -414,9 +422,24 @@ class question_category_object {
      * @param int|string $newinfoformat description format. One of the FORMAT_ constants.
      * @param int $idnumber the idnumber. '' is converted to null.
      * @param bool $redirect if true, will redirect once the DB is updated (default).
+     * @deprecated since Moodle 4.4 MDL-72397 - please do not use this function any more.
+     * @todo Final deprecation on Moodle 4.8 MDL-80804.
+     * @see qbank_managecategories\form\question_category_edit_form::process_dynamic_submission()
      */
-    public function update_category($updateid, $newparent, $newname, $newinfo, $newinfoformat = FORMAT_HTML,
-            $idnumber = null, $redirect = true): void {
+    public function update_category(
+        $updateid,
+        $newparent,
+        $newname,
+        $newinfo,
+        $newinfoformat = FORMAT_HTML,
+        $idnumber = null,
+        $redirect = true,
+    ): void {
+        debugging(
+            'update_category() is deprecated. ' .
+                'Please use qbank_managecategories\form\question_category_edit_form::process_dynamic_submission() instead.',
+            DEBUG_DEVELOPER,
+        );
         global $CFG, $DB;
         if (empty($newname)) {
             throw new moodle_exception('categorynamecantbeblank', 'question');
@@ -449,7 +472,7 @@ class question_category_object {
             }
         }
 
-        if ((string) $idnumber === '') {
+        if ((string)$idnumber === '') {
             $idnumber = null;
         } else if (!empty($tocontextid)) {
             // While this check already exists in the form validation, this is a backstop preventing unnecessary errors.

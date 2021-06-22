@@ -16,6 +16,10 @@
 
 namespace qbank_managecategories;
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . "/questionlib.php");
+
 use context;
 use core_question\local\bank\question_version_status;
 use moodle_exception;
@@ -33,7 +37,6 @@ use html_writer;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class helper {
-
     /**
      * Name of this plugin.
      */
@@ -151,7 +154,11 @@ class helper {
         foreach ($categories[$id]->childids as $childid) {
             if ($childid != $nochildrenof) {
                 $newcategories = $newcategories + self::flatten_category_tree(
-                        $categories, $childid, $depth + 1, $nochildrenof);
+                    $categories,
+                    $childid,
+                    $depth + 1,
+                    $nochildrenof
+                );
             }
         }
 
@@ -182,8 +189,10 @@ class helper {
         // categories from other courses, but not their parents.
         $toplevelcategoryids = [];
         foreach (array_keys($categories) as $id) {
-            if (!empty($categories[$id]->parent) &&
-                array_key_exists($categories[$id]->parent, $categories)) {
+            if (
+                !empty($categories[$id]->parent) &&
+                array_key_exists($categories[$id]->parent, $categories)
+            ) {
                 $categories[$categories[$id]->parent]->childids[] = $id;
             } else {
                 $toplevelcategoryids[] = $id;
@@ -194,7 +203,11 @@ class helper {
         $newcategories = [];
         foreach ($toplevelcategoryids as $id) {
             $newcategories = $newcategories + self::flatten_category_tree(
-                    $categories, $id, 0, $nochildrenof);
+                $categories,
+                $id,
+                0,
+                $nochildrenof
+            );
         }
 
         return $newcategories;
@@ -207,25 +220,42 @@ class helper {
      * are included. Optionally, only categories the current user may edit can be included.
      *
      * @param array $contexts
-     * @param bool $top
+     * @param bool $includetop
      * @param int $currentcat
      * @param string $selected optionally, the id of a category to be selected by
-     *      default in the dropdown.
+     *      default in the dropdown.k
      * @param int $nochildrenof
      * @param bool $return to return the string of the select menu or echo that from the method
+     * @return ?string The HTML, or null if the $return is false.
      * @throws \coding_exception|\dml_exception
      */
-    public static function question_category_select_menu(array $contexts, bool $top = false, int $currentcat = 0,
-                                           string $selected = "", int $nochildrenof = -1, bool $return = false) {
-        $categoriesarray = self::question_category_options($contexts, $top, $currentcat,
-            false, $nochildrenof, false);
+    public static function question_category_select_menu(
+        array $contexts,
+        bool $includetop = false,
+        int $currentcat = 0,
+        string $selected = "",
+        int $nochildrenof = -1,
+        bool $return = false,
+    ): ?string {
+        $categoriesarray = self::question_category_options(
+            $contexts,
+            $includetop,
+            $currentcat,
+            false,
+            $nochildrenof,
+            false
+        );
         $choose = '';
         $options = [];
         foreach ($categoriesarray as $group => $opts) {
             $options[] = [$group => $opts];
         }
-        $outputhtml = html_writer::label(get_string('questioncategory', 'core_question'),
-            'id_movetocategory', false, ['class' => 'accesshide']);
+        $outputhtml = html_writer::label(
+            get_string('questioncategory', 'core_question'),
+            'id_movetocategory',
+            false,
+            ['class' => 'accesshide']
+        );
         $attrs = [
             'id' => 'id_movetocategory',
             'class' => 'custom-select',
@@ -239,6 +269,7 @@ class helper {
             return $outputhtml;
         } else {
             echo $outputhtml;
+            return null;
         }
     }
 
@@ -246,18 +277,22 @@ class helper {
      * Get all the category objects, including a count of the number of questions in that category,
      * for all the categories in the lists $contexts.
      *
-     * @param context $contexts
+     * @param string $contexts
      * @param string $sortorder used as the ORDER BY clause in the select statement.
      * @param bool $top Whether to return the top categories or not.
      * @param int $showallversions 1 to show all versions not only the latest.
      * @return array of category objects.
      * @throws \dml_exception
      */
-    public static function get_categories_for_contexts($contexts, string $sortorder = 'parent, sortorder, name ASC',
-                                                       bool $top = false, int $showallversions = 0): array {
+    public static function get_categories_for_contexts(
+        string $contexts,
+        string $sortorder = 'parent, sortorder, name ASC',
+        bool $top = false,
+        int $showallversions = 0
+    ): array {
         global $DB;
         $topwhere = $top ? '' : 'AND c.parent <> 0';
-        $statuscondition = "AND (qv.status = '". question_version_status::QUESTION_STATUS_READY . "' " .
+        $statuscondition = "AND (qv.status = '" . question_version_status::QUESTION_STATUS_READY . "' " .
             " OR qv.status = '" . question_version_status::QUESTION_STATUS_DRAFT . "' )";
 
         $sql = "SELECT c.*,
@@ -287,7 +322,7 @@ class helper {
      * Output an array of question categories.
      *
      * @param array $contexts The list of contexts.
-     * @param bool $top Whether to return the top categories or not.
+     * @param bool $includetop Whether to return the top categories or not.
      * @param int $currentcat
      * @param bool $popupform
      * @param int $nochildrenof
@@ -295,9 +330,14 @@ class helper {
      * @return array
      * @throws \coding_exception|\dml_exception
      */
-    public static function question_category_options(array $contexts, bool $top = false, int $currentcat = 0,
-                                                     bool $popupform = false, int $nochildrenof = -1,
-                                                     bool $escapecontextnames = true): array {
+    public static function question_category_options(
+        array $contexts,
+        bool $includetop = false,
+        int $currentcat = 0,
+        bool $popupform = false,
+        int $nochildrenof = -1,
+        bool $escapecontextnames = true,
+    ): array {
         global $CFG;
         $pcontexts = [];
         foreach ($contexts as $context) {
@@ -305,9 +345,9 @@ class helper {
         }
         $contextslist = join(', ', $pcontexts);
 
-        $categories = self::get_categories_for_contexts($contextslist, 'parent, sortorder, name ASC', $top);
+        $categories = self::get_categories_for_contexts($contextslist, 'parent, sortorder, name ASC', $includetop);
 
-        if ($top) {
+        if ($includetop) {
             $categories = self::question_fix_top_names($categories);
         }
 
@@ -323,9 +363,12 @@ class helper {
                 if ($category->contextid == $contextid) {
                     $cid = $category->id;
                     if ($currentcat != $cid || $currentcat == 0) {
-                        $a = new \stdClass;
-                        $a->name = format_string($category->indentedname, true,
-                            ['context' => $context]);
+                        $a = new \stdClass();
+                        $a->name = format_string(
+                            $category->indentedname,
+                            true,
+                            ['context' => $context],
+                        );
                         if ($category->idnumber !== null && $category->idnumber !== '') {
                             $a->idnumber = s($category->idnumber);
                         }
@@ -396,5 +439,187 @@ class helper {
         }
 
         return $categories;
+    }
+
+    /**
+     * Gets all descendant(s) of a category.
+     *
+     * @param int $categoryid category to check in.
+     * @param array $parents Array of categories with their appropriate parent,
+     * index is the child and value is the parent.
+     * @return array $keys Keys representing all descendants of moved category.
+     */
+    public static function get_children(int $categoryid, array $parents): array {
+        $children = [];
+        // Check if the category is included in the child-parent array.
+        if (array_key_exists($categoryid, $parents)) {
+            // Getting immediate children of the current category.
+            // In the array, key is the child, value is the parent.
+            // The array_keys will return all children (keys) having the current category as their parent (values).
+            $children = array_keys($parents, $categoryid);
+            // Recursive call to get all children of each child.
+            foreach ($children as $child) {
+                $grandchildren = self::get_children($child, $parents);
+                $children = array_merge($children, $grandchildren);
+            }
+        }
+        return $children;
+    }
+
+    /**
+     * Create an ordered tree.
+     *
+     * @param array $items Unordered tree structure.
+     * @return array $items Items with proper tree descendant structure.
+     */
+    public static function create_ordered_tree(array $items): array {
+        foreach ($items as $item) {
+            if (array_key_exists((int)$item->parent, $items)) {
+                $item->parentitem = $items[$item->parent];
+                $items[$item->parent]->children[$item->id] = $item;
+            }
+        }
+        foreach ($items as $item) {
+            if (isset($item->children)) {
+                foreach ($item->children as $children) {
+                    unset($items[$children->id]);
+                }
+            }
+        }
+        return $items;
+    }
+
+    /**
+     * Move a category to a new parent.
+     *
+     * This is only for cases where the parent does not already have children. Use update_category_location to move next
+     * to an existing child category.
+     *
+     * @param int $categoryid
+     * @param int $newparentcategoryid
+     * @return bool
+     */
+    public static function move_category_to_new_parent(int $categoryid, int $newparentcategoryid): bool {
+        global $DB;
+        $categorycontextid = $DB->get_field('question_categories', 'contextid', ['id' => $categoryid]);
+        $parentcontextid = $DB->get_field('question_categories', 'contextid', ['id' => $newparentcategoryid]);
+        if ($DB->record_exists('question_categories', ['parent' => $newparentcategoryid])) {
+            throw new \coding_exception('You cannot use move_category_to_new_parent on a parent category that already' .
+                'has children. Use update_category_location instead.');
+        }
+        require_capability('moodle/question:managecategory', context::instance_by_id($categorycontextid));
+        require_capability('moodle/question:managecategory', context::instance_by_id($parentcontextid));
+
+        return $DB->set_field('question_categories', 'parent', $newparentcategoryid, ['id' => $categoryid]);
+    }
+
+    /**
+     * Move category to new location.
+     *
+     * @param int $categoryid ID of the category to move.
+     * @param int $targetcategoryid ID of the category to move next to.
+     * @param bool $before If true, move the category before the target category. If false, move it after.
+     */
+    public static function update_category_location(int $categoryid, int $targetcategoryid, bool $before = true) {
+        global $DB;
+
+        $origincategory = $DB->get_record('question_categories', ['id' => $categoryid], '*', MUST_EXIST);
+        $movetocategory = $DB->get_record('question_categories', ['id' => $targetcategoryid], '*', MUST_EXIST);
+
+        // Check permission for original and destination contexts.
+        require_capability('moodle/question:managecategory', context::instance_by_id($origincategory->contextid));
+
+        if ($origincategory->contextid != $movetocategory->contextid) {
+            require_capability('moodle/question:managecategory', context::instance_by_id($movetocategory->contextid));
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+
+        // Change to the same parent.
+        if ($origincategory->parent !== $movetocategory->parent) {
+            $DB->set_field(
+                'question_categories',
+                'parent',
+                $movetocategory->parent,
+                ['id' => $origincategory->id],
+            );
+        }
+
+        // Change to the same context.
+        if ($origincategory->contextid !== $movetocategory->contextid) {
+            // Check for duplicate idnumber.
+            if (!is_null($origincategory->idnumber)) {
+                $duplicateidnumber = $DB->record_exists('question_categories', [
+                    'idnumber' => $origincategory->idnumber,
+                    'contextid' => $movetocategory->contextid,
+                ]);
+                if ($duplicateidnumber) {
+                    throw new moodle_exception('idnumberexists', 'qbank_managecategories');
+                }
+            }
+
+            $DB->set_field(
+                'question_categories',
+                'contextid',
+                $movetocategory->contextid,
+                ['id' => $origincategory->id],
+            );
+            // Make change to sub categories.
+            question_move_category_to_context(
+                $origincategory->id,
+                $origincategory->contextid,
+                $movetocategory->contextid
+            );
+        }
+
+        // Update sort order.
+        $sortorder = $before ? $movetocategory->sortorder : $movetocategory->sortorder + 1;
+        $DB->set_field('question_categories', 'sortorder', $sortorder, ['id' => $origincategory->id]);
+
+        // Get other categories  which are after '$insertaftercategory', and update their sort order.
+        $params = [
+            'contextid' => $movetocategory->contextid,
+            'sortorder' => $movetocategory->sortorder,
+            'origincategoryid' => $origincategory->id,
+        ];
+        $select = "contextid = :contextid AND id <> :origincategoryid";
+        if ($before) {
+            $select .= " AND sortorder >= :sortorder";
+        } else {
+            $select .= " AND sortorder > :sortorder";
+        }
+        $sort = "sortorder ASC";
+        $toupdatesortorder = $DB->get_records_select('question_categories', $select, $params, $sort);
+        foreach ($toupdatesortorder as $category) {
+            $DB->set_field('question_categories', 'sortorder', ++$sortorder, ['id' => $category->id]);
+        }
+
+        $transaction->allow_commit();
+    }
+
+    /**
+     * Combine id and context id for a question category
+     *
+     * @param \stdClass $category a category to extract its id and context id
+     * @return string the combined string
+     */
+    public static function combine_id_context(\stdClass $category): string {
+        return $category->id . ',' . $category->contextid;
+    }
+
+
+    /**
+     * Get current max sort in a given context
+     *
+     * @param int $contextid context
+     * @return int current max sort order
+     */
+    public static function get_max_sortorder(int $contextid): int {
+        global $DB;
+        $sql = "SELECT MAX(sortorder)
+                  FROM {question_categories}
+                 WHERE contextid = :contextid";
+        $lastmax = $DB->get_field_sql($sql, ['contextid' => $contextid]);
+        return $lastmax ?? 0;
     }
 }
