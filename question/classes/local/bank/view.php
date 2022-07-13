@@ -1158,6 +1158,8 @@ class view {
             echo \html_writer::div( $resetlink . $dropdown, 'mb-3', ['class' => "row justify-content-end"]);
         }
 
+
+        echo \html_writer::start_div('table-responsive');
         $tableid = 'categoryquestions';
         // Start of the table.
         echo \html_writer::start_tag('table', [
@@ -1185,6 +1187,7 @@ class view {
 
         // End of the table.
         echo \html_writer::end_tag('table');
+        echo \html_writer::end_div();
 
         // Column Action script.
         $PAGE->requires->js_call_amd('qbank_columnsortorder/qbank_column_action', 'init',
