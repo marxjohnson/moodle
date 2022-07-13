@@ -141,8 +141,9 @@
     display: block;
 }
 
-#categoryquestions {
+.question-bank-table {
     margin: 0;
+    background-color: $white;
 
     td,
     th {
@@ -161,10 +162,6 @@
 
     & > tbody > tr.highlight {
         border: $border-width solid $info;
-    }
-
-    .checkbox {
-        padding-left: 5px;
     }
 
     .checkbox input[type="checkbox"] {
@@ -658,7 +655,7 @@ body.path-question-type .mform fieldset.hidden {
 }
 
 @include media-breakpoint-down(md) {
-    #categoryquestions {
+    .question-bank-table {
         td,
         th {
             max-width: 75vw;

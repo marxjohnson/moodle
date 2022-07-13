@@ -799,7 +799,7 @@ table.quizreviewsummary td.cell {
     margin: 0 0.2em;
 }
 
-#page-mod-quiz-edit #categoryquestions .questionname,
+#page-mod-quiz-edit .question-bank-table .questionname,
 #page-mod-quiz-edit ul.slots li.activity div.activityinstance .questionname {
     font-weight: bold;
     color: #555;
@@ -843,70 +843,72 @@ table.quizreviewsummary td.cell {
     display: none;
 }
 
-#categoryquestions .header {
+.question-bank-table .header {
     text-align: center;
     padding: 0 2px;
     border: 0 none;
     vertical-align: top;
 }
 
-#categoryquestions .header.checkbox {
+.question-bank-table .header.checkbox {
     vertical-align: bottom;
+    text-align: center;
 }
 
-#categoryquestions .header.qtype {
+.question-bank-table .header.qtype .sorters {
     white-space: nowrap;
 }
 
-#categoryquestions th .sorters {
+.question-bank-table th .sorters {
     font-weight: normal;
     font-size: 0.8em;
 }
 
-#categoryquestions td.modifiername,
-#categoryquestions td.creatorname,
-#categoryquestions td.questionlastused {
+.question-bank-table td.modifiername,
+.question-bank-table td.creatorname,
+.question-bank-table td.questionlastused {
     line-height: 1em;
 }
 
-#categoryquestions td.modifiername span.date,
-#categoryquestions td.creatorname span.date {
+.question-bank-table td.modifiername span.date,
+.question-bank-table td.creatorname span.date {
     font-weight: normal;
     font-size: 0.8em;
 }
 
-table#categoryquestions {
-    width: 100%;
+table.question-bank-table {
     table-layout: fixed;
     overflow-x: visible;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-#categoryquestions .iconcol {
+.question-bank-table .iconcol {
     width: 15px;
     text-align: center;
     padding: 0;
 }
 
-#categoryquestions .checkbox {
-    width: 19px;
+.question-bank-table .checkbox {
+    width: 32px;
     text-align: center;
     padding: 0;
 }
 
-#categoryquestions .editmenu {
+.question-bank-table .editmenu {
     width: 5em;
 }
 
-#categoryquestions .qtype {
+.question-bank-table .qtype {
     text-align: center;
 }
 
-#categoryquestions .qtype {
+.question-bank-table .qtype {
     width: 28px;
     padding: 0;
 }
 
-#categoryquestions .questiontext {
+.question-bank-table .questiontext {
     position: relative;
     zoom: 1;
     padding-left: 0.3em;
@@ -915,19 +917,19 @@ table#categoryquestions {
     text-overflow: ellipsis;
 }
 
-#categoryquestions .questionname {
+.question-bank-table .questionname {
     white-space: nowrap;
     overflow: hidden;
     zoom: 1;
     position: relative;
 }
 
-#categoryquestions .questiontext p {
+.question-bank-table .questiontext p {
     margin: 0;
 }
 
-#page-mod-quiz-edit table#categoryquestions td,
-#page-mod-quiz-edit table#categoryquestions th {
+#page-mod-quiz-edit table.question-bank-table td,
+#page-mod-quiz-edit table.question-bank-table th {
     overflow: hidden;
     white-space: nowrap;
 }

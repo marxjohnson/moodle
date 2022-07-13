@@ -14,35 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qbank_columnsortorder;
+namespace qbank_columnsortorder\external;
 
-use advanced_testcase;
 use qbank_columnsortorder\column_manager;
-use qbank_columnsortorder\external\set_columnbank_order;
+use qbank_columnsortorder\tests\external_function_testcase;
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-
-require_once($CFG->dirroot . '/question/classes/external.php');
+// phpcs:disable moodle.PHPUnit.TestCaseNames.Missing
+// This class inherits its test methods from the parent class.
 
 /**
  * Unit tests for qbank_columnsortorder external API.
  *
- * @package    qbank_columnsortorder
- * @author     2021, Ghaly Marc-Alexandre <marc-alexandreghaly@catalyst-ca.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package qbank_columnsortorder
+ * @copyright 2023 Catalyst IT Europe Ltd.
+ * @author Mark Johnson <mark.johnson@catalyst-eu.net>
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \qbank_columnsortorder\external\set_columnbank_order
  */
-class columnsortorder_external_test extends advanced_testcase {
+class set_columnbank_order_test extends external_function_testcase {
+
+    protected $testclass = '\qbank_columnsortorder\external\set_columnbank_order';
+
+    protected $setting = 'enabledcol';
 
     /**
-     * Test that external call core_question_external::set_columnbank_order($oldorder) sets proper
-     * data in config_plugins table.
+     * Return a randomly-ordered list of columns.
+     *
+     * @return array
      */
-    public function test_columnorder_external(): void {
-        $this->resetAfterTest(true);
-        $this->setAdminUser();
-
+    protected function generate_test_data(): array {
         $columnsortorder = new column_manager();
         $questionlistcolumns = $columnsortorder->get_columns();
         $columnclasses = [];
@@ -50,11 +50,6 @@ class columnsortorder_external_test extends advanced_testcase {
             $columnclasses[] = $columnnobject->class;
         }
         shuffle($columnclasses);
-        set_columnbank_order::execute($columnclasses);
-
-        $currentconfig = (array)get_config('qbank_columnsortorder', 'enabledcol');
-        $currentconfig = explode(',', $currentconfig[0]);
-
-        $this->assertSame($columnclasses, $currentconfig);
+        return $columnclasses;
     }
 }

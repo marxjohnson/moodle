@@ -20,7 +20,7 @@
     Displays the <th> header cell for a column in the question bank.
 
     Context variables required for this template:
-        * extraclasses: CSS classes to add to the th. E.g. "questionstatus pr-3".
+        * extraclasses: CSS classes to add to the th. E.g. "questionstatus pr-1".
         * help: (optional, may be omitted) help icon. The structure here needs to be as from help_icon::export_for_template().
 
         Other fields vary, depending on whether the column is sortable.
@@ -43,31 +43,41 @@
     Example context (json):
     {
         "sortable": false,
-        "extraclasses": "checkbox pr-3",
+        "extraclasses": "checkbox pr-1",
         "tiptitle": "<input id=\"qbheadercheckbox\" name=\"qbheadercheckbox\" type=\"checkbox\"  value=\"1\"\n       data-action=\"toggle\"\n       data-toggle=\"master\"\n       data-togglegroup=\"qbank\"\n       data-toggle-selectall=\"Select all\"\n       data-toggle-deselectall=\"Deselect all\"\n       \n\/>\n    <label for=\"qbheadercheckbox\" class=\"accesshide\">Select all<\/label>",
         "sorttip": true,
-        "tip": "Select questions for bulk actions"
+        "tip": "Select questions for bulk actions",
+        "class": "plugin_class",
+        "name": "plugin_name"
     }
 }}
-<th class="header {{extraclasses}}" scope="col">
-    {{#title}}
-        <div class="title">{{title}}</div>
-    {{/title}}
-    {{^sortable}}
-        {{^sorttip}}
-            {{tiptitle}}
-        {{/sorttip}}
-        {{#sorttip}}
-            <span title="{{tip}}">{{{tiptitle}}}</span>
-        {{/sorttip}}
-    {{/sortable}}
-    {{#sortable}}
-        <div class="sorters">
-            {{{sortlinks}}}
+<th class="header {{extraclasses}}" scope="col" data-pluginname="{{class}}" data-name="{{name}}">
+    <div class="columnsortorder-handles">
+        &nbsp;{{! Non-breaking space to give a small amount of spacing that the move handle can wrap below.
+        }}<div class="icon-no-margin mr-1 move-handle">
         </div>
-    {{/sortable}}
-    {{#help}}
-        {{>core/help_icon}}
-    {{/help}}
+        <div class="icon-no-margin resize-handle moodle-has-zindex">
+        </div>
+    </div>
+    <div class="columnsortorder-text">
+        {{#title}}
+            <div class="title">{{title}}</div>
+        {{/title}}
+        {{^sortable}}
+            {{^sorttip}}
+                <span>{{tiptitle}}</span>
+            {{/sorttip}}
+            {{#sorttip}}
+                <span title="{{tip}}">{{{tiptitle}}}</span>
+            {{/sorttip}}
+        {{/sortable}}
+        {{#sortable}}
+            <div class="sorters">
+                {{{sortlinks}}}
+            </div>
+        {{/sortable}}
+        {{#help}}
+            {{>core/help_icon}}
+        {{/help}}
+    </div>
 </th>
-

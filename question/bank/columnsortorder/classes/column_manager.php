@@ -35,62 +35,136 @@ use moodle_url;
  */
 class column_manager {
     /**
-     * @var array|bool Column order as set in config_plugins 'class' => 'position', ie: question_type_column => 3.
+     * @var array Column order as set in config_plugins 'class' => 'position', ie: question_type_column => 3.
      */
     public $columnorder;
 
     /**
-     * @var array|bool Disabled columns in config_plugins table.
+     * @var array hidden columns.
+     */
+    public $hiddencolumns;
+
+    /**
+     * @var array columns with size.
+     */
+    public $colsize;
+
+    /**
+     * @var array Disabled columns in config_plugins table.
      */
     public $disabledcolumns;
 
     /**
      * Constructor for column_manager class.
      *
+     * @param string $component is used to retrieve user preference.
      */
-    public function __construct() {
-        $this->columnorder = get_config('qbank_columnsortorder', 'enabledcol');
-        $this->disabledcolumns = get_config('qbank_columnsortorder', 'disabledcol');
+    public function __construct(string $component = '') {
+        $this->columnorder = $this->setup_property('enabledcol', $component);
+        $this->hiddencolumns = $this->setup_property('hiddencols', $component);
+        $this->colsize = $this->setup_property('colsize', $component, 'json');
+        $this->disabledcolumns = $this->setup_property('disabledcol', $component);
+
         if ($this->columnorder) {
-            $this->columnorder = array_flip(explode(',', $this->columnorder));
+            $this->columnorder = array_flip($this->columnorder);
         }
         if ($this->disabledcolumns) {
-            $this->disabledcolumns = array_flip(explode(',', $this->disabledcolumns));
+            $this->disabledcolumns = array_flip($this->disabledcolumns);
         }
+    }
+
+    /**
+     * Return the value for the given property, based the saved user preference or config setting.
+     *
+     * If no value is currently stored, returns an empty array.
+     *
+     * @param string $setting The identifier used for the saved config and user preference settings.
+     * @param string $component The component the user preference is stored against.
+     * @param string $encoding The encoding used to store the property - csv or json
+     * @return array
+     */
+    private function setup_property(string $setting, string $component = '', $encoding = 'csv'): array {
+        $value = get_config('qbank_columnsortorder', $setting);
+        if ($component) {
+            $value = get_user_preferences("{$component}_{$setting}", $value);
+        }
+        if (empty($value)) {
+            return [];
+        }
+        return $encoding == 'csv' ? explode(',', $value) : json_decode($value);
     }
 
     /**
      * Sets column order in the qbank_columnsortorder plugin config.
      *
      * @param array $columns Column order to set.
+     * @param string $component the component where user preference is saved.
      */
-    public static function set_column_order(array $columns) : void {
+    public static function set_column_order(array $columns, string $component = '') : void {
         $columns = implode(',', $columns);
-        set_config('enabledcol', $columns, 'qbank_columnsortorder');
+        self::save_preference('enabledcol', $columns, $component);
+    }
+
+    /**
+     * Hidden Columns.
+     *
+     * @param array $columns hidden columns
+     * @param string $component the component where user preference is saved.
+     */
+    public static function set_hidden_columns(array $columns, string $component = '') : void {
+        $columns = implode(',', $columns);
+        self::save_preference('hiddencols', $columns, $component);
+    }
+
+    /**
+     * Column size.
+     *
+     * @param string $sizes columns with width
+     * @param string $component the component where user preference is saved.
+     */
+    public static function set_column_size(string $sizes, string $component = '') : void {
+        self::save_preference('colsize', $sizes, $component);
+    }
+
+    /**
+     * Save Preferences.
+     *
+     * @param string $name name of a configuration
+     * @param string $value value of a configuration
+     * @param string $component the component where user preference is saved.
+     */
+    private static function save_preference(string $name, string $value, string $component = ''): void {
+        if (empty($component)) {
+            set_config($name, $value, 'qbank_columnsortorder');
+        } else {
+            set_user_preference("{$component}_{$name}", $value);
+        }
     }
 
     /**
      * Get qbank.
      *
+     * @param bool $editing Are we displaying the question bank in editing mode?
      * @return view
      */
-    protected function get_questionbank(): view {
+    protected function get_questionbank($editing = false): view {
         $course = (object) ['id' => 0];
         $context = context_system::instance();
         $contexts = new question_edit_contexts($context);
         // Dummy call to get the objects without error.
-        $questionbank = new view($contexts, new moodle_url('/question/dummyurl.php'), $course, null);
+        $questionbank = new view($contexts, new moodle_url('/question/dummyurl.php'), $course, null, $editing);
         return $questionbank;
     }
 
     /**
      * Get enabled columns.
      *
+     * @param bool $editing Are we displaying the question bank in editing mode?
      * @return array
      */
-    public function get_columns(): array {
+    public function get_columns($editing = false): array {
         $columns = [];
-        foreach ($this->get_questionbank()->get_visiblecolumns() as $key => $column) {
+        foreach ($this->get_questionbank($editing)->get_visiblecolumns() as $key => $column) {
             if ($column->get_name() === 'checkbox') {
                 continue;
             }
@@ -239,6 +313,7 @@ class column_manager {
                     $columnorder[end($colname)] = $colposition;
                 }
             }
+
             $properorder = array_merge($columnorder, $ordertosort);
             // Always have the checkbox at first column position.
             if (isset($properorder['checkbox_column'])) {
@@ -246,6 +321,15 @@ class column_manager {
                 unset($properorder['checkbox_column']);
                 $properorder = array_merge(['checkbox_column' => $checkboxfirstelement], $properorder);
             }
+
+            // Set column visibility.
+            foreach ($properorder as $column) {
+                if ($column instanceof \core_question\local\bank\column_base) {
+                    // Visible if the column is not in the hidden column list.
+                    $column->isvisible = !in_array(get_class($column), $this->hiddencolumns);
+                }
+            }
+
             return $properorder;
         }
         return $ordertosort;

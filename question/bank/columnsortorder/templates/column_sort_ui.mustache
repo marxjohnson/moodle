@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template qbank_columnsortorder/columnsortorder.mustache
+    @template qbank_columnsortorder/column_sort_ui
 
     Admin question bank setting template.
 
@@ -25,23 +25,38 @@
 
     Example context (json):
     {
-        "name": "Creatorname (creator_name_column)",
-        "hiddenname": "creator_name_column"
+        "names": [
+            {
+                "name": "Column A",
+                "tiptitle": "Column A",
+                "colname": "col_name_A",
+                "class": "class_name_A"
+            },
+            {
+                "name": "Column B",
+                "tiptitle": "Column B",
+                "colname": "col_name_B",
+                "class": "class_name_B"
+            }
+        ]
     }
 }}
-
 <div>
     {{#str}}qbanksortdescription, qbank_columnsortorder{{/str}}
 </div>
 <br>
-<div class="list list-group" id="qbank_columnsortorder-{{uniqid}}">
-    {{#names}}
-        <div class="column item list-group-item list-group-item-action" data-pluginname={{class}}>
-            {{>core/drag_handle}}
-            {{name}} {{colname}}
-        </div>
-    {{/names}}
+<div id="show-hide-dropdown" class="qbank-show-hide-dropdown mb-3">
 </div>
+    <table class="question-bank-table" id="qbank_columnsortorder-{{uniqid}}"
+           data-pinnedcolumns="{{pinnedcolumns}}" data-hiddencolumns="{{hiddencolumns}}" data-colsize="{{colsize}}">
+        <thead>
+        <tr class="column">
+            {{#names}}
+                {{>core_question/column_header}}
+            {{/names}}
+        </tr>
+        </thead>
+    </table>
 <br>
 <div>
     {{#columnsdisabled}}
@@ -55,8 +70,8 @@
     {{/disabled}}
 </div>
 {{#js}}
-    require(['qbank_columnsortorder/sort_columns'], function(SortColumns) {
-        SortColumns.init("qbank_columnsortorder-{{uniqid}}");
+    require(['qbank_columnsortorder/qbank_column_action'], function(AdminTable) {
+        AdminTable.init("qbank_columnsortorder-{{uniqid}}", true);
     });
 {{/js}}
 <br>

@@ -37,7 +37,7 @@ list($thispageurl, $contexts, $cmid, $cm, $module, $pagevars) =
 
 $url = new moodle_url($thispageurl, ['entryid' => $entryid, 'returnurl' => $returnurl]);
 $PAGE->set_url($url);
-$questionbank = new \qbank_history\question_history_view($contexts, $url, $COURSE, $entryid, $returnurl, $cm);
+$questionbank = new \qbank_history\question_history_view($contexts, $url, $COURSE, $entryid, $returnurl, $PAGE->user_is_editing());
 
 $streditingquestions = get_string('history_header', 'qbank_history');
 $PAGE->set_title($streditingquestions);

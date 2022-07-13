@@ -27,6 +27,15 @@ This files describes API changes for code that uses the question API.
 3) display_move_form() in qbank_managecategories\question_category_object class is deprecated and moved the logic to
    the question/bank/managecategories/category.php.
 
+4) qbank_columnsortorder\column_manager its constructor now accept component string, which is used to retrieve
+user preference of column actions. This allows us to save user preferences for column sizes, order and pinning, then apply
+them again when the user views the question bank.
+
+5) CSS selectors using #categoryquestions to address the table on the question bank page have now been changed to use
+.question-bank-table. This applies to the same styles to the table on the qbank_columnsortorder admin screen, where we
+can set default order and column sizes. It is important that the styles match on these pages so that the
+defaults have the expected result in the question bank.
+
 === 4.1 ===
 
 1) get_bulk_action_key() in core_question\local\bank\bulk_action_base class is deprecated and renamed to get_key().

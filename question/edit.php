@@ -38,7 +38,7 @@ if ($PAGE->course->id == $SITE->id) {
     $PAGE->set_primary_active_tab('home');
 }
 
-$questionbank = new core_question\local\bank\view($contexts, $thispageurl, $COURSE, $cm);
+$questionbank = new core_question\local\bank\view($contexts, $thispageurl, $COURSE, $cm, $PAGE->user_is_editing());
 
 $context = $contexts->lowest();
 $streditingquestions = get_string('editquestions', 'question');

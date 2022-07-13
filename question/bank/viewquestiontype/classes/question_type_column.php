@@ -52,4 +52,7 @@ class question_type_column extends column_base {
         return 'q.qtype';
     }
 
+    public function get_extra_classes(): array {
+        return ['pr-1'];
+    }
 }

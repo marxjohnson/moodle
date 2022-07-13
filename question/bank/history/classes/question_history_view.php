@@ -52,12 +52,14 @@ class question_history_view extends view {
      * @param stdClass $course course settings
      * @param int $entryid quiz settings
      * @param string $returnurl url to return to
+     * @param bool $editing Are we displaying the question bank in editing mode?
      */
     public function __construct(question_edit_contexts $contexts, moodle_url $pageurl, stdClass $course, int $entryid,
-                                string $returnurl) {
-        parent::__construct($contexts, $pageurl, $course);
+                                string $returnurl, bool $editing = false) {
+        parent::__construct($contexts, $pageurl, $course, null, $editing);
         $this->entryid = $entryid;
         $this->basereturnurl = new \moodle_url($returnurl);
+        $this->component = 'qbank_history';
     }
 
     protected function wanted_columns(): array {

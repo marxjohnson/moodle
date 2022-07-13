@@ -31256,45 +31256,43 @@ a.ygtvspacer:hover {
   display: block;
 }
 
-#categoryquestions {
+.question-bank-table {
   margin: 0;
+  background-color: #fff;
 }
-#categoryquestions td,
-#categoryquestions th {
+.question-bank-table td,
+.question-bank-table th {
   padding: 0 0.2em;
   max-width: 40vw;
 }
-#categoryquestions th {
+.question-bank-table th {
   text-align: left;
   font-weight: normal;
 }
-#categoryquestions > tbody > tr.r1 {
+.question-bank-table > tbody > tr.r1 {
   background-color: rgba(0, 0, 0, 0.03);
 }
-#categoryquestions > tbody > tr.highlight {
+.question-bank-table > tbody > tr.highlight {
   border: 1px solid #008196;
 }
-#categoryquestions .checkbox {
-  padding-left: 5px;
-}
-#categoryquestions .checkbox input[type=checkbox] {
+.question-bank-table .checkbox input[type=checkbox] {
   margin-left: 0;
   float: none;
 }
-#categoryquestions .iconcol {
+.question-bank-table .iconcol {
   padding: 3px;
   box-sizing: content-box;
 }
-#categoryquestions .iconcol .icon {
+.question-bank-table .iconcol .icon {
   margin: 0;
   width: 12px;
   height: 12px;
 }
-#categoryquestions label {
+.question-bank-table label {
   margin: 0;
   display: block;
 }
-#categoryquestions .header {
+.question-bank-table .header {
   text-align: left;
 }
 
@@ -31795,8 +31793,8 @@ body.path-question-type .mform fieldset.hidden {
   }
 }
 @media (max-width: 991.98px) {
-  #categoryquestions td,
-  #categoryquestions th {
+  .question-bank-table td,
+  .question-bank-table th {
     max-width: 75vw;
   }
 }

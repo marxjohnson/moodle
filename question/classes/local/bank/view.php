@@ -90,19 +90,19 @@ class view {
     public $course;
 
     /**
-     * @var \question_bank_column_base[] these are all the 'columns' that are
+     * @var \core_question\local\bank\column_base[] these are all the 'columns' that are
      * part of the display. Array keys are the class name.
      */
     protected $requiredcolumns;
 
     /**
-     * @var \question_bank_column_base[] these are the 'columns' that are
+     * @var \core_question\local\bank\column_base[] these are the 'columns' that are
      * actually displayed as a column, in order. Array keys are the class name.
      */
     protected $visiblecolumns;
 
     /**
-     * @var \question_bank_column_base[] these are the 'columns' that are
+     * @var \core_question\local\bank\column_base[] these are the 'columns' that are
      * actually displayed as an additional row (e.g. question text), in order.
      * Array keys are the class name.
      */
@@ -165,18 +165,30 @@ class view {
     public $bulkactions = [];
 
     /**
+     * @var string $component the component the api is used from.
+     */
+    public $component = 'core_question';
+
+    /**
+     * @var bool $editing Are we displaying the question bank in editing mode?
+     */
+    protected $editing;
+
+    /**
      * Constructor for view.
      *
      * @param \core_question\local\bank\question_edit_contexts $contexts
      * @param \moodle_url $pageurl
      * @param object $course course settings
      * @param object $cm (optional) activity settings.
+     * @param bool $editing Are we displaying the question bank in editing mode?
      */
-    public function __construct($contexts, $pageurl, $course, $cm = null) {
+    public function __construct($contexts, $pageurl, $course, $cm = null, $editing = false) {
         $this->contexts = $contexts;
         $this->baseurl = $pageurl;
         $this->course = $course;
         $this->cm = $cm;
+        $this->editing = $editing;
 
         // Create the url of the new question page to forward to.
         $this->returnurl = $pageurl->out_as_local_url(false);
@@ -317,8 +329,16 @@ class view {
         }
 
         // Check if qbank_columnsortorder is enabled.
+        // TODO: Extract this into a function, so that it is easier to override.
         if (array_key_exists('columnsortorder', core_plugin_manager::instance()->get_enabled_plugins('qbank'))) {
-            $columnorder = new column_manager();
+            if (!$this->course->id) {
+                // Site admin context.
+                $preference = "";
+            } else {
+                // Course or module context.
+                $preference = $this->component;
+            }
+            $columnorder = new column_manager($preference);
             $questionbankclasscolumns = $columnorder->get_sorted_columns($questionbankclasscolumns);
         }
 
@@ -341,7 +361,7 @@ class view {
         $this->requiredcolumns = [];
         $questionbankcolumns = $this->get_question_bank_plugins();
         foreach ($questionbankcolumns as $classobject) {
-            if (empty($classobject)) {
+            if (empty($classobject) || !($classobject instanceof \core_question\local\bank\column_base)) {
                 continue;
             }
             $this->requiredcolumns[$classobject->get_column_name()] = $classobject;
@@ -393,7 +413,10 @@ class view {
             if ($column->is_extra_row()) {
                 $this->extrarows[$column->get_column_name()] = $column;
             } else {
-                $this->visiblecolumns[$column->get_column_name()] = $column;
+                // Only add columns which are visible.
+                if ($this->editing || $column->isvisible) {
+                    $this->visiblecolumns[$column->get_column_name()] = $column;
+                }
             }
         }
 
@@ -1114,8 +1137,35 @@ class view {
      * @param array $questions
      */
     protected function print_table($questions): void {
+        global $PAGE;
+
+        // Column actions.
+        $columnsortorder = new column_manager($this->component);
+        $hiddencolumns = $columnsortorder->hiddencolumns;
+        $colsize = $columnsortorder->colsize;
+
+        if ($PAGE->user_is_editing()) {
+            // Reset link.
+            $url = new \moodle_url('/question/bank/columnsortorder/reset_preference.php', [
+                'returnurl' => $this->returnurl,
+                'component' => $this->component,
+                'sesskey' => sesskey()
+            ]);
+            $resetlink = \html_writer::link($url, get_string('reset'), ['class' => "btn btn-secondary mr-1"]);
+            $resetlink = \html_writer::div($resetlink, '');
+            // Container for show/hide dropdown.
+            $dropdown = \html_writer::div('', 'qbank-show-hide-dropdown', ['id' => "show-hide-dropdown"]);
+            echo \html_writer::div( $resetlink . $dropdown, 'mb-3', ['class' => "row justify-content-end"]);
+        }
+
+        $tableid = 'categoryquestions';
         // Start of the table.
-        echo \html_writer::start_tag('table', ['id' => 'categoryquestions', 'class' => 'table-responsive']);
+        echo \html_writer::start_tag('table', [
+            'id' => $tableid,
+            'class' => 'question-bank-table',
+            'data-hiddencolumns' => json_encode($hiddencolumns),
+            'data-colsize' => json_encode($colsize),
+        ]);
 
         // Prints the table header.
         echo \html_writer::start_tag('thead');
@@ -1135,11 +1185,16 @@ class view {
 
         // End of the table.
         echo \html_writer::end_tag('table');
+
+        // Column Action script.
+        $PAGE->requires->js_call_amd('qbank_columnsortorder/qbank_column_action', 'init',
+            [$tableid, $PAGE->user_is_editing(), $this->component]);
     }
 
     /**
      * Start of the table html.
      *
+     * @deprecated since Moodle 4.0
      * @deprecated since Moodle 4.0
      * @see print_table()
      * @todo Final deprecation on Moodle 4.4 MDL-72438

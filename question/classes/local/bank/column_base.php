@@ -41,6 +41,9 @@ abstract class column_base {
     /** @var bool determine whether the column is td or th. */
     protected $isheading = false;
 
+    /** @var bool determine whether the column is visible */
+    public $isvisible = true;
+
     /**
      * Constructor.
      * @param view $qbank the question bank view we are helping to render.
@@ -130,6 +133,10 @@ abstract class column_base {
         if ($help) {
             $data['help'] = $help->export_for_template($renderer);
         }
+
+        $data['colname'] = $this->get_column_name();
+        $data['name'] = $title;
+        $data['class'] = $name;
 
         echo $renderer->render_column_header($data);
     }

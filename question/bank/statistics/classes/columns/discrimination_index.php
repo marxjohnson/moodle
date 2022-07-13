@@ -65,7 +65,7 @@ class discrimination_index extends column_base {
     }
 
     public function get_extra_classes(): array {
-        return ['pr-3'];
+        return ['pr-1'];
     }
 
 }

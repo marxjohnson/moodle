@@ -37,7 +37,7 @@ class history_action_column extends menu_action_column_base {
     }
 
     public function get_extra_classes(): array {
-        return ['pr-3'];
+        return ['pr-1'];
     }
 
     public function get_name(): string {

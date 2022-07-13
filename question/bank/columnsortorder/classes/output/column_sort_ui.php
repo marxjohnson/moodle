@@ -17,7 +17,8 @@
 namespace qbank_columnsortorder\output;
 
 use moodle_url;
-use plugin_renderer_base;
+use templatable;
+use renderable;
 use qbank_columnsortorder\column_manager;
 
 /**
@@ -27,15 +28,20 @@ use qbank_columnsortorder\column_manager;
  * @author     Ghaly Marc-Alexandre <marc-alexandreghaly@catalyst-ca.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class renderer extends plugin_renderer_base {
+class column_sort_ui implements templatable, renderable {
+
     /**
-     * Render list of question bank plugin columns.
-     *
-     * @return string The rendered HTML.
+     * @var bool $editing Are we displaying the UI in editing mode?
      */
-    public function render_column_sort_ui() {
+    protected bool $editing;
+
+    public function __construct(bool $editing = false) {
+        $this->editing = $editing;
+    }
+
+    public function export_for_template(\renderer_base $output): array {
         $columnsortorder = new column_manager();
-        $enabledcolumns = $columnsortorder->get_columns();
+        $enabledcolumns = $columnsortorder->get_columns($this->editing);
         $disabledcolumns = $columnsortorder->get_disabled_columns();
         $params = [];
         foreach ($enabledcolumns as $columnname) {
@@ -44,14 +50,18 @@ class renderer extends plugin_renderer_base {
             if ($columnname->class === 'qbank_customfields\custom_field_column') {
                 $columnname->class .= "\\$columnname->colname";
             }
-            $params['names'][] = ['name' => $name, 'colname' => $colname, 'class' => $columnname->class];
+            $params['names'][] = ['name' => $name, 'tiptitle' => $name, 'colname' => $colname, 'class' => $columnname->class];
         }
+
         $params['disabled'] = $disabledcolumns;
+        $params['hiddencolumns'] = json_encode($columnsortorder->hiddencolumns);
+        $params['colsize'] = json_encode($columnsortorder->colsize);
         $params['columnsdisabled'] = (!empty($params['disabled'])) ? true : false;
+        $params['extraclasses'] = 'pr-1';
         $urltoredirect = new moodle_url('/admin/settings.php', ['section' => 'manageqbanks']);
 
         $params['urltomanageqbanks'] = get_string('qbankgotomanageqbanks', 'qbank_columnsortorder', $urltoredirect->out());
 
-        return $this->render_from_template('qbank_columnsortorder/columnsortorder', $params);
+        return $params;
     }
 }

@@ -1,0 +1,54 @@
+.question-bank-table .columnsortorder-handles {
+    position: relative;
+}
+.question-bank-table .resize-handle {
+    position: absolute;
+    right: -14px;
+    top: 0;
+    cursor: col-resize;
+}
+
+.columnsortorder-handles > div {
+    display: inline-block;
+}
+.columnsortorder-text {
+    overflow-x: hidden;
+}
+.question-bank-table th:hover .columnsortorder-text {
+    overflow-x: visible;
+    background-color: inherit;
+}
+.question-bank-table th:hover .columnsortorder-text > span {
+    position: relative;
+}
+.question-bank-table .header {
+    background-color: white;
+}
+.question-bank-table .header.active {
+    margin-right: -1.55rem;
+    color: #fff;
+    background-color: #0f6cbf;
+    border-color: #0f6cbf;
+}
+.question-bank-table .resize-handle [role="button"] {
+    cursor: col-resize;
+}
+.question-bank-table .resize-handle img {
+    /* Prevent the resize handle icon being dragged across the page */
+    pointer-events: none;
+}
+.question-bank-table th {
+    font-weight: normal;
+    vertical-align: top;
+}
+#page-admin-question-bank-columnsortorder-sortcolumns .question-bank-table th,
+.editing .question-bank-table th,
+.editing .question-bank-table td {
+    border-left: 2px solid rgb(222, 226, 230);
+    border-right: 2px solid rgb(222, 226, 230);
+}
+.qbank-show-hide-dropdown label {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
+}

@@ -19,20 +19,19 @@ namespace qbank_columnsortorder\external;
 use context_system;
 use core_external\external_api;
 use core_external\external_function_parameters;
-use core_external\external_multiple_structure;
 use core_external\external_value;
 use qbank_columnsortorder\column_manager;
 
 /**
- * External qbank_columnsortorder_set_columnbank_order API
+ * External qbank_columnsortorder_set_column_size API
  *
  * @package    qbank_columnsortorder
  * @category   external
- * @copyright  2021 Catalyst IT Australia Pty Ltd
- * @author     2021, Ghaly Marc-Alexandre <marc-alexandreghaly@catalyst-ca.net>
+ * @copyright  2022 Catalyst IT Australia Pty Ltd
+ * @author     2022, Nathan Nguyen <nathannguyen@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class set_columnbank_order extends external_api {
+class set_column_size extends external_api {
     /**
      * Returns description of method parameters.
      *
@@ -40,35 +39,32 @@ class set_columnbank_order extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'columns' => new external_multiple_structure(
-                new external_value(PARAM_TEXT, 'Plugin name for the column', VALUE_REQUIRED)
-            ),
+            'sizes' => new external_value(PARAM_TEXT, 'Size for each column', VALUE_REQUIRED),
             'component' => new external_value(PARAM_COMPONENT, 'Component where user preference is saved', VALUE_DEFAULT, ''),
         ]);
     }
 
     /**
      * Returns description of method result value.
-     *
      */
     public static function execute_returns(): void {
     }
 
     /**
-     * Set columns order.
-     * Save against user preference if  the component is specified
+     * Set sizes for columns
+     * Save against user preference if component is specified
      *
-     * @param array $columns json string representing pinned columns.
+     * @param string $sizes json string representing [column => size].
      * @param string $component where user preference is saved.
      */
-    public static function execute(array $columns, string $component = ''): void {
+    public static function execute(string $sizes, string $component = ''): void {
         [
-            'columns' => $columns,
+            'sizes' => $sizes,
             'component' => $component,
         ]
             = self::validate_parameters(self::execute_parameters(),
         [
-            'columns' => $columns,
+            'sizes' => $sizes,
             'component' => $component,
         ]);
 
@@ -78,6 +74,6 @@ class set_columnbank_order extends external_api {
             require_capability('moodle/site:config', $context);
         }
 
-        column_manager::set_column_order($columns, $component);
+        column_manager::set_column_size($sizes, $component);
     }
 }

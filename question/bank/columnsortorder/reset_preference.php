@@ -14,34 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qbank_history;
-
-use core_question\local\bank\column_base;
-
 /**
- * Question bank column for the question version number.
+ * Question bank settings page class.
  *
- * @package    qbank_history
+ * @package    qbank_columnsortorder
  * @copyright  2022 Catalyst IT Australia Pty Ltd
- * @author     Safat Shahin <safatshahin@catalyst-au.net>
+ * @author     Nathan Nguyen <nathannguyen@catalyst-ca.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class version_number_column extends column_base {
 
-    public function get_name(): string {
-        return 'questionversionnumber';
-    }
+require_once(__DIR__ . '/../../../config.php');
 
-    public function get_title(): string {
-        return get_string('questionversionnumber', 'qbank_history');
-    }
+$returnurl = required_param('returnurl', PARAM_LOCALURL);
+$component = required_param('component', PARAM_COMPONENT);
 
-    protected function display_content($question, $rowclasses): void {
-        print_string('questionversiondata', 'qbank_history', $question->version);
-    }
+require_sesskey();
+require_login();
 
-    public function get_extra_classes(): array {
-        return ['pr-1'];
-    }
+// Reset user preference.
+unset_user_preference("{$component}_enabledcol");
+unset_user_preference("{$component}_hiddencols");
+unset_user_preference("{$component}_colsize");
 
-}
+redirect(new moodle_url($returnurl));
