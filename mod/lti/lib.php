@@ -673,7 +673,11 @@ function lti_check_updates_since(cm_info $cm, $from, $filter = array()) {
     }
 
     // Now, teachers should see other students updates.
-    if (has_capability('mod/lti:manage', $cm->context)) {
+    if (has_any_capability([
+                'mod/lti:instructor',
+                'mod/lti:teachingassistant',
+                'mod/lti:manager',
+            ], $cm->context)) {
         $select = 'ltiid = :id AND (datesubmitted > :since1 OR dateupdated > :since2)';
         $params = array('id' => $cm->instance, 'since1' => $from, 'since2' => $from);
 

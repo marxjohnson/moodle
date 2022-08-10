@@ -29,6 +29,16 @@ defined('MOODLE_INTERNAL') || die();
 class helper {
 
     /**
+     * @var int Indicates usage of the old URN-based IMS role vocabulary (for LTI 1.0-1.1).
+     */
+    public const ROLE_VOCAB_URN = 1;
+
+    /**
+     * @var int Indicates usage of the newer URI-based IMS role vocabulary (for LTI 1.3 and 2.0).
+     */
+    public const ROLE_VOCAB_URI = 2;
+
+    /**
      * Get SQL to query DB for LTI tool proxy records.
      *
      * @param bool $orphanedonly If true, return SQL to get orphaned proxies only.
@@ -57,4 +67,95 @@ class helper {
 
         return $select . $from . $join . $where . $sort;
     }
+
+    /**
+     * Determine which IMS role vocabulary should be used for the tool.
+     *
+     * LTI version 1.0 and 1.1 use the old URN vocabulary.
+     * Versions 2.0 and 1.3 use the new URI vocabulary.
+     *
+     * @param object $tool
+     * @return int One of the self::ROLE_VOCAB_* constants.
+     */
+    public static function get_role_vocab_for_tool(object $tool): int {
+        return $tool->ltiversion == LTI_VERSION_1 ? self::ROLE_VOCAB_URN : self::ROLE_VOCAB_URI;
+    }
+
+    /**
+     * Gets the IMS role string for the specified user and LTI course module.
+     *
+     * @param mixed    $user      User object or user id
+     * @param int      $cmid      The course module id of the LTI activity
+     * @param int      $courseid  The course id of the LTI activity
+     * @param string   $rolevocab Which role vocab version should be used? One of the LTI_ROLE_VOCAB_* constants
+     *
+     * @return string A role string suitable for passing with an LTI launch
+     */
+    public static function get_ims_role($user, $cmid, $courseid, $rolevocab): string {
+        $roles = [];
+
+        if (empty($cmid)) {
+            $context = \context_course::instance($courseid);
+        } else {
+            $context = \context_module::instance($cmid);
+        }
+
+        // Mapping of Moodle capabilities to LTI roles.
+        $rolemap = [
+            'mod/lti:learner' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/Learner',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
+            ],
+            'mod/lti:teachingassistant' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/TeachingAssistant',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant',
+            ],
+            'mod/lti:contentdeveloper' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/ContentDeveloper',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper',
+            ],
+            'mod/lti:member' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/Member',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#Member',
+            ],
+            'mod/lti:manager' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/Manager',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#Manager',
+            ],
+            'mod/lti:mentor' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/Mentor',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
+            ],
+            'mod/lti:instructor' => [
+                self::ROLE_VOCAB_URN => 'urn:lti:role:ims/lis/Instructor',
+                self::ROLE_VOCAB_URI => 'http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor',
+            ],
+        ];
+
+        foreach ($rolemap as $capability => $ltirole) {
+            if (has_capability($capability, $context, $user, false)) {
+                array_push($roles, $ltirole[$rolevocab]);
+            }
+        }
+
+        if (!is_role_switched($courseid) && (is_siteadmin($user)) || has_capability('mod/lti:admin', $context)) {
+            // Make sure admins do not have the Learner role, then set admin role.
+            $roles = array_diff($roles, [$rolemap['mod/lti:learner'][$rolevocab]]);
+            if ($rolevocab == self::ROLE_VOCAB_URN) {
+                array_push($roles, 'urn:lti:sysrole:ims/lis/Administrator', 'urn:lti:instrole:ims/lis/Administrator');
+            } else {
+                array_push($roles, 'http://purl.imsglobal.org/vocab/lis/v2/membership#Administrator',
+                        'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
+                        'http://purl.imsglobal.org/vocab/lis/v2/system/institution/person#Administrator');
+            }
+        }
+
+        // If the user has no other roles, just give them the Learner role.
+        if (empty($roles)) {
+            array_push($roles, $rolemap['mod/lti:learner'][$rolevocab]);
+        }
+
+        return join(',', $roles);
+    }
+
 }

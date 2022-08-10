@@ -3158,6 +3158,7 @@ function print_error($errorcode, $module = 'error', $link = '', $a = null, $debu
 }
 
 /**
+<<<<<<< HEAD
  * Execute cron tasks
  *
  * @param int|null $keepalive The keepalive time for this cron run.
@@ -3389,4 +3390,24 @@ function random_bytes_emulate($length) {
             DEBUG_DEVELOPER
     );
     return random_bytes($length);
+}
+
+/**
+ * Gets the IMS role string for the specified user and LTI course module.
+ *
+ * @deprecated since Moodle 4.1 MDL-72066 - please do not use this function any more.
+ * @todo MDL-75815 This will be deleted in Moodle 4.5
+ * @see mod_lti\helper::get_ims_role()
+ * @param mixed    $user      User object or user id
+ * @param int      $cmid      The course module id of the LTI activity
+ * @param int      $courseid  The course id of the LTI activity
+ * @param boolean  $islti2    True if an LTI 2 tool is being launched
+ *
+ * @return string A role string suitable for passing with an LTI launch
+ */
+function lti_get_ims_role($user, $cmid, $courseid, $islti2) {
+
+    debugging('lti_get_ims_role() is deprecated. Please use mod_lti\helper::get_ims_role() instead.', DEBUG_DEVELOPER);
+    // Call the new method using the URI vocab. This might not be correct, but we can't tell from $islti2, so it's a best guess.
+    mod_lti\helper::get_ims_role($user, $cmid, $courseid, mod_lti\helper::ROLE_VOCAB_URI);
 }

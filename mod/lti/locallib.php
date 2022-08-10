@@ -553,7 +553,8 @@ function lti_get_launch_data($instance, $nonce = '', $messagetype = 'basic-lti-l
 
     $course = $PAGE->course;
     $islti2 = isset($tool->toolproxyid);
-    $allparams = lti_build_request($instance, $typeconfig, $course, $typeid, $islti2, $messagetype, $foruserid);
+    $rolevocab = helper::get_role_vocab_for_tool($tool ?? (object)['ltiversion' => $ltiversion]);
+    $allparams = lti_build_request($instance, $typeconfig, $course, $typeid, $islti2, $messagetype, $foruserid, $rolevocab);
     if ($islti2) {
         $requestparams = lti_build_request_lti2($tool, $allparams);
     } else {
@@ -788,18 +789,19 @@ function lti_build_sourcedid($instanceid, $userid, $servicesalt, $typeid = null,
  * @param boolean   $islti2         True if an LTI 2 tool is being launched
  * @param string    $messagetype    LTI Message Type for this launch
  * @param int       $foruserid      User targeted by this launch
+ * @param int       $rolevocab      The role vocabulary to use for IMS roles passed to the tool
  *
  * @return array                    Request details
  */
 function lti_build_request($instance, $typeconfig, $course, $typeid = null, $islti2 = false,
-    $messagetype = 'basic-lti-launch-request', $foruserid = 0) {
+    $messagetype = 'basic-lti-launch-request', $foruserid = 0, $rolevocab = helper::ROLE_VOCAB_URI) {
     global $USER, $CFG;
 
     if (empty($instance->cmid)) {
         $instance->cmid = 0;
     }
 
-    $role = lti_get_ims_role($USER, $instance->cmid, $instance->course, $islti2);
+    $role = helper::get_ims_role($USER, $instance->cmid, $instance->course, $rolevocab);
 
     $requestparams = array(
         'user_id' => $USER->id,
@@ -1130,7 +1132,7 @@ function lti_build_content_item_selection_request($id, $course, moodle_url $retu
     // Get base request parameters.
     $instance = new stdClass();
     $instance->course = $course->id;
-    $requestparams = lti_build_request($instance, $typeconfig, $course, $id, $islti2);
+    $requestparams = lti_build_request($instance, $typeconfig, $course, $id, $islti2, helper::get_role_vocab_for_tool($tool));
 
     // Get LTI2-specific request parameters and merge to the request parameters if applicable.
     if ($islti2) {
@@ -2142,53 +2144,6 @@ function lti_map_keyname($key, $tolower = true) {
         $newkey = $key;
     }
     return $newkey;
-}
-
-/**
- * Gets the IMS role string for the specified user and LTI course module.
- *
- * @param mixed    $user      User object or user id
- * @param int      $cmid      The course module id of the LTI activity
- * @param int      $courseid  The course id of the LTI activity
- * @param boolean  $islti2    True if an LTI 2 tool is being launched
- *
- * @return string A role string suitable for passing with an LTI launch
- */
-function lti_get_ims_role($user, $cmid, $courseid, $islti2) {
-    $roles = array();
-
-    if (empty($cmid)) {
-        // If no cmid is passed, check if the user is a teacher in the course
-        // This allows other modules to programmatically "fake" a launch without
-        // a real LTI instance.
-        $context = context_course::instance($courseid);
-
-        if (has_capability('moodle/course:manageactivities', $context, $user)) {
-            array_push($roles, 'Instructor');
-        } else {
-            array_push($roles, 'Learner');
-        }
-    } else {
-        $context = context_module::instance($cmid);
-
-        if (has_capability('mod/lti:manage', $context)) {
-            array_push($roles, 'Instructor');
-        } else {
-            array_push($roles, 'Learner');
-        }
-    }
-
-    if (!is_role_switched($courseid) && (is_siteadmin($user)) || has_capability('mod/lti:admin', $context)) {
-        // Make sure admins do not have the Learner role, then set admin role.
-        $roles = array_diff($roles, array('Learner'));
-        if (!$islti2) {
-            array_push($roles, 'urn:lti:sysrole:ims/lis/Administrator', 'urn:lti:instrole:ims/lis/Administrator');
-        } else {
-            array_push($roles, 'http://purl.imsglobal.org/vocab/lis/v2/person#Administrator');
-        }
-    }
-
-    return join(',', $roles);
 }
 
 /**
@@ -3342,23 +3297,6 @@ function lti_sign_jwt($parms, $endpoint, $oauthconsumerkey, $typeid = 0, $nonce 
     $messagetypemapping = lti_get_jwt_message_type_mapping();
     if (isset($parms['lti_message_type']) && array_key_exists($parms['lti_message_type'], $messagetypemapping)) {
         $parms['lti_message_type'] = $messagetypemapping[$parms['lti_message_type']];
-    }
-    if (isset($parms['roles'])) {
-        $roles = explode(',', $parms['roles']);
-        $newroles = array();
-        foreach ($roles as $role) {
-            if (strpos($role, 'urn:lti:role:ims/lis/') === 0) {
-                $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . substr($role, 21);
-            } else if (strpos($role, 'urn:lti:instrole:ims/lis/') === 0) {
-                $role = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#' . substr($role, 25);
-            } else if (strpos($role, 'urn:lti:sysrole:ims/lis/') === 0) {
-                $role = 'http://purl.imsglobal.org/vocab/lis/v2/system/person#' . substr($role, 24);
-            } else if ((strpos($role, '://') === false) && (strpos($role, 'urn:') !== 0)) {
-                $role = "http://purl.imsglobal.org/vocab/lis/v2/membership#{$role}";
-            }
-            $newroles[] = $role;
-        }
-        $parms['roles'] = implode(',', $newroles);
     }
 
     $now = time();

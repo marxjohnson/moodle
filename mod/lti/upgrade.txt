@@ -1,5 +1,17 @@
 This files describes API changes in the lti code.
 
+=== 4.4 ===
+* New capabilities added to support explicit mapping to LTI roles via Moodle's permissions system:
+    - mod/lti:learner
+    - mod/lti:teachingassistant
+    - mod/lti:contentdeveloper
+    - mod/lti:member
+    - mod/lti:manager
+    - mod/lti:mentor
+    - mod/lti:instructor
+* Deprecated lti_get_ims_roles() in favour of mod_lti\helper::get_ims_roles().
+* Deprecated mod/lti:manage capability in favour of more specific mod/lti:instructor, mod/lti:teachingassistant and mod/lti:manager
+
 === 4.3 ===
 
 * The `lti_libxml_disable_entity_loader` method is deprecated, as it is no longer required from PHP 8.0
