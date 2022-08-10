@@ -3,6 +3,15 @@ This files describes API changes in the lti code.
 === 4.1 ===
 
 * The callback get_shortcuts() is now removed. Please use get_course_content_items and get_all_content_items instead.
+* New capabilities added to support explicit mapping to LTI roles via Moodle's permissions system:
+    - mod/lti:learner
+    - mod/lti:teachingassistant
+    - mod/lti:contentdeveloper
+    - mod/lti:member
+    - mod/lti:manager
+    - mod/lti:mentor
+    - mod/lti:instructor
+* Deprecated lti_get_ims_roles() in favour of mod_lti\helper::get_ims_roles().
 
 === 3.10 ===
 

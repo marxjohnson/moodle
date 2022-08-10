@@ -56,24 +56,71 @@ $capabilities = array(
         'clonepermissionsfrom' => 'moodle/course:manageactivities'
     ),
 
-    // When the user arrives at the external tool, if they have this capability
-    // in Moodle, then they are given the Instructor role in the remote system,
-    // otherwise they are given Learner. See the lti_get_ims_role function.
     'mod/lti:manage' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW
+        )
+    ),
+
+    // When the user arrives at the external tool, if they have one of the following
+    // capabilities, they are granted the corresponding LTI role in the external tool.
+    // See the \mod_lti\helper::get_ims_role function.
+    'mod/lti:learner' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+    ),
+
+    'mod/lti:teachingassistant' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'teacher' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/lti:contentdeveloper' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE
+    ),
+
+    'mod/lti:manager' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/lti:member' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE
+    ),
+
+    'mod/lti:mentor' => array(
+        'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE
+    ),
+
+    'mod/lti:instructor' => array(
         'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
 
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => array(
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
         )
     ),
 
-    // When the user arrives at the external tool, if they have this capability
-    // in Moodle, then they are given the Administrator role in the remote system,
-    // otherwise they are given Learner. See the lti_get_ims_role function.
     'mod/lti:admin' => array(
         'riskbitmask' => RISK_PERSONAL, // A bit of a guess, but seems likely.
 

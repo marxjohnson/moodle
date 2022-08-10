@@ -25,6 +25,8 @@
 
 namespace ltiservice_memberships\local\service;
 
+use mod_lti\helper;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -256,7 +258,8 @@ class memberships extends \mod_lti\local\ltiservice\service_base {
             $member->{"@type" } = 'LISPerson';
             $membership = new \stdClass();
             $membership->status = 'Active';
-            $membership->role = explode(',', lti_get_ims_role($user->id, null, $contextid, true));
+            $rolevocab = helper::get_role_vocab_for_tool($tool);
+            $membership->role = explode(',', helper::get_ims_role($user->id, null, $contextid, $rolevocab));
 
             $instanceconfig = null;
             if (!is_null($lti)) {
@@ -397,7 +400,8 @@ class memberships extends \mod_lti\local\ltiservice\service_base {
 
             $member = new \stdClass();
             $member->status = 'Active';
-            $member->roles = explode(',', lti_get_ims_role($user->id, null, $course->id, true));
+            $rolevocab = helper::get_role_vocab_for_tool($tool);
+            $member->roles = explode(',', helper::get_ims_role($user->id, null, $course->id, $rolevocab));
 
             $instanceconfig = null;
             if (!is_null($lti)) {
