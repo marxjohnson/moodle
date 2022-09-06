@@ -234,6 +234,7 @@ if ($editform->is_cancelled()) {
             $newgroup->courseid = $data->courseid;
             $newgroup->name     = $group['name'];
             $newgroup->enablemessaging = $data->enablemessaging ?? 0;
+            $newgroup->visibility = \core_group\visibility::ALL;
             $groupid = groups_create_group($newgroup);
             $createdgroups[] = $groupid;
             foreach($group['members'] as $user) {

@@ -541,6 +541,14 @@ EOD;
             $record['descriptionformat'] = FORMAT_MOODLE;
         }
 
+        if (!isset($record['visibility'])) {
+            $record['visibility'] = \core_group\visibility::ALL;
+        }
+
+        if (!isset($record['participation'])) {
+            $record['participation'] = true;
+        }
+
         $id = groups_create_group((object)$record);
 
         // Allow tests to set group pictures.
