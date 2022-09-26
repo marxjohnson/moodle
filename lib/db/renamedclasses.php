@@ -86,4 +86,6 @@ $renamedclasses = [
     'core_block\\local\\views\\secondary' => 'core_block\\navigation\\views\\secondary',
     // Since Moodle 4.2.
     'Box\\Spout' => 'OpenSpout',
+    // Since Moodle 4.3.
+    'core_question\\bank\\search\\condition' => 'core_question\\local\\bank\\condition',
 ];
