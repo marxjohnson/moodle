@@ -1391,3 +1391,54 @@ class question_test_recordset extends moodle_recordset {
         $this->records = null;
     }
 }
+
+/**
+ * Helper class for tests that help to test core_question_renderer.
+ *
+ * @copyright  2018 Huong Nguyen <huongnv13@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class testable_core_question_renderer extends core_question_renderer {
+
+    /**
+     * Test the private number function.
+     *
+     * @param null|string $number
+     * @return HTML
+     */
+    public function number($number) {
+        return parent::number($number);
+    }
+}
+
+/**
+ * Provide utility function for random question test
+ *
+ * @package   core_question
+ * @author     Nathan Nguyen <nathannguyen@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+abstract class random_question_filter_test_base extends advanced_testcase {
+    /**
+     * Create filters base on provided values
+     *
+     * @param $categoryids question category filter
+     * @param $recursive subcategories filter
+     * @param $qtagids tags filter
+     * @return object[]
+     */
+    protected function create_filters($categoryids, $recursive = false, $qtagids = []) {
+        $filters = [
+            'category' => [
+                'jointype' => \qbank_managecategories\category_condition::JOINTYPE_DEFAULT,
+                'values' => $categoryids,
+                'filteroptions' => ['includesubcategories' => $recursive],
+            ],
+            'qtagids' => [
+                'jointype' => \qbank_tagquestion\tag_condition::JOINTYPE_DEFAULT,
+                'values' => $qtagids,
+            ],
+        ];
+        return $filters;
+    }
+}

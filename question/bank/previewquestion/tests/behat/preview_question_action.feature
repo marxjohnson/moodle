@@ -1,4 +1,4 @@
-@qbank @qbank_previewquestion
+@qbank @qbank_previewquestion @javascript
 Feature: Use the qbank plugin manager page for previewquestion
   In order to check the plugin behaviour with enable and disable
 

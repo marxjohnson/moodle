@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_question/category_condition
+    @template qbank_managecategories/subcategory_checkbox
 
     Example context (json):
     {
@@ -27,12 +27,7 @@
         ]
     }
 }}
-<div class="choosecategory">
-    <label class="mr-1" for="id_selectacategory">
-        {{#str}} selectacategory, question{{/str}}
-    </label>
-    {{{categoryselect}}}
-</div>
-<div class="boxaligncenter categoryinfo pl-0">
-    {{{categorydesc}}}
-</div>
+<label>
+    {{#str}}includesubcategories, core_question{{/str}}
+    <input type="checkbox" name="category-subcategories"{{#checked}} checked{{/checked}}>
+</label>

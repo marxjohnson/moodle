@@ -1,4 +1,4 @@
-@qbank @qbank_usage
+@qbank @qbank_usage @javascript
 Feature: Use the qbank plugin manager page for question usage
   In order to check the plugin behaviour with enable and disable
 
@@ -28,13 +28,12 @@ Feature: Use the qbank plugin manager page for question usage
     And I am on the "Test quiz" "mod_quiz > question bank" page
     And I should see "Usage"
 
-  @javascript
   Scenario: Question usage modal should work without any usage data
     And I am on the "Test quiz" "mod_quiz > question bank" page logged in as "admin"
-    And I set the field "Select a category" to "Test questions"
+    And I apply category filter with "Test questions" category
     And I should see "Test questions"
     And I should see "0" on the usage column
     When I click "0" on the usage column
     Then I should see "Version 1"
-    And I click on "Close" "button" in the ".modal-dialog" "css_element"
+    And I click on "Cancel" "button" in the ".modal-footer" "css_element"
     And I should see "0" on the usage column

@@ -103,7 +103,7 @@ abstract class column_base {
         $data['sortable'] = true;
         $data['extraclasses'] = $this->get_classes();
         $sortable = $this->is_sortable();
-        $name = get_class($this);
+        $name = str_replace('\\', '__', get_class($this));
         $title = $this->get_title();
         $tip = $this->get_title_tip();
         $links = [];
@@ -160,19 +160,20 @@ abstract class column_base {
 
     /**
      * Get a link that changes the sort order, and indicates the current sort state.
-     * @param string $sort the column to sort on.
+     *
+     * @param string $sortname the column to sort on.
      * @param string $title the link text.
      * @param string $tip the link tool-tip text. If empty, defaults to title.
      * @param bool $defaultreverse whether the default sort order for this column is descending, rather than ascending.
      * @return string
      */
-    protected function make_sort_link($sort, $title, $tip, $defaultreverse = false): string {
+    protected function make_sort_link($sortname, $title, $tip, $defaultreverse = false): string {
         global $PAGE;
         $sortdata = [];
-        $currentsort = $this->qbank->get_primary_sort_order($sort);
+        $currentsort = $this->qbank->get_primary_sort_order($sortname);
         $newsortreverse = $defaultreverse;
         if ($currentsort) {
-            $newsortreverse = $currentsort > 0;
+            $newsortreverse = $currentsort == SORT_ASC;
         }
         if (!$tip) {
             $tip = $title;
@@ -185,12 +186,14 @@ abstract class column_base {
 
         $link = $title;
         if ($currentsort) {
-            $link .= $this->get_sort_icon($currentsort < 0);
+            $link .= $this->get_sort_icon($currentsort == SORT_DESC);
         }
 
-        $sortdata['sorturl'] = $this->qbank->new_sort_url($sort, $newsortreverse);
+        $sortdata['sorturl'] = $this->qbank->new_sort_url($sortname, $newsortreverse);
+        $sortdata['sortname'] = $sortname;
         $sortdata['sortcontent'] = $link;
         $sortdata['sorttip'] = $tip;
+        $sortdata['sortorder'] = $newsortreverse ? SORT_DESC : SORT_ASC;
         $renderer = $PAGE->get_renderer('core_question', 'bank');
         return $renderer->render_column_sort($sortdata);
 

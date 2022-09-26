@@ -1,4 +1,4 @@
-<?php
+#<?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -75,7 +75,17 @@ if ($movequestionselected && $confirm && confirm_sesskey()) {
     if ($confirm == md5($movequestionselected)) {
         \qbank_bulkmove\helper::bulk_move_questions($movequestionselected, $tocategory);
     }
-    redirect(new moodle_url($returnurl, ['category' => "{$tocategoryid},{$contextid}"]));
+    $returnfilters = json_decode($returnurl->param('filter'));
+    if (!$returnfilters) {
+        $returnfilters = [
+            'category' => [
+                'name' => 'category',
+                'jointype' => \core_question\local\bank\condition::JOINTYPE_DEFAULT,
+            ]
+        ];
+    }
+    $returnfilters['category']['values'] = [$tocategoryid];
+    redirect(new moodle_url($returnurl, ['filter' => json_encode($returnfilters)]));
 }
 
 echo $OUTPUT->header();

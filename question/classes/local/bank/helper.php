@@ -51,4 +51,64 @@ class helper {
             throw new \moodle_exception('The following plugin is either disabled or missing from disk: ' . $pluginname);
         }
     }
+
+    /**
+     * Convert multidimentional object to array.
+     *
+     * @param $obj
+     * @return array|mixed
+     */
+    public static function convert_object_array($obj) {
+        // Not an object or array.
+        if (!is_object($obj) && !is_array($obj)) {
+            return $obj;
+        }
+        // Parse array.
+        $arr = [];
+        foreach ($obj as $key => $value) {
+            $arr[$key] = self::convert_object_array($value);
+        }
+        // Return parsed array.
+        return $arr;
+    }
+
+    /**
+     * List of condition classes
+     *
+     * @return array condition classes: [condition_key] = class
+     */
+    public static function get_condition_classes(): array {
+        $classes = [];
+        $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
+        foreach ($plugins as $componentname => $plugin) {
+            if (\core\plugininfo\qbank::is_plugin_enabled($componentname)) {
+                $pluginentrypointobject = new $plugin();
+                $conditions = $pluginentrypointobject->get_question_filters();
+                foreach ($conditions as $condition) {
+                    $classes[$condition->get_condition_key()] = $condition->get_condition_class();
+                }
+            }
+        }
+        return $classes;
+    }
+
+    /**
+     * Extract parameters from args list.
+     *
+     * @param array $args
+     * @return array the param and extra param
+     */
+    public static function extract_parameters_from_fragment_args(array $args): array {
+        global $DB;
+        // Decode query string.
+        $filtercondition = json_decode($args['filtercondition'], true);
+        $categories = $DB->get_records('question_categories', ['id' => clean_param($filtercondition['cat'], PARAM_INT)]);
+        $categories = \qbank_managecategories\helper::question_add_context_in_key($categories);
+        $category = array_pop($categories);
+        $filtercondition['cat'] = $category->id;
+        $extraparams = json_decode($args['extraparams'], true);
+
+        return [$filtercondition, $extraparams];
+    }
+
 }
