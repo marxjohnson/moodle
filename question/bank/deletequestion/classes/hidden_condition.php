@@ -88,8 +88,7 @@ class hidden_condition extends condition {
      */
     public static function build_query_from_filters(array $filters): array {
         if (!isset($filters['hidden'])) {
-            $where = "qv.status <> '" . question_version_status::QUESTION_STATUS_HIDDEN . "'";
-            return [$where, []];
+            return ["", []];
         }
 
         $filter = (object) $filters['hidden'];
