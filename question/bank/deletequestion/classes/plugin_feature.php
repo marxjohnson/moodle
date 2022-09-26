@@ -48,4 +48,10 @@ class plugin_feature extends plugin_features_base {
             new bulk_delete_action(),
         ];
     }
+
+    public function get_question_filters($qbank): array {
+        return [
+            new hidden_condition($qbank),
+        ];
+    }
 }
