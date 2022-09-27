@@ -1,4 +1,4 @@
-@qbank @qbank_editquestion
+@qbank @qbank_editquestion @javascript
 Feature: Use the qbank plugin manager page for editquestion
   In order to check the plugin behaviour with enable and disable
 
