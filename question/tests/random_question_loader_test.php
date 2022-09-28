@@ -20,14 +20,19 @@ use qubaid_list;
 use question_bank;
 use question_engine;
 
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
+
 /**
- * Tests for the {@see core_question\local\bank\random_question_loader} class.
+ * Tests for the {@see \core_question\local\bank\random_question_loader} class.
  *
  * @package   core_question
  * @copyright  2015 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class random_question_loader_test extends \advanced_testcase {
+class random_question_loader_test extends \random_question_filter_test_base {
 
     public function test_empty_category_gives_null() {
         $this->resetAfterTest();
