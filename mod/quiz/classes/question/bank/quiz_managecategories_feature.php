@@ -14,12 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * File only retained to prevent fatal errors in code that tries to require/include this.
- *
- * @todo MDL-76612 delete this file as part of Moodle 4.6 development.
- * @deprecated This file is no longer required in Moodle 4.2+.
- */
-defined('MOODLE_INTERNAL') || die();
+namespace mod_quiz\question\bank;
 
-debugging('This file is no longer required in Moodle 4.2+. Please do not include/require it.', DEBUG_DEVELOPER);
+use core_question\local\bank\view;
+use mod_quiz\question\bank\filter\custom_category_condition;
+use qbank_managecategories\subcategories_condition;
+
+class quiz_managecategories_feature extends \qbank_managecategories\plugin_feature {
+
+    public function get_question_filters(view $qbank = null): array {
+        return [
+            new custom_category_condition($qbank),
+        ];
+    }
+}

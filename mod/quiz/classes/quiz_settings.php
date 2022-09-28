@@ -567,12 +567,14 @@ class quiz_settings {
                 continue;
             }
             if ($questiondata->qtype === 'random' && $includepotential) {
-                if (!isset($qcategories[$questiondata->category])) {
-                    $qcategories[$questiondata->category] = false;
-                }
-                if (!empty($questiondata->filtercondition)) {
-                    $filtercondition = json_decode($questiondata->filtercondition);
-                    $qcategories[$questiondata->category] = !empty($filtercondition->includingsubcategories);
+                $fitlercondition = $questiondata->filtercondition;
+                if (!empty($fitlercondition)) {
+                    $filters = $fitlercondition['filters'];
+                    if (isset($filters['category'])) {
+                        foreach ($filters['category']['values'] as $catid) {
+                            $qcategories[$catid] = $filters['category']['filteroptions']['includesubcategories'];
+                        }
+                    }
                 }
             } else {
                 if (!in_array($questiondata->qtype, $questiontypes)) {
