@@ -183,6 +183,13 @@ if ($node) {
 }
 echo $OUTPUT->header();
 
+// Add random question - result message.
+if ($message = optional_param('message', '', PARAM_TEXT)) {
+    echo $output->box_start('generalbox');
+    echo $OUTPUT->notification($message, 'success');
+    echo $OUTPUT->box_end();
+}
+
 // Initialise the JavaScript.
 $quizeditconfig = new stdClass();
 $quizeditconfig->url = $thispageurl->out(true, ['qbanktool' => '0']);
