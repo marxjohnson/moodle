@@ -30,7 +30,11 @@ class discrimination_condition extends condition {
     /** @var string SQL fragment to add to the where clause. */
     protected $where;
 
-    public function __construct($qbank) {
+    public function __construct($qbank = null) {
+        if (!$qbank) {
+            return;
+        }
+
         $this->filters = $qbank->get_pagevars('filters');
         // Build where and params.
         list($this->where, $this->params) = self::build_query_from_filters($this->filters);
@@ -121,10 +125,6 @@ class discrimination_condition extends condition {
             return [$where, []];
         }
         return ['', []];
-    }
-
-    public function get_name() {
-        return 'discrimination';
     }
 
     public function get_title() {

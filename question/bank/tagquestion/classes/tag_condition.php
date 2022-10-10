@@ -44,8 +44,13 @@ class tag_condition extends condition {
      * Tag condition constructor. It uses the qbank object and initialises all the its required information
      * to be passed as a part of condition to get the questions.
      *
+     * @param null $qbank qbank view
      */
-    public function __construct($qbank) {
+    public function __construct($qbank = null) {
+        if (!$qbank) {
+            return;
+        }
+
         $cat = $qbank->get_pagevars('cat');
         if (is_array($cat)) {
             foreach ($cat as $value) {
@@ -70,7 +75,7 @@ class tag_condition extends condition {
     }
 
     public function get_condition_key() {
-        return 'tag';
+        return 'qtagids';
     }
 
     public function where() {
@@ -157,9 +162,6 @@ class tag_condition extends condition {
         return [$where, $params];
     }
 
-    public function get_name() {
-        return 'qtagids';
-    }
 
     public function get_title() {
         return get_string('tag', 'tag');

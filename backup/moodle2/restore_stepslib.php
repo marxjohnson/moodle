@@ -6162,8 +6162,7 @@ trait restore_question_set_reference_data_trait {
             if (isset($filtercondition->questioncategoryid)) {
                 $filters->category = (object) [
                     'jointype' => \qbank_managecategories\category_condition::JOINTYPE_DEFAULT,
-                    'values' => [$filtercondition->questioncategoryid],
-                    'conditionclass' => \qbank_managecategories\category_condition::class
+                    'values' => [$filtercondition->questioncategoryid]
                 ];
             }
 
@@ -6171,8 +6170,7 @@ trait restore_question_set_reference_data_trait {
             if (isset($filtercondition->includingsubcategories)) {
                 $filters->subcategories = (object) [
                     'jointype' => \qbank_managecategories\subcategories_condition::JOINTYPE_DEFAULT,
-                    'values' => [$filtercondition->includingsubcategories],
-                    'conditionclass' => \qbank_managecategories\subcategories_condition::class
+                    'values' => [$filtercondition->includingsubcategories]
                 ];
             }
 
@@ -6180,8 +6178,7 @@ trait restore_question_set_reference_data_trait {
             if (isset($filtercondition->tags)) {
                 $filters->qtagid = (object) [
                     'jointype' => \qbank_tagquestion\tag_condition::JOINTYPE_DEFAULT,
-                    'values' => $filtercondition->tags,
-                    'conditionclass' => \qbank_tagquestion\tag_condition::class
+                    'values' => $filtercondition->tags
                 ];
             }
             $filtercondition->filters = $filters;

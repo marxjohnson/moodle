@@ -35,8 +35,9 @@ class questiontext_condition extends condition {
 
     /**
      * Constructor to initialize the question text filter condition.
+     * @param null $qbank qbank view
      */
-    public function __construct($qbank) {
+    public function __construct($qbank = null) {
     }
 
     public function get_condition_key() {
@@ -58,10 +59,6 @@ class questiontext_condition extends condition {
      */
     public function params() {
         return $this->params;
-    }
-
-    public function get_name() {
-        return 'showtext';
     }
 
     public function get_title() {

@@ -49,8 +49,14 @@ class category_condition extends condition {
 
     /**
      * Constructor to initialize the category filter condition.
+     *
+     * @param null $qbank qbank view
      */
-    public function __construct($qbank) {
+    public function __construct($qbank = null) {
+        if (!$qbank) {
+            return;
+        }
+
         $this->cat = $qbank->get_pagevars('cat');
         $this->contexts = $qbank->contexts->having_one_edit_tab_cap($qbank->get_pagevars('tabname'));
         $this->course = $qbank->course;
@@ -249,10 +255,6 @@ class category_condition extends condition {
         list($insql, $params) = $DB->get_in_or_equal($categoriesandsubcategories, SQL_PARAMS_NAMED, 'cat', $equal);
         $where = 'qbe.questioncategoryid ' . $insql;
         return [$where, $params];
-    }
-
-    public function get_name() {
-        return 'category';
     }
 
     public function get_title() {

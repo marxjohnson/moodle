@@ -54,10 +54,6 @@ class subcategories_condition extends condition {
         return $this->params;
     }
 
-    public function get_name() {
-        return 'subcategories';
-    }
-
     public function get_title() {
         return get_string('includesubcategories', 'core_question');
     }
