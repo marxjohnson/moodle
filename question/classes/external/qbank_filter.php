@@ -169,8 +169,8 @@ class qbank_filter extends external_api {
         $categoryid = array_pop($categoryids);
         if (!is_numeric($categoryid)) {
             $warnings[] = [
-                'warningcode' => 'nocategoryconditionspecified',
-                'message' => get_string('nocategoryconditionspecified', 'question')
+                'warningcode' => 'noconditionspecified',
+                'message' => get_string('noconditionspecified', 'question')
             ];
             return [
                 'filtercondition' => '',
@@ -184,8 +184,8 @@ class qbank_filter extends external_api {
                 if ($filter['rangetype'] === condition::RANGETYPE_BETWEEN) {
                     if (count($filter['values']) === 1) {
                         $warnings[] = [
-                            'warningcode' => 'nocategoryconditionspecified',
-                            'message' => get_string('nocategoryconditionspecified', 'question')
+                            'warningcode' => 'noconditionspecified',
+                            'message' => get_string('noconditionspecified', 'question')
                         ];
                         return [
                             'filtercondition' => '',
@@ -196,8 +196,8 @@ class qbank_filter extends external_api {
                 foreach ($filter['values'] as $filtervalue) {
                     if (!is_numeric($filtervalue)) {
                         $warnings[] = [
-                            'warningcode' => 'nocategoryconditionspecified',
-                            'message' => get_string('nocategoryconditionspecified', 'question')
+                            'warningcode' => 'noconditionspecified',
+                            'message' => get_string('noconditionspecified', 'question')
                         ];
                         return [
                             'filtercondition' => '',

@@ -82,16 +82,9 @@ class discrimination_condition extends condition {
         return false;
     }
 
-    /**
-     * Get the list of available joins for the filter.
-     *
-     * @return array
-     */
     public function get_join_list(): array {
         return [
-            self::JOINTYPE_NONE => get_string('none'),
-            self::JOINTYPE_ANY => get_string('any'),
-            self::JOINTYPE_ALL => get_string('all'),
+            self::JOINTYPE_ALL,
         ];
     }
 
@@ -102,8 +95,14 @@ class discrimination_condition extends condition {
      * @return array where sql and params
      */
     public static function build_query_from_filters(array $filters): array {
+        if (!isset($filters['discrimination'])) {
+            return ["", []];
+        }
         if (isset($filters['discrimination'])) {
             $filter = (object) $filters['discrimination'];
+            if (!isset($filter->values[0])) {
+                return ["", []];
+            }
             $where = 'q.id IN (SELECT qs.questionid
                                FROM {question_statistics} qs
                           LEFT JOIN {question} q ON qs.questionid = q.id
@@ -116,9 +115,9 @@ class discrimination_condition extends condition {
                 $where .= ' < ' . $filter->values[0] . ')';
             }
             if ($filter->rangetype === self::RANGETYPE_BETWEEN) {
-                $where .= ' > '
+                $where .= ' >= '
                     . $filter->values[0]
-                    . ' AND AVG(qs.discriminationindex) <'
+                    . ' AND AVG(qs.discriminationindex) <='
                     . $filter->values[1]
                     . ')';
             }

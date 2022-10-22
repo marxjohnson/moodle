@@ -134,13 +134,15 @@ function core_question_output_fragment_question_data($args) {
     }
 
     $nodeparent = $PAGE->settingsnav->find('questionbank', \navigation_node::TYPE_CONTAINER);
-    $thispageurl = new \moodle_url($nodeparent->action->get_path());
+    $thispageurl = new \moodle_url($nodeparent->action);
     if ($cm) {
         $thispageurl->param('cmid', $cm->id);
     } else {
         $thispageurl->param('courseid', $params['courseid']);
     }
-
+    if (!empty($param->filterquery)) {
+        $thispageurl->param('filter', $param->filterquery);
+    }
     $questionbank = new $viewclass($contexts, $thispageurl, $course, $cm, $params, $extraparams);
     list($questionhtml, $jsfooter) = $questionbank->display_questions_table();
     return [$questionhtml, $jsfooter];

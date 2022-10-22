@@ -49,6 +49,33 @@ class qbank_filter extends datafilter {
         return $this;
     }
 
+    protected function get_filter_object(
+        string $name,
+        string $title,
+        bool $custom,
+        bool $multiple,
+        ?string $filterclass,
+        array $values,
+        bool $allowempty = false,
+        array $joinlist = []
+    ): ?stdClass {
+
+        if (!$allowempty && empty($values)) {
+            // Do not show empty filters.
+            return null;
+        }
+
+        return (object) [
+            'name' => $name,
+            'title' => $title,
+            'allowcustom' => $custom,
+            'allowmultiple' => $multiple,
+            'filtertypeclass' => $filterclass,
+            'values' => $values,
+            'joinlist' => json_encode($joinlist)
+        ];
+    }
+
     /**
      * Get data for all filter types.
      *
@@ -66,7 +93,8 @@ class qbank_filter extends datafilter {
                 $searchcondition->allow_multiple(),
                 $searchcondition->get_filter_class(),
                 $searchcondition->get_initial_values(),
-                $searchcondition->allow_empty()
+                $searchcondition->allow_empty(),
+                $searchcondition->get_join_list(),
             );
         }
 

@@ -47,10 +47,11 @@ class qbank_view extends external_api {
             'filtercondition' => new external_value(PARAM_RAW, 'The filter conditions'),
             'contextid' => new external_value(PARAM_INT, 'The context of the api'),
             'extraparams' => new external_value(PARAM_RAW, 'The extra parameters for extended apis', VALUE_DEFAULT, ''),
+            'filterquery' => new external_value(PARAM_RAW, 'The filter query', VALUE_DEFAULT, ''),
         ]);
     }
 
-    public static function execute($component, $callback, $filtercondition, $contextid, $extraparams = '') {
+    public static function execute($component, $callback, $filtercondition, $contextid, $extraparams = '', $filterquery = '') {
         global $OUTPUT;
         // Parameter validation.
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -58,11 +59,13 @@ class qbank_view extends external_api {
             'callback' => $callback,
             'filtercondition' => $filtercondition,
             'contextid' => $contextid,
-            'extraparams' => $extraparams
+            'extraparams' => $extraparams,
+            'filterquery' => $filterquery,
         ]);
         $argument [] = json_encode([
             'filtercondition' => $params['filtercondition'],
-            'extraparams' => $params['extraparams']
+            'extraparams' => $params['extraparams'],
+            'filterquery' => $filterquery
         ]);
         $context = \context::instance_by_id($contextid);
         self::validate_context($context);

@@ -58,6 +58,12 @@ class subcategories_condition extends condition {
         return get_string('includesubcategories', 'core_question');
     }
 
+    public function get_join_list(): array {
+        return [
+            self::JOINTYPE_ALL,
+        ];
+    }
+
     public function get_filter_class() {
         return 'qbank_managecategories/datafilter/filtertypes/subcategories';
     }

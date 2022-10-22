@@ -277,6 +277,13 @@ class category_condition extends condition {
         return false;
     }
 
+    public function get_join_list(): array {
+        return [
+            self::JOINTYPE_NONE,
+            self::JOINTYPE_ALL,
+        ];
+    }
+
     public function get_initial_values() {
         $catmenu = helper::question_category_options($this->contexts, true, 0, true, -1, false);
         $values = [];

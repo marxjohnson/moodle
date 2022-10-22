@@ -36,6 +36,7 @@ const INTERPRETATION = {
         'Question probably invalid': 5,
     },
     RANGES: {
+        '0': '',
         '1': '49',
         '2': '30-49',
         '3': '20-29',
@@ -122,7 +123,7 @@ export default class extends Range {
                     true,
                     {
                         layout: 'core/datafilter/autocomplete_layout',
-                        selection: 'core/datafilter//autocomplete_selection',
+                        selection: 'core/datafilter/autocomplete_selection',
                     }
                 );
             }
@@ -174,7 +175,13 @@ export default class extends Range {
      * @returns {Number}
      */
     get selectedOption() {
-        return this.filterRoot.querySelector('div[data-active-value]').dataset.activeValue;
+        const activeValueNode = this.filterRoot.querySelector('div[data-active-value]');
+        if (activeValueNode) {
+            return activeValueNode.dataset.activeValue;
+        } else {
+            return 0;
+        }
+
     }
 
     /**
@@ -194,7 +201,7 @@ export default class extends Range {
      */
     get rawValues() {
         if (this.interpretation === true) {
-            if (this.selectedOption == 1) {
+            if (this.selectedOption == 1 || this.selectedOption == 0) {
                 // After.
                 return [this.interpretationRanges[0]];
             }
@@ -220,7 +227,7 @@ export default class extends Range {
      */
     get rangetype() {
         if (this.interpretation === true) {
-            if (this.selectedOption == 1) {
+            if (this.selectedOption == 1 || this.selectedOption == 0) {
                 // After.
                 return 0;
             }

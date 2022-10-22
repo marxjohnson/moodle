@@ -22,7 +22,7 @@
  */
 
 import ajax from 'core/ajax';
-import CoreFilter from 'core/datafilter';
+import CoreFilter from 'core_question/qbank_datafilter';
 import Notification from 'core/notification';
 import Selectors from 'core/datafilter/selectors';
 import Templates from 'core/templates';
@@ -50,7 +50,7 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
         // Default value filterset::JOINTYPE_DEFAULT.
         filters: [],
         filteroptions: {
-            filterverb: 2,
+            filterverb: 0,
         },
         displayoptions: {
             perpage: perpage,
@@ -71,6 +71,7 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
         SORT_LINK: '#questionscontainer div.sorters a',
         PAGINATION_LINK: '#questionscontainer a[href].page-link',
     };
+    let filterQuery = '';
 
     // Init function with apply callback.
     const coreFilter = new CoreFilter(filterSet, function(filters, pendingPromise) {
@@ -103,7 +104,7 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
             wsfilter.filteroptions.filterverb = parseInt(filterSet.dataset.filterverb, 10);
             // Clean old filter
             wsfilter.filters = [];
-
+            delete filterdata.filterverb;
             // Retrieve fitter info.
             for (const [key, value] of Object.entries(filterdata)) {
                 let filter = {
@@ -115,6 +116,9 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
                 wsfilter.filters.push(filter);
             }
             if (Object.keys(filterdata).length !== 0) {
+                if (isNaN(wsfilter.filteroptions.filterverb) === false) {
+                    filterdata.filterverb = wsfilter.filteroptions.filterverb;
+                }
                 updateUrlParams(filterdata);
             }
         }
@@ -166,6 +170,7 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
             filtercondition: filtercondition,
             contextid: contextId,
             extraparams: extraparams,
+            filterquery: filterQuery,
         };
         const request = {methodname: 'core_question_view', args: viewData};
         return ajax.call([request])[0];
@@ -178,8 +183,8 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
      */
     const updateUrlParams = (filters) => {
         const url = new URL(location.href);
-        const query = objectToQuery(filters);
-        url.searchParams.set('filter', query);
+        filterQuery = objectToQuery(filters);
+        url.searchParams.set('filter', filterQuery);
         history.pushState(filters, '', url);
     };
 
@@ -246,6 +251,10 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
         const entries = params.entries();
         entries.forEach((value) => {
             const param = value[0];
+            if (param === 'filterverb') {
+                object[param] = value[1];
+                return;
+            }
             object[param] = !isNaN(params.get(param)) ? parseInt(params.get(param)) : params.get(param);
             if (isNaN(object[param]) && object[param].includes('&')) {
                 object[param] = queryToObject(object[param]);
@@ -302,9 +311,13 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
     // Run apply filter at page load.
     pagevars = JSON.parse(pagevars);
     let initialFilters;
+    let filterverb = null;
     if (pagevars.filters) {
         // Load initial filter based on page vars.
         initialFilters = pagevars.filters;
+        if (pagevars.filterverb) {
+            filterverb = pagevars.filterverb;
+        }
     } else {
         // Otherwise, load filter from URL.
         initialFilters = loadUrlParams();
@@ -320,6 +333,10 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
         // Add fitlers.
         let rowcount = 0;
         for (const urlFilter in initialFilters) {
+            if (urlFilter === 'filterverb') {
+                filterverb = initialFilters[urlFilter];
+                continue;
+            }
             if (urlFilter !== 'courseid') {
                 // Add each filter row.
                 rowcount += 1;
@@ -333,7 +350,8 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
                 coreFilter.addFilterRow(filterdata);
             }
         }
-
+        coreFilter.filterSet.dataset.filterverb = filterverb;
+        coreFilter.filterSet.querySelector(Selectors.filterset.fields.join).value = filterverb;
         // Apply filter.
         applyFilter(initialFilters);
     }

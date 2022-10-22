@@ -91,6 +91,10 @@ class helper {
             // Filter key and data are separate by '='.
             $encodedfilter = explode('=', $encodedfilter);
             $key = $encodedfilter[0];
+            if ($key === 'filterverb') {
+                $filters[$key] = $encodedfilter[1];
+                continue;
+            }
             $filters[$key] = [];
             $params = explode('&', urldecode($encodedfilter[1]));
             foreach ($params as $param) {

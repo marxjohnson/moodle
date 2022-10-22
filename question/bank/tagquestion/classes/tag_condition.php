@@ -125,8 +125,11 @@ class tag_condition extends condition {
         } else {
             return ['', []];
         }
+        // Remove empty string.
+        $filter->values = array_filter($filter->values);
 
         $selectedtagids = $filter->values ?? [];
+
         $params = [];
         $where = '';
         $filterverb = $filter->jointype ?? self::JOINTYPE_DEFAULT;

@@ -217,6 +217,10 @@ class view {
             ];
             $params['filters'] = $filters;
         }
+        if (isset($params['filters']['filterverb'])) {
+            $params['filterverb'] = $params['filters']['filterverb'];
+            unset($params['filters']['filterverb']);
+        }
 
         // Create the url of the new question page to forward to.
         $this->returnurl = $pageurl->out_as_local_url(false);

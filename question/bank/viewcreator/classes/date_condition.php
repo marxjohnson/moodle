@@ -90,16 +90,10 @@ class date_condition extends condition {
         return false;
     }
 
-    /**
-     * Get the list of available joins for the filter.
-     *
-     * @return array
-     */
     public function get_join_list(): array {
         return [
-            self::JOINTYPE_NONE => get_string('none'),
-            self::JOINTYPE_ANY => get_string('any'),
-            self::JOINTYPE_ALL => get_string('all'),
+            self::JOINTYPE_NONE,
+            self::JOINTYPE_ALL
         ];
     }
 
@@ -112,19 +106,24 @@ class date_condition extends condition {
     public static function build_query_from_filters(array $filters): array {
         if (isset($filters['date'])) {
             $filter = (object) $filters['date'];
+            $filterverb = $filter->jointype ?? self::JOINTYPE_DEFAULT;
             $where = "";
+            if ($filterverb === self::JOINTYPE_NONE) {
+                $where = " NOT ";
+            }
+
             if ($filter->rangetype === self::RANGETYPE_AFTER) {
                 $timeafter = $filter->values[0];
-                $where = "q.timecreated >= {$timeafter}";
+                $where .= " ( q.timecreated >= {$timeafter} ) ";
             }
             if ($filter->rangetype === self::RANGETYPE_BEFORE) {
                 $timebefore = $filter->values[0];
-                $where = "q.timecreated <= {$timebefore}";
+                $where .= " ( q.timecreated <= {$timebefore} ) ";
             }
             if ($filter->rangetype === self::RANGETYPE_BETWEEN) {
                 $timefrom = $filter->values[0];
                 $timeto = $filter->values[1];
-                $where = "q.timecreated >= {$timefrom} AND q.timecreated <= {$timeto}";
+                $where .= " ( q.timecreated >= {$timefrom} AND q.timecreated <= {$timeto} ) ";
             }
             return [$where, []];
         }

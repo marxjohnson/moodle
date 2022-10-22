@@ -169,9 +169,9 @@ abstract class condition {
      */
     public function get_join_list(): array {
         return [
-            self::JOINTYPE_NONE => get_string('none'),
-            self::JOINTYPE_ANY => get_string('any'),
-            self::JOINTYPE_ALL => get_string('all'),
+            self::JOINTYPE_NONE,
+            self::JOINTYPE_ANY,
+            self::JOINTYPE_ALL,
         ];
     }
 
