@@ -607,10 +607,17 @@ class cache implements cache_loader {
         // 6. Set it to the store if we got it from the loader/datasource. Only set to this direct
         // store; parent method will have set it to all stores if needed.
         if ($setaftervalidation) {
+            $lock = null;
+            if ($this instanceof cache_application && $this->requirelockingbeforewrite) {
+                $lock = $this->acquire_lock($key);
+            }
             if ($requiredversion === self::VERSION_NONE) {
                 $this->set_implementation($key, self::VERSION_NONE, $result, false);
             } else {
                 $this->set_implementation($key, $actualversion, $result, false);
+            }
+            if ($lock) {
+                $this->release_lock($key);
             }
         }
         // 7. Make sure we don't pass back anything that could be a reference.
@@ -828,10 +835,17 @@ class cache implements cache_loader {
         if ($this->loader !== false && $setparents) {
             // We have a loader available set it there as well.
             // We have to let the loader do its own parsing of data as it may be unique.
+            $lock = null;
+            if ($this->loader instanceof cache_application && $this->loader->requirelockingbeforewrite) {
+                $lock = $this->loader->acquire_lock($key);
+            }
             if ($version === self::VERSION_NONE) {
                 $this->loader->set($key, $data);
             } else {
                 $this->loader->set_versioned($key, $version, $data);
+            }
+            if ($lock) {
+                $this->loader->release_lock($key);
             }
         }
         $usestaticacceleration = $this->use_static_acceleration();
@@ -967,7 +981,17 @@ class cache implements cache_loader {
         if ($this->loader !== false) {
             // We have a loader available set it there as well.
             // We have to let the loader do its own parsing of data as it may be unique.
+            $locks = [];
+            if ($this->loader instanceof cache_application && $this->loader->requirelockingbeforewrite) {
+                foreach ($keyvaluearray as $pair) {
+                    $key = $pair['key'];
+                    $locks[$key] = $this->loader->acquire_lock($key);
+                }
+            }
             $this->loader->set_many($keyvaluearray);
+            foreach (array_keys($locks) as $key) {
+                $this->loader->release_lock($key);
+            }
         }
         $data = array();
         $simulatettl = $this->has_a_ttl() && !$this->store_supports_native_ttl();
