@@ -315,3 +315,33 @@ Feature: Group assignment submissions
     When I follow "View all submissions"
     Then "Student 1" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 2" row "Status" column of "generaltable" table should contain "Submitted for grading"
+
+  Scenario: Group submission does not use non-participation groups
+    Given the following "courses" exist:
+      | fullname | shortname | category | groupmode |
+      | Course 1 | C1        | 0        | 1         |
+    And the following "users" exist:
+      | username | firstname | lastname | email                |
+      | teacher1 | Teacher   | 1        | teacher1@example.com |
+      | student1 | Student   | 1        | student0@example.com |
+    And the following "course enrolments" exist:
+      | user     | course | role           |
+      | teacher1 | C1     | editingteacher |
+      | student1 | C1     | student        |
+    And the following "groups" exist:
+      | name    | course | idnumber | participation |
+      | Group 1 | C1     | G1       | 0             |
+    And the following "group members" exist:
+      | group | user     |
+      | G1    | student1 |
+    And the following "activity" exists:
+      | activity         | assign                      |
+      | course           | C1                          |
+      | name             | Test assignment name        |
+      | intro            | Test assignment description |
+      | submissiondrafts | 0                           |
+      | teamsubmission   | 1                           |
+      | groupmode        | 1                           |
+    When I am on the "Test assignment name" Activity page logged in as student1
+    Then I should see "Default group"
+    And I should not see "Group 1"
