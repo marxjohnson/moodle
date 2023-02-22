@@ -453,6 +453,8 @@ function has_capability($capability, context $context, $user = null, $doanything
         throw new coding_exception('Capability parameter "doanything" is wierd, only true or false is allowed. This has to be fixed in code.');
     }
 
+    $capability = check_capability_deprecation($capability);
+
     // capability must exist
     if (!$capinfo = get_capability_info($capability)) {
         debugging('Capability "'.$capability.'" was not found! This has to be fixed in code.');
@@ -1407,6 +1409,8 @@ function assign_capability($capability, $permission, $roleid, $contextid, $overw
     } else {
         $context = context::instance_by_id($contextid);
     }
+
+    $capability = check_capability_deprecation($capability);
 
     // Capability must exist.
     if (!$capinfo = get_capability_info($capability)) {
@@ -2604,20 +2608,6 @@ function is_inside_frontpage(context $context) {
 function get_capability_info($capabilityname) {
     $caps = get_all_capabilities();
 
-    // Check for deprecated capability.
-    if ($deprecatedinfo = get_deprecated_capability_info($capabilityname)) {
-        if (!empty($deprecatedinfo['replacement'])) {
-            // Let's try again with this capability if it exists.
-            if (isset($caps[$deprecatedinfo['replacement']])) {
-                $capabilityname = $deprecatedinfo['replacement'];
-            } else {
-                debugging("Capability '{$capabilityname}' was supposed to be replaced with ".
-                    "'{$deprecatedinfo['replacement']}', which does not exist !");
-            }
-        }
-        $fullmessage = $deprecatedinfo['fullmessage'];
-        debugging($fullmessage, DEBUG_DEVELOPER);
-    }
     if (!isset($caps[$capabilityname])) {
         return null;
     }
@@ -2672,6 +2662,35 @@ function get_deprecated_capability_info($capabilityname) {
             "It will be replaced by '{$deprecatedinfo['replacement']}'.";
     }
     return $deprecatedinfo;
+}
+
+/**
+ * Check whether the requested capability is deprecated.
+ *
+ * If the capability is deprecated, a debugging message is output. If a replacement
+ * capability is specified and exists, that capability name will be returned. Otherwise,
+ * the original name will be returned.
+ *
+ * @param string $capabilityname
+ * @return string
+ */
+function check_capability_deprecation(string $capabilityname): string {
+    $caps = get_all_capabilities();
+    // Check for deprecated capability.
+    if ($deprecatedinfo = get_deprecated_capability_info($capabilityname)) {
+        if (!empty($deprecatedinfo['replacement'])) {
+            // Let's try again with this capability if it exists.
+            if (isset($caps[$deprecatedinfo['replacement']])) {
+                $capabilityname = $deprecatedinfo['replacement'];
+            } else {
+                debugging("Capability '{$capabilityname}' was supposed to be replaced with ".
+                        "'{$deprecatedinfo['replacement']}', which does not exist !");
+            }
+        }
+        $fullmessage = $deprecatedinfo['fullmessage'];
+        debugging($fullmessage, DEBUG_DEVELOPER);
+    }
+    return $capabilityname;
 }
 
 /**
@@ -4262,6 +4281,8 @@ function get_user_capability_contexts(string $capability, bool $getcategories, $
     if (!$userid) {
         $userid = $USER->id;
     }
+
+    $capability = check_capability_deprecation($capability);
 
     if (!$capinfo = get_capability_info($capability)) {
         debugging('Capability "'.$capability.'" was not found! This has to be fixed in code.');
