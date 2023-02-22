@@ -2013,6 +2013,8 @@ class accesslib_test extends advanced_testcase {
     /**
      * Test get_deprecated_capability_info() through has_capability
      *
+     * Calling has_capability() for a deprecated capability should generate a debugging message.
+     *
      * @covers ::get_deprecated_capability_info
      */
     public function test_get_deprecated_capability_info_through_has_capability() {
@@ -2032,6 +2034,8 @@ class accesslib_test extends advanced_testcase {
     /**
      * Test get_deprecated_capability_info() through get_user_capability_contexts()
      *
+     * Calling get_user_capability_contexts() with a deprecated capability should generate a debugging message.
+     *
      * @covers ::get_deprecated_capability_info
      */
     public function test_get_deprecated_capability_info_through_get_user_capability_contexts() {
@@ -2046,6 +2050,45 @@ class accesslib_test extends advanced_testcase {
         $this->assertNotEmpty($courses);
         $this->assertDebuggingCalled("The capability 'fake/access:fakecapability' is deprecated."
                 . "This capability should not be used anymore.");
+    }
+
+    /**
+     * Test get_deprecated_capability_info() through assign_capability()
+     *
+     * Calling assign_capability with a deprecated capability should generate a debugging message.
+     *
+     * @covers ::get_deprecated_capability_info
+     */
+    public function test_get_deprecated_capability_info_through_assign_capability() {
+        $this->resetAfterTest();
+        $category = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['categoryid' => $category->id]);
+        $roleid = $this->getDataGenerator()->create_role();
+        $this->setup_fake_plugin('access');
+
+        // For now we have deprecated fake/access:fakecapability.
+        assign_capability('fake/access:fakecapability', CAP_ALLOW, $roleid, context_course::instance($course->id));
+        $this->assertDebuggingCalled("The capability 'fake/access:fakecapability' is deprecated."
+                . "This capability should not be used anymore.");
+    }
+
+
+    /**
+     * Test unassign_capability() with a deprecated capability.
+     *
+     * We should be able to unassign a deprecated capability with no debugging messages generated.
+     *
+     * @covers ::unassign_capability()
+     */
+    public function test_unassign_capability_with_deprecated_capability() {
+        $this->resetAfterTest();
+        $category = $this->getDataGenerator()->create_category();
+        $course = $this->getDataGenerator()->create_course(['categoryid' => $category->id]);
+        $roleid = $this->getDataGenerator()->create_role();
+        $this->setup_fake_plugin('access');
+
+        // For now we have deprecated fake/access:fakecapability.
+        unassign_capability('fake/access:fakecapability', $roleid, context_course::instance($course->id));
     }
 
     /**
