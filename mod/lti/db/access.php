@@ -156,7 +156,7 @@ $deprecatedcapabilities = [
         'message' => 'Manual instance configuration is deprecated. Please create a course tool (mod/lti:addcoursetool) and ensure '.
             'users are able to add an instance of the course tool via the activity chooser (mod/lti:addpreconfiguredinstance).'
     ],
-    'mod/lti:manage' => [ // Deprecated since 4.1 (MDL-72066). Final deprecation in 4.5 (MDL-75815).
+    'mod/lti:manage' => [ // Deprecated since 4.4 (MDL-72066). Final deprecation in 4.8 (MDL-75815).
         'replacement' => 'mod/lti:instructor',
         'message' => 'This was replaced by the more specific mod/lti:instructor, mod/lti:teachingassistant and mod/lti:manager'
     ],

@@ -3395,8 +3395,8 @@ function random_bytes_emulate($length) {
 /**
  * Gets the IMS role string for the specified user and LTI course module.
  *
- * @deprecated since Moodle 4.1 MDL-72066 - please do not use this function any more.
- * @todo MDL-75815 This will be deleted in Moodle 4.5
+ * @deprecated since Moodle 4.2 MDL-72066 - please do not use this function any more.
+ * @todo MDL-75815 This will be deleted in Moodle 4.6
  * @see mod_lti\helper::get_ims_role()
  * @param mixed    $user      User object or user id
  * @param int      $cmid      The course module id of the LTI activity

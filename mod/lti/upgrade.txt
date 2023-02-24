@@ -9,7 +9,7 @@ This files describes API changes in the lti code.
     - mod/lti:manager
     - mod/lti:mentor
     - mod/lti:instructor
-* Deprecated lti_get_ims_roles() in favour of mod_lti\helper::get_ims_roles().
+* Deprecated lti_get_ims_role() in favour of mod_lti\helper::get_ims_role().
 * Deprecated mod/lti:manage capability in favour of more specific mod/lti:instructor, mod/lti:teachingassistant and mod/lti:manager
 
 === 4.3 ===
