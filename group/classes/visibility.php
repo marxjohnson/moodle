@@ -58,14 +58,13 @@ class visibility {
      * @return int
      * @throws \dml_exception
      */
-    public static function update_cache_for_course(int $courseid, ?\cache $cache = null): int {
+    public static function update_hiddengroups_cache(int $courseid, ?\cache $cache = null): int {
         global $DB;
         if (!$cache) {
             $cache = \cache::make('core', 'coursehiddengroups');
         }
         $hiddengroups = $DB->count_records_select('groups', 'courseid = ? AND visibility != ?', [$courseid, self::ALL]);
         $cache->set($courseid, $hiddengroups);
-        return $hiddengroups;
     }
 
     /**
@@ -83,7 +82,8 @@ class visibility {
         $cache = \cache::make('core', 'coursehiddengroups');
         $hiddengroups = $cache->get($courseid);
         if ($hiddengroups === false) {
-            $hiddengroups = self::update_cache_for_course($courseid, $cache);
+            self::update_hiddengroups_cache($courseid, $cache);
+            $cache->get($courseid);
         }
         return $hiddengroups > 0;
     }

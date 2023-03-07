@@ -9,7 +9,7 @@ information provided here is intended especially for developers.
   - New `participation` field.
   - `participation` and `enablemessaging` fields are disabled (default: false) when `visibility` is set
     to `visibility::OWN` or `visibility::NONE`.
-* The following externallib functions now accept `visiblity` and `participation` as optional parameters:
+* The following externallib functions now accept `visibility` and `participation` as optional parameters:
   - create_groups()
   - update_groups()
 * The following externallib functions now also return `visibility` and `participation` fields in their responses:

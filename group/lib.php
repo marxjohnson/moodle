@@ -293,7 +293,7 @@ function groups_create_group($data, $editform = false, $editoroptions = false) {
     // Invalidate the grouping cache for the course
     cache_helper::invalidate_by_definition('core', 'groupdata', array(), array($course->id));
     // Rebuild the coursehiddengroups cache for the course.
-    \core_group\visibility::update_cache_for_course($course->id);
+    \core_group\visibility::update_hiddengroups_cache($course->id);
 
     // Group conversation messaging.
     if (\core_message\api::can_create_group_conversation($USER->id, $context)) {
@@ -446,7 +446,7 @@ function groups_update_group($data, $editform = false, $editoroptions = false) {
     // Invalidate the group data.
     cache_helper::invalidate_by_definition('core', 'groupdata', array(), array($data->courseid));
     // Rebuild the coursehiddengroups cache for the course.
-    \core_group\visibility::update_cache_for_course($data->courseid);
+    \core_group\visibility::update_hiddengroups_cache($data->courseid);
 
     $group = $DB->get_record('groups', array('id'=>$data->id));
 
@@ -591,7 +591,7 @@ function groups_delete_group($grouporid) {
     // Purge the group and grouping cache for users.
     cache_helper::purge_by_definition('core', 'user_group_groupings');
     // Rebuild the coursehiddengroups cache for the course.
-    \core_group\visibility::update_cache_for_course($group->courseid);
+    \core_group\visibility::update_hiddengroups_cache($group->courseid);
 
     // Trigger group event.
     $params = array(
@@ -741,7 +741,7 @@ function groups_delete_groups($courseid, $showfeedback=false) {
     // Purge the group and grouping cache for users.
     cache_helper::purge_by_definition('core', 'user_group_groupings');
     // Rebuild the coursehiddengroups cache for the course.
-    \core_group\visibility::update_cache_for_course($courseid);
+    \core_group\visibility::update_hiddengroups_cache($courseid);
 
     if ($showfeedback) {
         echo $OUTPUT->notification(get_string('deleted').' - '.get_string('groups', 'group'), 'notifysuccess');

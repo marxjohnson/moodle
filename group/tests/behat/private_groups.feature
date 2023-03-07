@@ -1,4 +1,4 @@
-@core @course_group
+@core @core_group
 Feature: Private groups
   As a teacher
   In order to organise students into groups while protecting their privacy

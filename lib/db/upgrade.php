@@ -3022,7 +3022,7 @@ privatefiles,moodle|/user/files.php';
     if ($oldversion < 2023030300.01) {
         // Define field id to be added to groups.
         $table = new xmldb_table('groups');
-        $field = new xmldb_field('visibility', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0', 'picture');
+        $field = new xmldb_field('visibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'picture');
 
         // Conditionally launch add field visibility.
         if (!$dbman->field_exists($table, $field)) {
