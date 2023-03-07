@@ -1,5 +1,8 @@
 @mod @mod_data
 Feature: Group data activity
+  In order to create a database with my group
+  As a student
+  I need to add and view entries for the groups I am a member of
 
   Background:
     And the following "courses" exist:
