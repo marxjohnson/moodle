@@ -1,5 +1,8 @@
 @mod @mod_workshop
 Feature: Viewing workshop reports by group
+  In order to manage workshops for separate groups
+  As a teacher
+  I need to select groups for grade reports and submission allocation
 
   Background:
     And the following "courses" exist:
