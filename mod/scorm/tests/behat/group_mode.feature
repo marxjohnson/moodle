@@ -1,5 +1,8 @@
 @mod @mod_scorm
-Feature: Viewing reports by group
+Feature: Viewing scorm reports in separate and visible groups mode
+  In order to view reports for large courses
+  As a teacher
+  I need to filter the users on the reports page by group
 
   Background:
     And the following "courses" exist:
