@@ -1,5 +1,4 @@
 /**
-/**
  * Provides interface for users to edit availability settings on the
  * module/section editing form.
  *
@@ -144,7 +143,6 @@ M.core_availability.form = {
             }
             this.updateRestrictByGroup();
         }
-
     },
 
     /**
@@ -1263,8 +1261,6 @@ M.core_availability.EyeIcon.prototype.setEnabled = function() {
     }
 };
 
-
-
 /**
  * Delete icon (to delete an Item or List).
  *
@@ -1297,4 +1293,3 @@ M.core_availability.DeleteIcon = function(toDelete) {
  * @type Y.Node
  */
 M.core_availability.DeleteIcon.prototype.span = null;
-
