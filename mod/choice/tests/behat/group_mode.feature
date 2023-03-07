@@ -1,5 +1,8 @@
 @mod @mod_choice
 Feature: Group choice
+  In order to view choice responses for large courses
+  As a user
+  I need to filter the responses to a choice by group
 
   Background:
     And the following "courses" exist:
