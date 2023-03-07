@@ -1,5 +1,8 @@
 @mod @mod_survey
 Feature: Viewing response reports by group
+  In order to view reponse reports on a large course
+  As a teacher
+  I need to filter the users on the response reports by group
 
   Background:
     And the following "courses" exist:
