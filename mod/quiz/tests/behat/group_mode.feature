@@ -1,5 +1,8 @@
 @mod @mod_quiz
 Feature: Viewing results by group
+  In order to view quiz results on a large course
+  As a teacher
+  I need to filter results by group
 
   Background:
     And the following "courses" exist:
