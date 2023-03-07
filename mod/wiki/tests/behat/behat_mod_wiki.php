@@ -31,8 +31,9 @@ use Behat\Mink\Exception\ExpectationException as ExpectationException;
 /**
  * Steps definitions related to mod_wiki.
  *
- * @copyright 2014 Marina Glancy
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright 2023 Catalyst IT Europe Ltd.
+ * @author Mark Johnson <mark.johnson@catalyst-eu.net>
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class behat_mod_wiki extends behat_base {
 

@@ -1,5 +1,8 @@
 @mod @mod_wiki
 Feature: Groups can have separate content on a wiki
+  In order to create a wiki with my group
+  As a user
+  I need to view and add wiki pages by group
 
   Background:
     Given the following "users" exist:
@@ -44,7 +47,7 @@ Feature: Groups can have separate content on a wiki
       | wiki1 | Separate page 1 | No group page |
       | wiki2 | Visible page 1  | No group page |
 
-  Scenario Outline: Teacher can see all group wikis
+  Scenario Outline: Teacher can see all participation group wikis
     Given I am on the "<wiki>" "wiki activity" page logged in as teacher1
     And I should see "All participants" in the "<mode> groups" "select"
     And I should see "Group 1" in the "<mode> groups" "select"
@@ -80,7 +83,7 @@ Feature: Groups can have separate content on a wiki
       | wiki1 |
       | wiki2 |
 
-  Scenario Outline: Students should only see their groups' own wiki in separate groups mode
+  Scenario Outline: Students should only see their participation groups' own wiki in separate groups mode
     Given I am on the "wiki1" "wiki activity" page logged in as <user>
     Then I should see "Separate groups: <group>"
     And "Separate groups" "select" should not exist
@@ -93,7 +96,7 @@ Feature: Groups can have separate content on a wiki
       # The view page throws an exception if the user is not in a group, so we cannot test
       # student3 and student4.
 
-  Scenario Outline: Students can see all groups' own wikis in visible groups mode
+  Scenario Outline: Students can see all participation groups' own wikis in visible groups mode
     Given I am on the "wiki2" "wiki activity" page logged in as <user>
     And I should see "All participants" in the "Visible groups" "select"
     And I should see "Group 1" in the "Visible groups" "select"
