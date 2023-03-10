@@ -66,6 +66,6 @@ abstract class mod_lti_testcase extends externallib_advanced_testcase  {
         // Create a tool proxy.
         $proxy = mod_lti_external::create_tool_proxy("Test proxy $uniqueid",
             $this->getExternalTestFileUrl("/proxy$uniqueid.html"), [], []);
-        return (object)external_api::clean_returnvalue(mod_lti_external::create_tool_proxy_returns(), $proxy);
+        return (object)\core_external\external_api::clean_returnvalue(mod_lti_external::create_tool_proxy_returns(), $proxy);
     }
 }
