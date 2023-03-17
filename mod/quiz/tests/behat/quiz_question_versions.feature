@@ -111,3 +111,19 @@ Feature: Quiz question versioning
     And I press "Add selected questions to the quiz"
     Then I should see "Other question" on quiz page "1"
     And the field "version" in the "Other question" "list_item" matches value "Always latest"
+
+  @javascript
+  Scenario: Previewing a question set to use always latest version will set the preview to always latest version
+    When I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher"
+    And the field "version" in the "First question" "list_item" matches value "Always latest"
+    When I follow "Preview question"
+    And I expand all fieldsets
+    Then the field "Question version" matches value "Always latest"
+
+  @javascript
+  Scenario: Previewing a question set to use a specific version will set the preview to that version
+    When I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher"
+    And I set the field "version" to "v1 (latest)"
+    When I follow "Preview question"
+    And I expand all fieldsets
+    Then the field "Question version" matches value "1"

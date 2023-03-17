@@ -1042,9 +1042,11 @@ function quiz_question_edit_button($cmid, $question, $returnurl, $contentafteric
  * @param stdClass $quiz the quiz settings
  * @param stdClass $question the question
  * @param int $variant which question variant to preview (optional).
+ * @param bool $alwayslatest Should we always display the latest version of the question, regardless of the version the preview
+ *      was opened for?
  * @return moodle_url to preview this question with the options from this quiz.
  */
-function quiz_question_preview_url($quiz, $question, $variant = null) {
+function quiz_question_preview_url($quiz, $question, $variant = null, $version = null) {
     // Get the appropriate display options.
     $displayoptions = display_options::make_from_quiz($quiz,
             display_options::DURING);
@@ -1056,7 +1058,7 @@ function quiz_question_preview_url($quiz, $question, $variant = null) {
 
     // Work out the correcte preview URL.
     return \qbank_previewquestion\helper::question_preview_url($question->id, $quiz->preferredbehaviour,
-            $maxmark, $displayoptions, $variant);
+            $maxmark, $displayoptions, $variant, null, null, $version);
 }
 
 /**
@@ -1072,7 +1074,10 @@ function quiz_question_preview_button($quiz, $question, $label = false, $variant
     if (!question_has_capability_on($question, 'use')) {
         return '';
     }
-    return $PAGE->get_renderer('mod_quiz', 'edit')->question_preview_icon($quiz, $question, $label, $variant, null);
+    $slotinfo = quiz_settings::create($quiz->id)->get_structure()->get_slot_by_number($question->slot);
+    return $PAGE->get_renderer('mod_quiz', 'edit')
+        ->question_preview_icon($quiz, $question, $label, $variant,
+                $slotinfo->requestedversion ?: \qbank_previewquestion\question_preview_options::ALWAYS_LATEST);
 }
 
 /**
