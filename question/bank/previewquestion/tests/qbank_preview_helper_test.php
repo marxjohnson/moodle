@@ -93,12 +93,13 @@ class qbank_preview_helper_test extends \advanced_testcase {
      */
     public function test_question_preview_action_url() {
         $actionurl = helper::question_preview_action_url($this->questiondata->id, $this->quba->get_id(), $this->options,
-                $this->context, $this->returnurl);
+                $this->context, $this->returnurl, question_preview_options::ALWAYS_LATEST);
         $params = [
            'id' => $this->questiondata->id,
            'previewid' => $this->quba->get_id(),
            'returnurl' => $this->returnurl,
-           'courseid' => $this->context->instanceid
+           'courseid' => $this->context->instanceid,
+           'version' => question_preview_options::ALWAYS_LATEST,
         ];
         $params = array_merge($params, $this->options->get_url_params());
         $expectedurl = new moodle_url('/question/bank/previewquestion/preview.php', $params);
@@ -111,7 +112,8 @@ class qbank_preview_helper_test extends \advanced_testcase {
      * @covers ::question_preview_form_url
      */
     public function test_question_preview_form_url() {
-        $formurl = helper::question_preview_form_url($this->questiondata->id, $this->context, $this->quba->get_id(), $this->returnurl);
+        $formurl = helper::question_preview_form_url(
+                $this->questiondata->id, $this->context, $this->quba->get_id(), $this->returnurl);
         $params = [
             'id' => $this->questiondata->id,
             'previewid' => $this->quba->get_id(),
@@ -129,12 +131,13 @@ class qbank_preview_helper_test extends \advanced_testcase {
      */
     public function test_question_preview_url() {
         $previewurl = helper::question_preview_url($this->questiondata->id, $this->options->behaviour, $this->options->maxmark,
-                $this->options, $this->options->variant, $this->context);
+                $this->options, $this->options->variant, $this->context, null, question_preview_options::ALWAYS_LATEST);
         $params = [
             'id' => $this->questiondata->id,
             'behaviour' => $this->options->behaviour,
             'maxmark' => $this->options->maxmark,
-            'courseid' => $this->context->instanceid
+            'courseid' => $this->context->instanceid,
+            'version' => question_preview_options::ALWAYS_LATEST,
         ];
         // Extra params for options.
         $params['correctness']     = $this->options->correctness;

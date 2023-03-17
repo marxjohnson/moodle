@@ -103,10 +103,11 @@ class helper {
      * @param question_preview_options $options the options in use
      * @param context $context context for the question preview
      * @param moodle_url $returnurl url of the page to return to
+     * @param int $version which version to preview (optional).
      * @return moodle_url
      */
     public static function question_preview_action_url($questionid, $qubaid,
-            question_preview_options $options, $context, $returnurl = null): moodle_url {
+            question_preview_options $options, $context, $returnurl = null, $version = null): moodle_url {
         $params = [
                 'id' => $questionid,
                 'previewid' => $qubaid,
@@ -119,6 +120,7 @@ class helper {
         if ($returnurl !== null) {
             $params['returnurl'] = $returnurl;
         }
+        $params['version'] = $version;
         $params = array_merge($params, $options->get_url_params());
         return new moodle_url('/question/bank/previewquestion/preview.php', $params);
     }
@@ -159,6 +161,7 @@ class helper {
      * @param object $context context of the question for preview
      * @param moodle_url $returnurl url of the page to return to
      * @param int|null $version version of the question in preview
+     * @param
      */
     public static function restart_preview($previewid, $questionid, $displayoptions, $context,
         $returnurl = null, $version = null): void {
@@ -170,7 +173,8 @@ class helper {
             $transaction->allow_commit();
         }
         redirect(self::question_preview_url($questionid, $displayoptions->behaviour,
-                $displayoptions->maxmark, $displayoptions, $displayoptions->variant, $context, $returnurl, $version));
+                $displayoptions->maxmark, $displayoptions, $displayoptions->variant,
+                $context, $returnurl, $version));
     }
 
     /**
@@ -195,7 +199,7 @@ class helper {
         $params = ['id' => $questionid];
 
         if (!is_null($version)) {
-            $params['id'] = $version;
+            $params['version'] = $version;
         }
         if (is_null($context)) {
             global $PAGE;

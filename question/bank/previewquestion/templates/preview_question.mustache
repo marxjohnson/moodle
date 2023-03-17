@@ -61,6 +61,14 @@
             <span class="badge bg-primary text-light">{{versiontitle}}</span>
         </h3>
     </div>
+    {{#newerversion}}
+    <div class="d-flex">
+        <p>
+            {{newerversion}}
+            <input type="submit" name="restart" value="{{#str}}restartnow, qbank_previewquestion{{/str}}" class="btn btn-secondary mr-1 mb-1" id="id_restart_question_preview">
+        </p>
+    </div>
+    {{/newerversion}}
     <div class="d-flex">
         <div class="badge-primary h-50 px-2 mt-n2">
             <span class="accesshide">ID number</span>

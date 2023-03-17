@@ -52,8 +52,15 @@ class preview_action_column extends menu_action_column_base {
 
         if (question_has_capability_on($question, 'use')) {
             $context = $this->qbank->get_most_specific_context();
+            // Default previews to always use the latest question version, unless we are previewing specific versions from the
+            // question history.
+            if ($this->qbank->base_url()->get_path() == '/question/bank/history/history.php') {
+                $version = $question->id;
+            } else {
+                $version = question_preview_options::ALWAYS_LATEST;
+            }
             $url = helper::question_preview_url($question->id, null, null,
-                                                    null, null, $context, $this->qbank->returnurl);
+                                                    null, null, $context, $this->qbank->returnurl, $version);
             return [$url, 't/preview', $this->strpreview];
         } else {
             return [null, null, null];

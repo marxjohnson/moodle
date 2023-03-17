@@ -99,12 +99,62 @@ Feature: A teacher can preview questions in the question bank
     And I set the field "Question text" to "New text version"
     And I click on "submitbutton" "button"
     And I choose "Preview" action for "New version" in the question bank
+    And I expand all fieldsets
     Then I should see "Version 2"
     And I should see "(latest)"
     And I should see "New version"
     And I should see "New text version"
     And I should not see "Test question to be previewed"
     And I should not see "Version 1"
+    And I should see "1" in the "Question version" "select"
+    And I should see "2" in the "Question version" "select"
+
+  Scenario: The preview always uses the latest question version by default.
+    Given the following "core_question > updated questions" exist:
+      | questioncategory | question                      | questiontext       |
+      | Test questions   | Test question to be previewed | Question version 2 |
+    And I should see "Version 1 (latest)"
+    And I expand all fieldsets
+    And the field "Question version" matches value "Always latest"
+    And I set the field "Answer:" to "3.14"
+    And I press "Submit and finish"
+    And I should see "Version 1"
+    When I press "Start again"
+    Then I should not see "Version 1"
+    And I should see "Version 2 (latest)"
+
+  Scenario: Detect a newer version during always latest preview and offer to switch to the latest
+    Given the following "core_question > updated questions" exist:
+      | questioncategory | question                      | questiontext       |
+      | Test questions   | Test question to be previewed | Question version 2 |
+    And I should see "Version 1 (latest)"
+    And I set the field "Answer:" to "3.14"
+    When I press "Submit and finish"
+    And I should see "This preview is using version 1 of this question. The latest version is 2."
+    And I press "Restart now?"
+    Then I should not see "Version 1"
+    And I should see "Version 2 (latest)"
+
+  Scenario: Previewing from the question history will not always show the latest version
+    Given I press "Close preview"
+    And the following "core_question > updated questions" exist:
+      | questioncategory | question                      | questiontext       |
+      | Test questions   | Test question to be previewed | Question version 2 |
+    And I choose "History" action for "Test question to be previewed" in the question bank
+    And I choose "Preview" action for "Test question to be previewed" in the question bank
+    And I should see "Version 1"
+    And I expand all fieldsets
+    And the field "Question version" matches value "1"
+    And I set the field "Answer:" to "3.14"
+    And I press "Submit and finish"
+    And I should see "Version 1"
+    And I should not see "The latest version is 2."
+    And the following "core_question > updated questions" exist:
+      | questioncategory | question                      | questiontext       |
+      | Test questions   | Test question to be previewed | Question version 3 |
+    When I press "Start again"
+    Then I should see "Version 1"
+    And I should not see "Version 3 (latest)"
 
   Scenario: Question preview can be closed
     And I press "Close preview"
