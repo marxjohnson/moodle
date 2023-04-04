@@ -322,7 +322,7 @@ class externallib_test extends externallib_advanced_testcase {
             // to be reset afterwards.
             core_question_external::get_random_question_summaries(1, false, [], $systemcontext->id);
         } catch (\Exception $e) {
-            $this->assertInstanceOf('restricted_context_exception', $e);
+            $this->assertInstanceOf('core_external\restricted_context_exception', $e);
         }
         // Reset the restriction so that other tests don't fail aftwards.
         core_question_external::set_context_restriction($systemcontext);
