@@ -352,7 +352,5 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
         }
         coreFilter.filterSet.dataset.filterverb = filterverb;
         coreFilter.filterSet.querySelector(Selectors.filterset.fields.join).value = filterverb;
-        // Apply filter.
-        applyFilter(initialFilters);
     }
 };

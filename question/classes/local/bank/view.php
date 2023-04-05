@@ -1056,6 +1056,7 @@ class view {
 
         echo \html_writer::start_tag('div',
             ['class' => 'categoryquestionscontainer', 'id' => 'questionscontainer']);
+        $this->display_questions($this->load_questions(), $this->pagevars['qpage'], $this->pagevars['qperpage']);
         echo \html_writer::end_tag('div');
 
         $this->display_bottom_controls($catcontext);
@@ -1191,7 +1192,6 @@ class view {
      * @return array
      */
     public function load_questions() {
-        $this->init_sort_from_params();
         $this->build_query();
         $questionsrs = $this->load_page_questions();
         $questions = [];
