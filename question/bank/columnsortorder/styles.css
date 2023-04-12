@@ -30,6 +30,10 @@
     background-color: #0f6cbf;
     border-color: #0f6cbf;
 }
+.question-bank-table .pinned {
+    background-color: wheat;
+    position: sticky;
+}
 .question-bank-table .resize-handle [role="button"] {
     cursor: col-resize;
 }
@@ -51,4 +55,10 @@
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0;
+}
+.categoryquestionscontainer .table-responsive {
+    padding-bottom: 15rem;
+}
+.questionbankwindow #bulkactionsui-container {
+    margin-top: -28rem;
 }

@@ -54,6 +54,7 @@ class column_sort_ui implements templatable, renderable {
         }
 
         $params['disabled'] = $disabledcolumns;
+        $params['pinnedcolumns'] = json_encode($columnsortorder->pinnedcolumns);
         $params['hiddencolumns'] = json_encode($columnsortorder->hiddencolumns);
         $params['colsize'] = json_encode($columnsortorder->colsize);
         $params['columnsdisabled'] = (!empty($params['disabled'])) ? true : false;

@@ -46,12 +46,17 @@ let dataNameAttribute;
 /** To track mouse event on a table header */
 let currentHeader;
 
+/** To track current pinned header */
+let currentPinnedHeader;
+
 /** Current mouse x postion, to track mouse event on a table header */
 let currentX;
 
 const SELECTORS = {
     MOVE_HANDLE: '[data-action="move"]',
     RESIZE_HANDLE: '[data-action="resize"]',
+    PIN_HANDLE: '[data-action="pin"]',
+    PINNED_CLASS: 'pinned',
     tableHeader: identifier => `th[data-${dataIdAttribute}="${identifier.replace(/["\\]/g, '\\$&')}"]`,
     tableColumn: identifier => `td[data-${dataIdAttribute}="${identifier.replace(/["\\]/g, '\\$&')}"]`,
     tableHeaderSection: tableid => `#${tableid} thead tr`,
@@ -146,8 +151,183 @@ const setUpMoveHandle = (handleContainer, component = '') => {
 
         // Persist column order.
         repository.setColumnbankOrder(getColumnOrder(), component).catch(Notification.exception);
+
+        // Update pinned headers.
+        rePinHeaders();
     });
 
+};
+
+/**
+ * Pin an element
+ * @param {Element} element the node that will be pinned
+ * @param {Number} width the width of pinned node.
+ * @param {Number} zIndex so that the pinned node will be laid above other element.
+ * @param {Number} left distance to the left border of the table.
+ */
+const pinElement = (element, width, zIndex, left) => {
+    element.style.width = width + "px";
+    element.style.zIndex = zIndex;
+    element.style.left = left + "px";
+    element.classList.add('pinned');
+};
+
+/**
+ * Unpin an element
+ * @param {Element} element the node that will be unpinned
+ */
+const unpinElement = (element) => {
+    element.style.zIndex = "";
+    element.style.left = "";
+    element.classList.remove('pinned');
+};
+
+/**
+ * Process pinned elements
+ * @param {bool} toBePinned to be pinned or unpinned
+ * @param {Element} stopAtHeader stop pinning after the header
+ * @returns {Array} list of pinned headers
+ */
+const processPinnedHeaders = (toBePinned, stopAtHeader) => {
+    let left = 0;
+    let pinnedHeaders = [];
+    const tableHeaders = table.querySelectorAll("thead th");
+    // Each header should be higher than the next header along, so that the resize icons overlap correctly.
+    let headerZIndex = Array.from(tableHeaders).findIndex(header => header === stopAtHeader) + 1;
+
+    // Unpin all headers.
+    tableHeaders.forEach((header) => {
+        // Unpin header.
+        unpinElement(header);
+        const button = header.querySelector('.pin-handle span');
+        getString('pincolumn', 'qbank_columnsortorder', header.dataset[dataNameAttribute]).then(str => {
+            button.title = str;
+            return str;
+        }).catch();
+        // Unpin columns.
+        const columns = table.querySelectorAll(SELECTORS.tableColumn(header.dataset[dataIdAttribute]));
+        columns.forEach(column => {
+            unpinElement(column);
+        });
+    });
+
+    // Pin headers.
+    if (toBePinned) {
+        const tableHeadersArr = Array.prototype.slice.call(tableHeaders);
+        tableHeadersArr.some((header) => {
+
+            const width = header.offsetWidth;
+            // Pin header.
+            pinnedHeaders.push(header.dataset[dataIdAttribute]);
+            pinElement(header, width, headerZIndex, left);
+
+            // Pin columns.
+            const columns = table.querySelectorAll(SELECTORS.tableColumn(header.dataset[dataIdAttribute]));
+            // Each row should be higher than the next row down, so action menus overlap correctly.
+            let columnZIndex = columns.length;
+            columns.forEach(column => {
+                pinElement(column, width, columnZIndex, left);
+                columnZIndex--;
+            });
+
+            // Update z-indexes for the next column.
+            headerZIndex -= 1;
+            // Increase margin.
+            left += width;
+
+            // End sticky headers.
+            if (header === stopAtHeader) {
+                const button = header.querySelector('.pin-handle span');
+                getString('unpincolumn', 'qbank_columnsortorder', header.dataset[dataNameAttribute]).then(str => {
+                    button.title = str;
+                    return str;
+                }).catch();
+                return true;
+            }
+            return false;
+        });
+
+    }
+    // Return pinned headers.
+    return pinnedHeaders;
+};
+
+/**
+ * Handle activation events on the pin handle.
+ *
+ * @param {Element} pinHandle The handle that was activated.
+ * @returns {Array} list of pinned headers
+ */
+const pinHandler = (pinHandle) => {
+    // Pin all headers to the clicked header.
+    const target = pinHandle.dataset.target;
+    const stopAtHeader = table.querySelector(SELECTORS.tableHeader(target));
+    let toBePinned = true;
+    if (currentPinnedHeader === stopAtHeader.dataset[dataIdAttribute]) {
+        // Unpinned all headers.
+        toBePinned = false;
+        currentPinnedHeader = '';
+    } else {
+        // Track current pinned header.
+        currentPinnedHeader = stopAtHeader.dataset[dataIdAttribute];
+    }
+
+    return processPinnedHeaders(toBePinned, stopAtHeader);
+};
+
+/**
+ * Set up pin handle
+ * @param {String} handleContainer container class that will hold the pin icon.
+ * @param {String} component The component to save preferences against
+ */
+const setUpPinHandle = (handleContainer, component = '') => {
+    // Add "pin icon" for each header.
+    const tableHeaders = table.querySelectorAll("th:not(.checkbox)");
+    tableHeaders.forEach(async(header) => {
+        const context = {
+            action: "pin",
+            target: header.dataset[dataIdAttribute],
+            title: await getString('pincolumn', 'qbank_columnsortorder', header.dataset[dataNameAttribute]),
+            icon: 'thumb-tack'
+        };
+        const container = header.querySelector(handleContainer);
+        addHandle(context, container);
+    });
+
+    // Mouse event on headers.
+    table.addEventListener('click', e => {
+        const pinHandle = e.target.closest(SELECTORS.PIN_HANDLE);
+        // Return if it is not ' pin' button.
+        if (!pinHandle) {
+            return;
+        }
+        repository.setPinnedColumns(pinHandler(pinHandle), component).catch(Notification.exception);
+    });
+    table.addEventListener('keypress', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') {
+            return;
+        }
+        const pinHandle = e.target.closest(SELECTORS.PIN_HANDLE);
+        // Return if it is not ' pin' button.
+        if (!pinHandle) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        repository.setPinnedColumns(pinHandler(pinHandle), component).catch(Notification.exception);
+    });
+};
+
+/**
+ * Re-pin the headers based on the currently pinned header.
+ *
+ * This should be called if anything to do with the currently pinned headers changes, such as order
+ * or size, so that they are re-calculated correctly.
+ */
+const rePinHeaders = () => {
+    if (currentPinnedHeader) {
+        processPinnedHeaders(true, document.querySelector(SELECTORS.tableHeader(currentPinnedHeader)));
+    }
 };
 
 /**
@@ -191,6 +371,9 @@ const showResizeModal = async(currentHeader, component = '') => {
     });
     root.on(ModalEvents.save, () => {
         repository.setColumnSize(saveColumnSizes(), component).catch(Notification.exception);
+        if (currentHeader.classList.contains('pinned')) {
+            rePinHeaders();
+        }
     });
     modal.show();
 
@@ -266,6 +449,9 @@ const setUpResizeHandle = (handleContainer, component) => {
         if (moveTracker) {
             // If the mouse moved, we are changing the size by drag, so save the change.
             repository.setColumnSize(saveColumnSizes(), component).catch(Notification.exception);
+            if (currentHeader.classList.contains('pinned')) {
+                rePinHeaders();
+            }
         } else {
             // If the mouse didn't move, display a modal to change the size using a form.
             showResizeModal(currentHeader, component);
@@ -424,6 +610,26 @@ const setUpCurrentHiddenColumns = () => {
 };
 
 /**
+ * Current pinned columns
+ */
+const setUpCurrentPinnedColumns = () => {
+    const currentPinnedColumns = table.dataset.pinnedcolumns;
+    if (!currentPinnedColumns) {
+        return;
+    }
+    // Existing pinned headers.
+    const decodedPinnedColumns = JSON.parse(currentPinnedColumns);
+    if (decodedPinnedColumns.length > 0) {
+        // Save pinned header.
+        currentPinnedHeader = decodedPinnedColumns[decodedPinnedColumns.length - 1];
+        if (currentPinnedHeader !== '') {
+            const stopAtHeader = table.querySelector(SELECTORS.tableHeader(currentPinnedHeader));
+            processPinnedHeaders(true, stopAtHeader);
+        }
+    }
+};
+
+/**
  * Set up initial column sizes.
  *
  * If there is a saved column size for the column, use that. Otherwise, set it to the current width of the column on screen.
@@ -501,10 +707,12 @@ export const init = (tableId, isEditing, component = '') => {
 
     setUpCurrentHiddenColumns();
     setUpCurrentColumnSizes();
+    setUpCurrentPinnedColumns();
 
     if (isEditing) {
         setUpHideShowDropdown("#show-hide-dropdown", component).catch(Notification.exception);
         setUpMoveHandle(".move-handle", component);
+        setUpPinHandle(".pin-handle", component);
         setUpResizeHandle(".resize-handle", component);
     }
 };

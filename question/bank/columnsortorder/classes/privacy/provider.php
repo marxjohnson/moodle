@@ -36,6 +36,7 @@ class provider implements
 
     public static function get_metadata(collection $collection): collection {
         $collection->add_user_preference('enabledcol', 'privacy:metadata:preference:enabledcol');
+        $collection->add_user_preference('pinnedcols', 'privacy:metadata:preference:pinnedcols');
         $collection->add_user_preference('hiddencols', 'privacy:metadata:preference:hiddencols');
         $collection->add_user_preference('colsize', 'privacy:metadata:preference:colsize');
 

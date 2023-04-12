@@ -39,6 +39,9 @@ class behat_qbank_columnsortorder extends behat_base {
             new behat_component_named_selector('column resize handle', [
                 "//th[contains(@data-name, %locator%)]//div[contains(@class, 'resize-handle')]/span",
             ]),
+            new behat_component_named_selector('column pin handle', [
+                "//th[contains(@data-name, %locator%)]//div[contains(@class, 'pin-handle')]/span",
+            ]),
             new behat_component_named_selector('pinned column header', [
                 "//th[contains(@class, 'pinned')][contains(@data-name, %locator%)]",
             ]),

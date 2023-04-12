@@ -65,6 +65,19 @@ Feature: Set question bank column order, pinning and size
     And I set the field "Select a category:" to "Default for quiz1"
     And I should not see "Created by" in the "Actions" "table_row"
 
+  Scenario: User can pin a column in the question bank
+    Given I am logged in as "teacher1"
+    And I am on "Course 1" Course homepage with editing mode on
+    And I am on the "Test quiz Q001" "mod_quiz > question bank" page
+    And I set the field "Select a category:" to "Default for quiz1"
+    And "Created by" "qbank_columnsortorder > pinned column header" should not exist
+    When I click on "Created by" "qbank_columnsortorder > column pin handle"
+    Then "Created by" "qbank_columnsortorder > pinned column header" should exist
+    And I am on "Course 1" Course homepage with editing mode off
+    And I am on the "Test quiz Q001" "mod_quiz > question bank" page
+    And I set the field "Select a category:" to "Default for quiz1"
+    And "Created by" "qbank_columnsortorder > pinned column header" should exist
+
   Scenario: User can resize a column in the question bank using modal dialog
     Given I am logged in as "teacher1"
     And I am on "Course 1" Course homepage with editing mode on

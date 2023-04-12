@@ -33,6 +33,12 @@ $functions = [
         'type' => 'write',
         'ajax' => true,
     ],
+    'qbank_columnsortorder_set_pinned_columns' => [
+        'classname' => 'qbank_columnsortorder\external\set_pinned_columns',
+        'description' => 'Pinned Columns',
+        'type' => 'write',
+        'ajax' => true,
+    ],
     'qbank_columnsortorder_set_hidden_columns' => [
         'classname' => 'qbank_columnsortorder\external\set_hidden_columns',
         'description' => 'Hidden Columns',

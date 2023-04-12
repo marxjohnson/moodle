@@ -54,6 +54,20 @@ export const setColumnbankOrder = (columns, component = '') => {
 };
 
 /**
+ * Save the list of pinned columns
+ *
+ * @param {String[]} columns List of pinned column names
+ * @param {String} component Optional component name to store user preference against.
+ * @return {Promise}
+ */
+export const setPinnedColumns = (columns, component = '') => {
+    return fetchMany([{
+        methodname: 'qbank_columnsortorder_set_pinned_columns',
+        args: {columns: columns, component: component},
+    }])[0];
+};
+
+/**
  * Save the column widths
  *
  * @param {String} sizes JSON string encoding an array of objects with "column" and "width" properties.

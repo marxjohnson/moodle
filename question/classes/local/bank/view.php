@@ -1141,6 +1141,7 @@ class view {
 
         // Column actions.
         $columnsortorder = new column_manager($this->component);
+        $pinnedcolumns = $columnsortorder->pinnedcolumns;
         $hiddencolumns = $columnsortorder->hiddencolumns;
         $colsize = $columnsortorder->colsize;
 
@@ -1165,6 +1166,7 @@ class view {
         echo \html_writer::start_tag('table', [
             'id' => $tableid,
             'class' => 'question-bank-table',
+            'data-pinnedcolumns' => json_encode($pinnedcolumns),
             'data-hiddencolumns' => json_encode($hiddencolumns),
             'data-colsize' => json_encode($colsize),
         ]);

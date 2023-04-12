@@ -81,6 +81,49 @@ Feature: Set default question bank column order, pinning and size
     And I press the up key
     And the focused element is "Modified by" "checkbox"
 
+  Scenario: Admin can pin a column in site administration page
+    Given I log in as "admin"
+    And I navigate to "Plugins > Question bank plugins > Column sort order" in site administration
+    And "Created by" "qbank_columnsortorder > pinned column header" should not exist
+    When I click on "Created by" "qbank_columnsortorder > column pin handle"
+    Then "Created by" "qbank_columnsortorder > pinned column header" should exist
+    And I reload the page
+    And "Created by" "qbank_columnsortorder > pinned column header" should exist
+
+  Scenario: Pinning a header also pins previous headers
+    Given I log in as "admin"
+    And I navigate to "Plugins > Question bank plugins > Column sort order" in site administration
+    And "T" "qbank_columnsortorder > column header" should appear before "Question" "qbank_columnsortorder > column header"
+    And "Question" "qbank_columnsortorder > column header" should appear before "Actions" "qbank_columnsortorder > column header"
+    When I click on "Question" "qbank_columnsortorder > column pin handle"
+    Then "T" "qbank_columnsortorder > pinned column header" should exist
+    And "Question" "qbank_columnsortorder > pinned column header" should exist
+    And "Actions" "qbank_columnsortorder > pinned column header" should not exist
+
+  Scenario: Pinning the last pinned header unpins all headers
+    Given I log in as "admin"
+    And I navigate to "Plugins > Question bank plugins > Column sort order" in site administration
+    And I click on "Question" "qbank_columnsortorder > column pin handle"
+    And "T" "qbank_columnsortorder > pinned column header" should exist
+    And "Question" "qbank_columnsortorder > pinned column header" should exist
+    And I click on "Question" "qbank_columnsortorder > column pin handle"
+    Then "T" "qbank_columnsortorder > pinned column header" should not exist
+    And "Question" "qbank_columnsortorder > pinned column header" should not exist
+
+  Scenario: Pinning a pinned header moves the pin to that header
+    Given I log in as "admin"
+    And I navigate to "Plugins > Question bank plugins > Column sort order" in site administration
+    And "T" "qbank_columnsortorder > column header" should appear before "Question" "qbank_columnsortorder > column header"
+    And "Question" "qbank_columnsortorder > column header" should appear before "Actions" "qbank_columnsortorder > column header"
+    And I click on "Actions" "qbank_columnsortorder > column pin handle"
+    And "T" "qbank_columnsortorder > pinned column header" should exist
+    And "Question" "qbank_columnsortorder > pinned column header" should exist
+    And "Actions" "qbank_columnsortorder > pinned column header" should exist
+    And I click on "Question" "qbank_columnsortorder > column pin handle"
+    And "T" "qbank_columnsortorder > pinned column header" should exist
+    And "Question" "qbank_columnsortorder > pinned column header" should exist
+    And "Actions" "qbank_columnsortorder > pinned column header" should not exist
+
   Scenario: Admin can resize a column in site administration page using modal dialog
     Given I log in as "admin"
     And I navigate to "Plugins > Question bank plugins > Column sort order" in site administration

@@ -85,6 +85,12 @@ class column_manager_test extends advanced_testcase {
                 'dataproperty' => 'columns',
                 'csv' => true
             ],
+            'Test set_pinned_columns' => [
+                'setting' => 'pinnedcols',
+                'function' => 'set_pinned_columns',
+                'dataproperty' => 'columns',
+                'csv' => true
+            ],
             'Test set_hidden_columns' => [
                 'setting' => 'hiddencols',
                 'function' => 'set_hidden_columns',

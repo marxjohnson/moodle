@@ -40,6 +40,11 @@ class column_manager {
     public $columnorder;
 
     /**
+     * @var array pinned columns.
+     */
+    public $pinnedcolumns;
+
+    /**
      * @var array hidden columns.
      */
     public $hiddencolumns;
@@ -61,6 +66,7 @@ class column_manager {
      */
     public function __construct(string $component = '') {
         $this->columnorder = $this->setup_property('enabledcol', $component);
+        $this->pinnedcolumns = $this->setup_property('pinnedcols', $component);
         $this->hiddencolumns = $this->setup_property('hiddencols', $component);
         $this->colsize = $this->setup_property('colsize', $component, 'json');
         $this->disabledcolumns = $this->setup_property('disabledcol', $component);
@@ -103,6 +109,17 @@ class column_manager {
     public static function set_column_order(array $columns, string $component = '') : void {
         $columns = implode(',', $columns);
         self::save_preference('enabledcol', $columns, $component);
+    }
+
+    /**
+     * Pinned Columns.
+     *
+     * @param array $columns pinned columns.
+     * @param string $component the component where user preference is saved.
+     */
+    public static function set_pinned_columns(array $columns, string $component = '') : void {
+        $columns = implode(',', $columns);
+        self::save_preference('pinnedcols', $columns, $component);
     }
 
     /**

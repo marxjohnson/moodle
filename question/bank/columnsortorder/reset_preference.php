@@ -33,6 +33,7 @@ require_login();
 
 // Reset user preference.
 unset_user_preference("{$component}_enabledcol");
+unset_user_preference("{$component}_pinnedcols");
 unset_user_preference("{$component}_hiddencols");
 unset_user_preference("{$component}_colsize");
 
