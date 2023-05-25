@@ -108,7 +108,7 @@ if ($deleteselected) {
 
     $deleteurl = new \moodle_url('/question/bank/deletequestion/delete.php', [
         'deleteselected' => $questionlist, 'deleteall' => $deleteall, 'confirm' => md5($questionlist),
-        'sesskey' => sesskey(), 'returnurl' => $returnurl, 'cmid' => $cmid, 'courseid' => $courseid,
+        'sesskey' => sesskey(), 'returnurl' => $returnurl->out_as_local_url(false), 'cmid' => $cmid, 'courseid' => $courseid,
     ]);
     $continue = new \single_button($deleteurl, get_string('delete'), 'post');
 

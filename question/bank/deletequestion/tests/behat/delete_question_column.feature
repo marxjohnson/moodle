@@ -1,4 +1,4 @@
-@qbank @qbank_deletequestion
+@qbank @qbank_deletequestion @javascript
 Feature: Use the qbank plugin manager page for deletequestion
   In order to check the plugin behaviour with enable and disable
 
@@ -29,7 +29,6 @@ Feature: Use the qbank plugin manager page for deletequestion
     And I am on the "Test quiz" "mod_quiz > question bank" page
     And the "Delete" action should exist for the "First question" question in the question bank
 
-  @javascript
   Scenario: Enable/disable delete questions bulk action from the base view
     Given I log in as "admin"
     When I navigate to "Plugins > Question bank plugins > Manage question bank plugins" in site administration
@@ -44,7 +43,6 @@ Feature: Use the qbank plugin manager page for deletequestion
     And I click on "With selected" "button"
     And I should see question bulk action "deleteselected"
 
-  @javascript
   Scenario: I should not see the deleted questions in the base view
     Given I am on the "Test quiz" "mod_quiz > question bank" page logged in as "admin"
     And I click on "First question" "checkbox"
@@ -62,9 +60,7 @@ Feature: Use the qbank plugin manager page for deletequestion
       | Tags | foo |
     And I click on "Save changes" "button"
     And I am on the "Test quiz" "mod_quiz > question bank" page
-    And I open the autocomplete suggestions list
-    And I click on "foo" item in the autocomplete list
-    And "foo" "autocomplete_selection" should exist
+    And I apply question bank filter "Tag" with value "foo"
     And I click on "First question" "checkbox"
     And I click on "With selected" "button"
     And I click on question bulk action "deleteselected"
