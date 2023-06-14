@@ -1,5 +1,14 @@
 This files describes API changes for code that uses the question API.
 
+=== 4.2.2 ===
+
+1) The question bank tertiary navigation is now built using the `plugin_feature::get_navigation_node()` functions from qbank plugins.
+   This allows plugins to extend the navigation with their own links.
+
+2) The tertiary navigation now allows pages to add their own action button next to the navigation menu by calling
+   `set_action_button()` on the `qbank_action_menu` object. This means plugin pages can include their own button like the
+   category management page has "Add category".
+
 === 4.2.1 ===
 
 1) The core_question_generator::update_question has been changed so that it no longer modifies the $question
@@ -22,7 +31,6 @@ This files describes API changes for code that uses the question API.
 4) The cache() methods of classes analysis_for_question, analysis_for_subpart, analysis_for_class
    and analysis_for_actual_response now take an optional $calculationtime, which is used the time
    stored in the database. If not given, time() is used.
-
 
 === 4.2 ===
 
