@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+<!-- question: 380076  -->
+  <question type="truefalse">
+    <name>
+      <text>True/false question</text>
+    </name>
+    <questiontext format="html">
+      <text>The answer is true.</text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text>You should have selected true.</text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format">
+      <text>true</text>
+      <feedback format="html">
+        <text>This is the right answer.</text>
+      </feedback>
+    </answer>
+    <answer fraction="0" format="moodle_auto_format">
+      <text>false</text>
+      <feedback format="html">
+        <text>This is the wrong answer.</text>
+      </feedback>
+    </answer>
+    <qbank>
+      <customfields>
+       <yesno>
+        <value>
+         <text>1</text>
+        </value>
+        <valueformat>
+         <text>0</text>
+        </valueformat>
+       </yesno>
+       <something>
+        <value>
+         <text>Foobar</text>
+        </value>
+        <valueformat>
+         <text>0</text>
+        </valueformat>
+       </something>
+       <richtext>
+        <value>
+         <text><![CDATA[<p>some rich text</p>]]></text>
+        </value>
+        <valueformat>
+         <text>1</text>
+        </valueformat>
+       </richtext>
+      </customfields>
+    </qbank>
+  </question>
+
+</quiz>
