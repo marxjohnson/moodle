@@ -1,0 +1,12 @@
+issueNumber: MDL-78520
+notes:
+  qbank:
+    - message: |
+        The new data mapper API has been added to allow plugins that
+        store additional question data to import and export that data
+        via the Moodle XML format.
+
+        Documentation can be found in the devdocs at
+        API guides > Plugin types > Question bank plugins > Data mapper API,
+        and an example can be found in qbank_customfields.
+      type: improved
