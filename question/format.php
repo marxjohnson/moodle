@@ -534,6 +534,24 @@ class qformat_default {
                 }
             }
 
+            if (!empty($question->qbank)) {
+                foreach ($question->qbank as $plugin => $data) {
+                    if (!\core\plugininfo\qbank::is_plugin_enabled('qbank_' . $plugin)) {
+                        continue;
+                    }
+                    $pluginfeaturesclass = "\\qbank_{$plugin}\\plugin_feature";
+                    /** @var \core_question\local\bank\plugin_features_base $pluginfeatures */
+                    $pluginfeatures = new $pluginfeaturesclass();
+                    $pluginresult = $pluginfeatures->import_data($question->id, $data);
+                    if (!empty($pluginresult['error'])) {
+                        $result->error .= ' ' . $pluginresult['error'];
+                    }
+                    if (!empty($pluginresult['notice'])) {
+                        $result->notice .= ' ' . $pluginresult['notice'];
+                    }
+                }
+            }
+
             if (!empty($result->error)) {
                 echo $OUTPUT->notification($result->error);
                 // Can't use $transaction->rollback(); since it requires an exception,
@@ -1010,6 +1028,21 @@ class qformat_default {
                     $dummyquestion = $this->create_dummy_question_representing_category($categoryname, $categoryinfo);
                     $expout .= $this->writequestion($dummyquestion) . "\n";
                     $writtencategories[] = $trackcategory;
+                }
+            }
+
+            $question->qbank = [];
+            $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
+            foreach ($plugins as $componentname => $pluginfeaturesclass) {
+                if (!\core\plugininfo\qbank::is_plugin_enabled($componentname)) {
+                    continue;
+                }
+                /** @var \core_question\local\bank\plugin_features_base $pluginfeatures */
+                $pluginfeatures = new $pluginfeaturesclass();
+                $plugindata = $pluginfeatures->get_export_data($question->id);
+                if (!empty($plugindata)) {
+                    $pluginname = str_replace('qbank_', '', $componentname);
+                    $question->qbank[$pluginname] = $plugindata;
                 }
             }
 

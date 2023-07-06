@@ -65,4 +65,27 @@ class plugin_features_base {
         return [];
     }
 
+    /**
+     * Return array of additional question data stored by this plugin for export.
+     *
+     * @param int $questionid The question we are exporting.
+     * @return ?array [$key => $value] pairs of data to export. Null if this plugin exports no data.
+     */
+    public function get_export_data(int $questionid): ?array {
+        return null;
+    }
+
+    /**
+     * Import additional data for this plugin.
+     *
+     * This function will only be called if an imported file contains data for this plugin.
+     *
+     * @param int $questionid The question we are importing data for
+     * @param array $data Data to be imported. The format should match the output of {@see ::get_export_data()}.
+     * @return array ['error', 'notice']
+     */
+    public function import_data(int $questionid, array $data): array {
+        return ['error' => '', 'notice' => ''];
+    }
+
 }
