@@ -16,8 +16,11 @@
 
 namespace qbank_customfields;
 
+use core_customfield\data_controller;
+use core_question\local\bank\data_mapper_base;
 use core_question\local\bank\plugin_features_base;
 use core_question\local\bank\view;
+use qbank_customfields\data_mapper;
 use qbank_customfields\customfield\question_handler;
 
 /**
@@ -56,5 +59,9 @@ class plugin_feature extends plugin_features_base {
         }
 
         return $columns;
+    }
+
+    public function get_data_mapper(): data_mapper_base {
+        return new data_mapper();
     }
 }
