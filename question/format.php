@@ -522,6 +522,23 @@ class qformat_default {
                 );
             }
 
+            if (!empty($question->qbank)) {
+                foreach ($question->qbank as $plugin => $data) {
+                    if (!\core\plugininfo\qbank::is_plugin_enabled('qbank_' . $plugin)) {
+                        continue;
+                    }
+                    $pluginfeaturesclass = "\\qbank_{$plugin}\\plugin_feature";
+                    $datamapper = (new $pluginfeaturesclass())->get_data_mapper();
+                    $pluginresult = $datamapper->save_question_data($question->id, $data);
+                    if (!empty($pluginresult['error'])) {
+                        $result->error .= ' ' . $pluginresult['error'];
+                    }
+                    if (!empty($pluginresult['notice'])) {
+                        $result->notice .= ' ' . $pluginresult['notice'];
+                    }
+                }
+            }
+
             if (!empty($result->error)) {
                 echo $OUTPUT->notification($result->error);
                 // Can't use $transaction->rollback(); since it requires an exception,

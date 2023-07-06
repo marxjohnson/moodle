@@ -115,4 +115,13 @@ class plugin_features_base {
     public function get_question_filters(?view $qbank = null): array {
         return [];
     }
+
+    /**
+     * This method will return the data mapper object for the plugin.
+     *
+     * @return data_mapper_base
+     */
+    public function get_data_mapper(): data_mapper_base {
+        return new data_mapper_base();
+    }
 }
