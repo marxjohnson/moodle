@@ -65,4 +65,12 @@ class plugin_features_base {
         return [];
     }
 
+    /**
+     * This method will return the data mapper object for the plugin.
+     *
+     * @return data_mapper_base
+     */
+    public function get_data_mapper(): data_mapper_base {
+        return new data_mapper_base();
+    }
 }
