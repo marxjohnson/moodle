@@ -279,6 +279,9 @@ class qformat_xml extends qformat_default {
         // Read the question tags.
         $this->import_question_tags($qo, $question);
 
+        // Read qbank plugin data.
+        $this->import_qbank_plugins($qo, $question);
+
         return $qo;
     }
 
@@ -424,6 +427,34 @@ class qformat_xml extends qformat_default {
     }
 
     /**
+     * Import data for question bank plugins
+     *
+     * @param \stdClass $qo the question data that is being constructed.
+     * @param array $questionxml The xml representing the question.
+     * @return void
+     */
+    public function import_qbank_plugins(\stdClass $qo, array $questionxml): void {
+        $qo->qbank = [];
+        if (!array_key_exists('qbank', $questionxml['#'])) {
+            return;
+        }
+        foreach ($questionxml['#']['qbank'][0]['#'] as $plugin => $data) {
+            $qo->qbank[$plugin] = [];
+            foreach ($data[0]['#'] as $pluginitem => $pluginvalue) {
+                $qo->qbank[$plugin][$pluginitem] = [];
+                foreach ($this->getpath($pluginvalue, [0, '#'], []) as $itemfield => $itemvalue) {
+                    $qo->qbank[$plugin][$pluginitem][$itemfield] = $this->getpath(
+                        $itemvalue,
+                        [0, '#', 'text', 0, '#'],
+                        '',
+                        true
+                    );
+                }
+            }
+        }
+    }
+
+    /**
      * Import files from a node in the XML.
      * @param array $xml an array of <file> nodes from the the parsed XML.
      * @return array of things representing files - in the form that save_question expects.
@@ -562,6 +593,7 @@ class qformat_xml extends qformat_default {
 
         $this->import_hints($qo, $question, true, false, $this->get_format($qo->questiontextformat));
         $this->import_question_tags($qo, $question);
+        $this->import_qbank_plugins($qo, $question);
 
         return $qo;
     }
@@ -1594,6 +1626,25 @@ class qformat_xml extends qformat_default {
                     $expout .= "    </tags>\n";
                 }
             }
+        }
+
+        // Add any additional data provided by qbank plugins.
+        if (!empty($question->qbank)) {
+            $expout .= "    <qbank>\n";
+            foreach ($question->qbank as $plugin => $data) {
+                $expout .= "      <{$plugin}>\n";
+                foreach ($data as $itemname => $itemdata) {
+                    $expout .= "       <{$itemname}>\n";
+                    foreach ($itemdata as $key => $value) {
+                        $expout .= "        <{$key}>\n";
+                        $expout .= "         {$this->writetext($value)}";
+                        $expout .= "        </{$key}>\n";
+                    }
+                    $expout .= "       </$itemname>\n";
+                }
+                $expout .= "      </$plugin>\n";
+            }
+            $expout .= "    </qbank>\n";
         }
 
         // Close the question tag.
