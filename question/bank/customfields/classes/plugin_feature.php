@@ -16,6 +16,7 @@
 
 namespace qbank_customfields;
 
+use core_customfield\data_controller;
 use core_question\local\bank\plugin_features_base;
 use core_question\local\bank\view;
 use qbank_customfields\customfield\question_handler;
@@ -56,5 +57,30 @@ class plugin_feature extends plugin_features_base {
         }
 
         return $columns;
+    }
+
+    public function get_export_data(int $questionid): ?array {
+        $exportdata = [];
+        $customfieldhandler = question_handler::create();
+        $datacontrollers = $customfieldhandler->get_instance_data($questionid, true);
+        foreach ($datacontrollers as $datacontroller) {
+            $exportdata[$datacontroller->get_field()->get('shortname')] = $datacontroller->get_value();
+        }
+        return $exportdata;
+    }
+
+    public function import_data(int $questionid, array $data): array {
+        $error = '';
+        try {
+            $customfieldhandler = question_handler::create();
+            foreach ($data as $field => $value) {
+                $importdata['customfield_' . $field] = $value;
+            }
+            $importdata['id'] = $questionid;
+            $customfieldhandler->instance_form_save((object)$importdata);
+        } catch (\Throwable $e) {
+            $error = $e->getMessage();
+        }
+        return ['error' => $error, 'notice' => ''];
     }
 }
