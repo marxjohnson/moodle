@@ -541,7 +541,7 @@ class qformat_default {
                     }
                     $pluginfeaturesclass = "\\qbank_{$plugin}\\plugin_feature";
                     $datamapper = (new $pluginfeaturesclass())->get_data_mapper();
-                    $pluginresult = $datamapper->import_data($question->id, $data);
+                    $pluginresult = $datamapper->import_question_data($question->id, $data);
                     if (!empty($pluginresult['error'])) {
                         $result->error .= ' ' . $pluginresult['error'];
                     }
@@ -1027,20 +1027,6 @@ class qformat_default {
                     $dummyquestion = $this->create_dummy_question_representing_category($categoryname, $categoryinfo);
                     $expout .= $this->writequestion($dummyquestion) . "\n";
                     $writtencategories[] = $trackcategory;
-                }
-            }
-
-            $question->qbank = [];
-            $plugins = \core_component::get_plugin_list_with_class('qbank', 'plugin_feature', 'plugin_feature.php');
-            foreach ($plugins as $componentname => $pluginfeaturesclass) {
-                if (!\core\plugininfo\qbank::is_plugin_enabled($componentname)) {
-                    continue;
-                }
-                $datamapper = (new $pluginfeaturesclass())->get_data_mapper();
-                $plugindata = $datamapper->get_export_data($question->id);
-                if (!empty($plugindata)) {
-                    $pluginname = str_replace('qbank_', '', $componentname);
-                    $question->qbank[$pluginname] = $plugindata;
                 }
             }
 

@@ -1,5 +1,13 @@
 This files describes API changes for question import/export format plugins.
 
+=== 4.3 ===
+
+* Question objects for export now include a qbank property which holds data for any
+  qbank plugins that store additional data for a question, in the format
+  [$pluginname => [$key => $value].
+* For import formats that support qbank plugin data, data for a plugin should be
+  passed to import_question_data() in the plugin's data_mapper class.
+
 === 4.0 ===
 
 1) The major question bank changes should not affect import/export plugins.

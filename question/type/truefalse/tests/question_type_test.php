@@ -81,7 +81,7 @@ class question_type_test extends \advanced_testcase {
         $this->assertEquals(['id', 'category', 'parent', 'name', 'questiontext', 'questiontextformat',
                 'generalfeedback', 'generalfeedbackformat', 'defaultmark', 'penalty', 'qtype',
                 'length', 'stamp', 'timecreated', 'timemodified', 'createdby', 'modifiedby', 'idnumber', 'contextid',
-                'status', 'versionid', 'version', 'questionbankentryid', 'categoryobject', 'options', 'hints'],
+                'status', 'versionid', 'version', 'questionbankentryid', 'categoryobject', 'options', 'hints', 'qbank'],
                 array_keys(get_object_vars($questiondata)));
         $this->assertEquals($category->id, $questiondata->category);
         $this->assertEquals(0, $questiondata->parent);

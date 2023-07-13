@@ -119,6 +119,43 @@ class questionbank_test extends \advanced_testcase {
         $this->assertArrayHasKey($q1->id, $qs);
     }
 
+    /**
+     * Test loading multiple questions containing additional data in a qbank plugin.
+     *
+     * @return void
+     * @covers \question_finder::load_many_for_cache()
+     */
+    public function test_load_many_for_cache_with_plugindata(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $cat = $generator->create_question_category();
+        $q1 = $generator->create_question('shortanswer', null, ['category' => $cat->id]);
+        $q2 = $generator->create_question('shortanswer', null, ['category' => $cat->id]);
+
+        $fieldcategory = (object)[
+            'component' => 'qbank_customfields',
+            'area' => 'question',
+        ];
+
+        $generator = $this->getDataGenerator();
+        $catid = $generator->create_custom_field_category($fieldcategory)->get('id');
+        $generator->create_custom_field(['categoryid' => $catid, 'type' => 'checkbox', 'shortname' => 'yesno']);
+
+        \qbank_customfields\customfield\question_handler::create()->instance_form_save((object)[
+            'id' => $q2->id,
+            'customfield_yesno' => 1
+        ]);
+
+        $qs = question_finder::get_instance()->load_many_for_cache([$q1->id, $q2->id]);
+        $this->assertArrayHasKey($q1->id, $qs);
+        $this->assertArrayHasKey($q2->id, $qs);
+        $this->assertArrayHasKey('customfields', $qs[$q1->id]->qbank);
+        $this->assertArrayHasKey('customfields', $qs[$q2->id]->qbank);
+        $this->assertEquals(['yesno' => 0], $qs[$q1->id]->qbank['customfields']);
+        $this->assertEquals(['yesno' => 1], $qs[$q2->id]->qbank['customfields']);
+    }
+
+
     public function test_load_many_for_cache_missing_id() {
         // Try to load a non-existent question.
         $this->expectException(\dml_missing_record_exception::class);

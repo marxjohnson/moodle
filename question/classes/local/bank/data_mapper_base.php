@@ -14,39 +14,42 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace core_question\local\bank;
+
 /**
  * Base class for handling import and export of plugin data
+ *
+ * Any plugin that stores additional data for a question should return an extension of this class from
+ * plugin_feature::get_data_mapper().
  *
  * @package   core_question
  * @copyright 2023 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core_question\local\bank;
-
 class data_mapper_base {
 
     /**
-     * Return array of additional question data stored by this plugin for export.
+     * Return array of additional question data stored by this plugin.
      *
-     * @param int $questionid The question we are exporting.
-     * @return ?array [$key => $value] pairs of data to export. Null if this plugin exports no data.
+     * This function returns a multi-dimentional array of key => value pairs, keyed by question id.
+     * It should always return a key for each question id passed in $questionids, even if there is no data for that question.
+     *
+     * @param int[] $questionids The questions we are fetching data for.
+     * @return array [$questionid][$key => $value] pairs of data.
      */
-    public function get_export_data(int $questionid): ?array {
-        return null;
+    public function get_question_data(array $questionids): array {
+        return array_fill_keys($questionids, []);
     }
 
     /**
-     * Import additional data for this plugin.
-     *
-     * This function will only be called if an imported file contains data for this plugin.
+     * Save additional question data for this plugin.
      *
      * @param int $questionid The question we are importing data for
-     * @param array $data Data to be imported. The format should match the output of {@see ::get_export_data()}.
+     * @param array $data Data to be imported as [$key => $value]
      * @return array ['error', 'notice']
      */
-    public function import_data(int $questionid, array $data): array {
+    public function save_question_data(int $questionid, array $data): array {
         return ['error' => '', 'notice' => ''];
     }
 
