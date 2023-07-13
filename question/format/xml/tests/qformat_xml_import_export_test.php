@@ -635,10 +635,6 @@ class qformat_xml_import_export_test extends advanced_testcase {
         ];
 
         $question = $qtype->save_question($question, $fromform);
-        $qformat->setQuestions([question_bank::load_question_data($question->id)]);
-        $qformat->setCattofile(false);
-        $qformat->setContexttofile(false);
-
         $this->create_custom_fields();
         $customfieldhandler = qbank_customfields\customfield\question_handler::create();
         $customfieldhandler->instance_form_save((object)[
@@ -646,6 +642,12 @@ class qformat_xml_import_export_test extends advanced_testcase {
             'customfield_yesno' => 1,
             'customfield_something' => 'Foobar',
         ]);
+
+        question_bank::notify_question_edited($question->id);
+
+        $qformat->setQuestions([question_bank::load_question_data($question->id)]);
+        $qformat->setCattofile(false);
+        $qformat->setContexttofile(false);
 
         $expectedxml = file_get_contents(__DIR__ . '/fixtures/question_with_qbank_plugin_data.xml');
         $this->assert_same_xml($expectedxml, $qformat->exportprocess());
