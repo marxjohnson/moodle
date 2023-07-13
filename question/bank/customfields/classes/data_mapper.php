@@ -21,25 +21,27 @@ use qbank_customfields\customfield\question_handler;
 /**
  * Class to handle import and export of customfield data
  *
- * @package   qbank_customfield
+ * @package   qbank_customfields
  * @copyright 2023 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class data_mapper extends \core_question\local\bank\data_mapper_base {
 
-    public function get_export_data(int $questionid): ?array {
-        $exportdata = [];
+    public function get_question_data(array $questionids): array {
+        $questiondata = parent::get_question_data($questionids);
         $customfieldhandler = question_handler::create();
-        $datacontrollers = $customfieldhandler->get_instance_data($questionid, true);
-        foreach ($datacontrollers as $datacontroller) {
-            $exportdata[$datacontroller->get_field()->get('shortname')] = $datacontroller->get_value();
+        $qdatacontrollers = $customfieldhandler->get_instances_data($questionids, true);
+        foreach ($qdatacontrollers as $qid => $datacontrollers) {
+            foreach ($datacontrollers as $datacontroller) {
+                $questiondata[$qid][$datacontroller->get_field()->get('shortname')] = $datacontroller->get_value();
+            }
         }
-        return $exportdata;
+        return $questiondata;
     }
 
-    public function import_data(int $questionid, array $data): array {
-        $error = '';
+    public function save_question_data(int $questionid, array $data): array {
+        $return = parent::save_question_data($questionid, $data);
         try {
             $customfieldhandler = question_handler::create();
             foreach ($data as $field => $value) {
@@ -48,8 +50,8 @@ class data_mapper extends \core_question\local\bank\data_mapper_base {
             $importdata['id'] = $questionid;
             $customfieldhandler->instance_form_save((object)$importdata);
         } catch (\Throwable $e) {
-            $error = $e->getMessage();
+            $return['error'] = $e->getMessage();
         }
-        return ['error' => $error, 'notice' => ''];
+        return $return;
     }
 }
