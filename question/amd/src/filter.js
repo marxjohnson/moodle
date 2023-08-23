@@ -42,8 +42,19 @@ import Fragment from 'core/fragment';
  * @param {string} pagevars JSON-encoded parameters from passed from the view, including filters and jointype.
  * @param {string} extraparams JSON-encoded additional parameters specific to this view class, used for re-rendering the view.
  */
-export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
-                     perpage, contextId, component, callback, view, cmid, pagevars, extraparams) => {
+export const init = (
+    filterRegionId,
+    defaultcourseid,
+    defaultcategoryid,
+    perpage,
+    contextId,
+    component,
+    callback,
+    view,
+    cmid,
+    pagevars,
+    extraparams
+) => {
 
     const SELECTORS = {
         QUESTION_CONTAINER_ID: '#questionscontainer',

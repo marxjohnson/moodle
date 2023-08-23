@@ -55,8 +55,14 @@ class question_history_view extends view {
      * @param array $extraparams any extra parameters need to initialized if the api is extended, it will be passed to js.
      * @throws \moodle_exception
      */
-    public function __construct(question_edit_contexts $contexts, moodle_url $pageurl, stdClass $course, stdClass $cm = null,
-        array $params = [], array $extraparams = []) {
+    public function __construct(
+        question_edit_contexts $contexts,
+        moodle_url $pageurl,
+        stdClass $course,
+        stdClass $cm = null,
+        array $params = [],
+        array $extraparams = [],
+    ) {
         $this->entryid = $extraparams['entryid'];
         $this->basereturnurl = new \moodle_url($extraparams['returnurl']);
         parent::__construct($contexts, $pageurl, $course, $cm, $params, $extraparams);

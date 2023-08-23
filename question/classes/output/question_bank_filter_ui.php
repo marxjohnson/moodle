@@ -80,9 +80,18 @@ class question_bank_filter_ui extends datafilter {
      * @param array $pagevars current filter parameters
      * @param array $extraparams additional parameters required for a particular view class.
      */
-    public function __construct(\context $context, array $searchconditions, array $additionalparams,
-            string $component, string $callback, string $view, ?string $tableregionid = null, ?int $cmid = null,
-            array $pagevars = [], array $extraparams = []) {
+    public function __construct(
+        \context $context,
+        array $searchconditions,
+        array $additionalparams,
+        string $component,
+        string $callback,
+        string $view,
+        ?string $tableregionid = null,
+        ?int $cmid = null,
+        array $pagevars = [],
+        array $extraparams = []
+    ) {
         parent::__construct($context, $tableregionid);
         $this->searchconditions = $searchconditions;
         $this->additionalparams = $additionalparams;
