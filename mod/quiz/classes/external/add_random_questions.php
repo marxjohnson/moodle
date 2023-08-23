@@ -116,14 +116,14 @@ class add_random_questions extends external_api {
                 null,
                 $contexts->having_cap('moodle/question:add'));
             $categoryid = $qcobject->add_category($parentcategory, $newcategory, '', true);
-            $filters = [
+            $filter = [
                 'category' => [
                     'jointype' => custom_category_condition::JOINTYPE_DEFAULT,
                     'values' => [$categoryid],
                     'filteroptions' => ['includesubcategories' => false],
                 ]
             ];
-            $filtercondition->filters = $filters;
+            $filtercondition['filter'] = $filter;
         }
 
         // Add random question to the quiz.
