@@ -309,8 +309,14 @@ export default class ModalAddRandomQuestion extends Modal {
      * @param {string} newcategory add new category
      * @param {string} parentcategory parent category of new category
      */
-    async addQuestions(cmid, addonpage, randomcount, filtercondition,
-                       newcategory, parentcategory) {
+    async addQuestions(
+        cmid,
+        addonpage,
+        randomcount,
+        filtercondition,
+        newcategory,
+        parentcategory
+    ) {
         const call = {
             methodname: 'mod_quiz_add_random_questions',
             args: {

@@ -77,8 +77,14 @@ class add_random_questions extends external_api {
      * @param string $parentcategory parent category of new category
      * @return array result
      */
-    public static function execute(int $cmid, int $addonpage, int $randomcount,
-                                   string $filtercondition, string $newcategory = '', string $parentcategory = ''): array {
+    public static function execute(
+        int $cmid,
+        int $addonpage,
+        int $randomcount,
+        string $filtercondition,
+        string $newcategory = '',
+        string $parentcategory = '',
+    ): array {
         [
             'cmid' => $cmid,
             'addonpage' => $addonpage,

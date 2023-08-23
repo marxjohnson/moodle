@@ -60,7 +60,11 @@ class update_filter_condition extends external_api {
      * @param string $filtercondition
      * @return array  result
      */
-    public static function execute(int $cmid, int $slotid, string $filtercondition): array {
+    public static function execute(
+        int $cmid,
+        int $slotid,
+        string $filtercondition,
+    ): array {
         global  $DB;
 
         [
