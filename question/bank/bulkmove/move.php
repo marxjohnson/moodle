@@ -76,7 +76,9 @@ if ($movequestionselected && $confirm && confirm_sesskey()) {
         \qbank_bulkmove\helper::bulk_move_questions($movequestionselected, $tocategory);
     }
     $returnfilters = \core_question\local\bank\filter_condition_manager::update_filter_param_to_category(
-            $returnurl->param('filter'), $tocategoryid);
+        $returnurl->param('filter'),
+        $tocategoryid,
+    );
     redirect(new moodle_url($returnurl, ['filter' => $returnfilters]));
 }
 
