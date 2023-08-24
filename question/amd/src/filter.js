@@ -33,12 +33,12 @@ import Fragment from 'core/fragment';
  * @param {String} filterRegionId ID of the HTML element containing the filters.
  * @param {String} defaultcourseid Course ID for the default course to pass back to the view.
  * @param {String} defaultcategoryid Question bank category ID for the default course to pass back to the view.
- * @param {int} perpage The number of questions to display per page.
- * @param {int} contextId Context ID of the question bank view.
+ * @param {Number} perpage The number of questions to display per page.
+ * @param {Number} contextId Context ID of the question bank view.
  * @param {string} component Frankenstyle name of the component for the fragment API callback (e.g. core_question)
  * @param {string} callback Name of the callback for the fragment API (e.g question_data)
  * @param {string} view The class name of the question bank view class used for this page.
- * @param {int} cmid If we are in an activitiy, the course module ID.
+ * @param {Number} cmid If we are in an activitiy, the course module ID.
  * @param {string} pagevars JSON-encoded parameters from passed from the view, including filters and jointype.
  * @param {string} extraparams JSON-encoded additional parameters specific to this view class, used for re-rendering the view.
  */
