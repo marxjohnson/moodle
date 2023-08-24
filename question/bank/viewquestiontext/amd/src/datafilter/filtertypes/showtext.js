@@ -25,7 +25,4 @@
 import GenericFilter from 'core/datafilter/filtertype';
 
 export default class extends GenericFilter {
-    constructor(filterType, filterSet, initialValues) {
-        super(filterType, filterSet, initialValues);
-    }
 }

@@ -25,7 +25,4 @@
 import Binary from 'core/datafilter/filtertypes/binary';
 
 export default class extends Binary {
-    constructor(filterType, filterSet, initialValues) {
-        super(filterType, filterSet, initialValues);
-    }
 }
