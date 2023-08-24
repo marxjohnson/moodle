@@ -67,9 +67,11 @@ class question_history_view_test extends \advanced_testcase {
         ];
         // Generate the view.
         $viewclass = \qbank_history\question_history_view::class;
-        $extraparams['view'] = $viewclass;
-        $extraparams['entryid'] = $entry->id;
-        $extraparams['returnurl'] = "/";
+        $extraparams = [
+            'view' => $viewclass,
+            'entryid' => $entry->id,
+            'returnurl' => "/",
+        ];
         $view = new $viewclass($contexts, new \moodle_url('/'), $course, null, $pagevars, $extraparams);
         ob_start();
         $view->display();
@@ -112,9 +114,11 @@ class question_history_view_test extends \advanced_testcase {
         ];
         // Generate the view.
         $viewclass = \qbank_history\question_history_view::class;
-        $extraparams['view'] = $viewclass;
-        $extraparams['entryid'] = $entry->id;
-        $extraparams['returnurl'] = "/";
+        $extraparams = [
+            'view' => $viewclass,
+            'entryid' => $entry->id,
+            'returnurl' => "/",
+        ];
         $view = new $viewclass($contexts, new \moodle_url('/'), $course,  null, $pagevars, $extraparams);
         ob_start();
         $view->display_question_bank_header();
