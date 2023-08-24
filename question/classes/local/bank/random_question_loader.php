@@ -85,7 +85,7 @@ class random_question_loader {
     public function get_next_filtered_question_id(array $filters): ?int {
         $this->ensure_filtered_questions_loaded($filters);
 
-        $key = $this->get_fitlered_questions_key($filters);
+        $key = $this->get_filtered_questions_key($filters);
         if (empty($this->availablequestionscache[$key])) {
             return null;
         }
@@ -141,7 +141,7 @@ class random_question_loader {
      * @param array $filters filter array
      * @return String
      */
-    protected function get_fitlered_questions_key(array $filters): String {
+    protected function get_filtered_questions_key(array $filters): String {
         return sha1(json_encode($filters));
     }
 
@@ -173,7 +173,6 @@ class random_question_loader {
         return $key;
     }
 
-
     /**
      * Populate {@see $availablequestionscache} according to filter conditions.
      *
@@ -183,7 +182,7 @@ class random_question_loader {
     protected function ensure_filtered_questions_loaded(array $filters) {
         global $DB;
 
-        $key = $this->get_fitlered_questions_key($filters);
+        $key = $this->get_filtered_questions_key($filters);
         if (isset($this->availablequestionscache[$key])) {
             // Data is already in the cache, nothing to do.
             return;
@@ -371,7 +370,7 @@ class random_question_loader {
      */
     protected function get_filtered_question_ids(array $filters): array {
         $this->ensure_filtered_questions_loaded($filters);
-        $key = $this->get_fitlered_questions_key($filters);
+        $key = $this->get_filtered_questions_key($filters);
 
         $cachedvalues = $this->availablequestionscache[$key];
         $questionids = [];
@@ -422,7 +421,7 @@ class random_question_loader {
      */
     public function is_filtered_question_available(array $filters, int $questionid): bool {
         $this->ensure_filtered_questions_loaded($filters);
-        $categorykey = $this->get_fitlered_questions_key($filters);
+        $categorykey = $this->get_filtered_questions_key($filters);
 
         foreach ($this->availablequestionscache[$categorykey] as $questionids) {
             if (isset($questionids[$questionid])) {
@@ -463,6 +462,7 @@ class random_question_loader {
 
         return false;
     }
+
     /**
      * Get the list of available questions for the given criteria.
      *
