@@ -239,10 +239,10 @@ export default class ModalAddRandomQuestion extends Modal {
             'add_random_question_form',
             this.getContextId(),
             {
-                addonpage: addonpage,
-                cat: cat,
-                returnurl: returnurl,
-                cmid: cmid
+                addonpage,
+                cat,
+                returnurl,
+                cmid,
             }
         )
         .then((html, js) =>{
@@ -265,36 +265,37 @@ export default class ModalAddRandomQuestion extends Modal {
             // page once the modal is hidden.
             FormChangeChecker.disableAllChecks();
 
-            // Submit buttons.
-            const submitbuttons = document.querySelectorAll(SELECTORS.SUBMIT_BUTTON_ELEMENT);
-
             // Add question to quiz.
-            const modal = this;
-            submitbuttons.forEach((button) => {
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
+            this.getBody()[0].addEventListener('click', (e) => {
+                const button = e.target.closest(SELECTORS.SUBMIT_BUTTON_ELEMENT);
+                if (!button) {
+                    return;
+                }
+                e.preventDefault();
 
-                    const randomcount = document.querySelector(SELECTORS.SELECT_NUMBER_TO_ADD).value;
-                    const filtercondition = document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
+                const randomcount = document.querySelector(SELECTORS.SELECT_NUMBER_TO_ADD).value;
+                const filtercondition = document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
 
-                    // Add Random questions.
-                    let target = e.target.closest(SELECTORS.ADD_RANDOM_BUTTON);
-                    if (target) {
-                        modal.addQuestions(cmid, addonpage, randomcount, filtercondition, '', '');
-                        return;
-                    }
-                    // Add new category if required.
-                    target = e.target.closest(SELECTORS.ADD_NEW_CATEGORY_BUTTON);
-                    if (target) {
-                        let newcategory = document.querySelector(SELECTORS.NEW_CATEGORY_ELEMENT).value;
-                        let parentcategory = document.querySelector(SELECTORS.PARENT_CATEGORY_ELEMENT).value;
-                        modal.addQuestions(cmid, addonpage, randomcount, filtercondition,
-                            newcategory, parentcategory);
-                        return;
-                    }
-                });
+                // Add Random questions if the add random button was clicked.
+                const addRandomButton = e.target.closest(SELECTORS.ADD_RANDOM_BUTTON);
+                if (addRandomButton) {
+                    this.addQuestions(cmid, addonpage, randomcount, filtercondition, '', '');
+                    return;
+                }
+                // Add new category if the add category button was clicked.
+                const addCategoryButton = e.target.closest(SELECTORS.ADD_NEW_CATEGORY_BUTTON);
+                if (addCategoryButton) {
+                    this.addQuestions(
+                        cmid,
+                        addonpage,
+                        randomcount,
+                        filtercondition,
+                        document.querySelector(SELECTORS.NEW_CATEGORY_ELEMENT).value,
+                        document.querySelector(SELECTORS.PARENT_CATEGORY_ELEMENT).value
+                    );
+                    return;
+                }
             });
-            return;
         })
         .catch(Notification.exception);
     }
@@ -320,12 +321,12 @@ export default class ModalAddRandomQuestion extends Modal {
         const call = {
             methodname: 'mod_quiz_add_random_questions',
             args: {
-                cmid: cmid,
-                addonpage: addonpage,
-                randomcount: randomcount,
-                filtercondition: filtercondition,
-                newcategory: newcategory,
-                parentcategory: parentcategory,
+                cmid,
+                addonpage,
+                randomcount,
+                filtercondition,
+                newcategory,
+                parentcategory,
             }
         };
         try {
