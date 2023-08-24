@@ -115,10 +115,11 @@ class core_question_bank_renderer extends plugin_renderer_base {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     public function render_category_condition($displaydata) {
-        debugging('Function render_category_condition()
-         has been deprecated and moved to qbank_managecategories plugin,
-         Please use qbank_managecategories\output\renderer::render_category_condition() instead.',
-            DEBUG_DEVELOPER);
+        debugging(
+            'Function render_category_condition() has been deprecated and moved to qbank_managecategories plugin, ' .
+                'Please use qbank_managecategories\output\renderer::render_category_condition() instead.',
+            DEBUG_DEVELOPER
+        );
         return $this->render_from_template('qbank_managecategories/category_condition', $displaydata);
     }
 
@@ -131,8 +132,10 @@ class core_question_bank_renderer extends plugin_renderer_base {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     public function render_category_condition_advanced($displaydata) {
-        debugging('Function render_category_condition_advanced() has been deprecated',
-            DEBUG_DEVELOPER);
+        debugging(
+            'Function render_category_condition_advanced() has been deprecated',
+            DEBUG_DEVELOPER
+        );
         // The template category_condition_advanced should also be deleted with this function.
         return $this->render_from_template('qbank_managecategories/category_condition_advanced', $displaydata);
     }
@@ -147,10 +150,11 @@ class core_question_bank_renderer extends plugin_renderer_base {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     public function render_hidden_condition_advanced($displaydata) {
-        debugging('Function render_hidden_condition_advanced()
-         has been deprecated and moved to qbank_deletequestion plugin,
-         Please use qbank_deletequestion\output\renderer::render_hidden_condition_advanced() instead.',
-            DEBUG_DEVELOPER);
+        debugging(
+            'Function render_hidden_condition_advanced() has been deprecated and moved to qbank_deletequestion plugin, ' .
+                'Please use qbank_deletequestion\output\renderer::render_hidden_condition_advanced() instead.',
+            DEBUG_DEVELOPER
+        );
         return $this->render_from_template('qbank_deletequestion/hidden_condition_advanced', $displaydata);
     }
 

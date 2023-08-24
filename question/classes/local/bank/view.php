@@ -315,8 +315,11 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function init_search_conditions(): void {
-        debugging('Function init_search_conditions() has been deprecated,
-         please create a qbank plugin and implement a filter object instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function init_search_conditions() has been deprecated, please create a qbank plugin' .
+                'and implement a filter object instead.',
+            DEBUG_DEVELOPER
+        );
         $searchplugins = get_plugin_list_with_function('local', 'get_question_bank_search_conditions');
         foreach ($searchplugins as $component => $function) {
             foreach ($function($this) as $searchobject) {
@@ -862,8 +865,11 @@ class view {
      * @todo Final deprecation on Moodle 4.4 MDL-72438
      */
     public function preview_question_url($questiondata) {
-        debugging('Function preview_question_url() has been deprecated and moved to qbank_previewquestion plugin,
-         please use qbank_previewquestion\helper::question_preview_url() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function preview_question_url() has been deprecated and moved to qbank_previewquestion plugin, ' .
+                'please use qbank_previewquestion\helper::question_preview_url() instead.',
+            DEBUG_DEVELOPER
+        );
         return question_preview_url($questiondata->id, null, null, null, null,
             $this->get_most_specific_context());
     }
@@ -936,10 +942,12 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function print_choose_category_message(): void {
-        debugging('Function print_choose_category_message() is deprecated,
-         all the features for this method is currently handles by the qbank filter api,
-         please have a look at question/bank/managecategories/classes/category_confition.php
-         for more information.', DEBUG_DEVELOPER);
+        debugging(
+            'Function print_choose_category_message() is deprecated, all the features for this method is currently ' .
+                'handled by the qbank filter api, please have a look at ' .
+                'question/bank/managecategories/classes/category_confition.php for more information.',
+            DEBUG_DEVELOPER
+        );
         echo \html_writer::start_tag('p', ['style' => "\"text-align:center;\""]);
         echo \html_writer::tag('b', get_string('selectcategoryabove', 'question'));
         echo \html_writer::end_tag('p');
@@ -954,10 +962,12 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function get_current_category($categoryandcontext) {
-        debugging('Function get_current_category() is deprecated,
-         all the features for this method is currently handles by the qbank filter api,
-         please have a look at question/bank/managecategories/classes/category_confition.php
-         for more information.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_current_category() is deprecated, all the features for this method is currently handled by ' .
+            'the qbank filter api, please have a look at question/bank/managecategories/classes/category_confition.php ' .
+            'for more information.',
+            DEBUG_DEVELOPER
+        );
         global $DB, $OUTPUT;
         list($categoryid, $contextid) = explode(',', $categoryandcontext);
         if (!$categoryid) {
@@ -983,9 +993,12 @@ class view {
      * @deprecated since Moodle 4.3 MDL-72321
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
-    protected function nnndisplay_options_form($showquestiontext): void {
-        debugging('Function display_options_form() is deprecated, this method has been replaced with mustaches in filters,
-            please use filtering objects', DEBUG_DEVELOPER);
+    protected function display_options_form($showquestiontext): void {
+        debugging(
+            'Function display_options_form() is deprecated, this method has been replaced with mustaches in filters, ' .
+                'please use filtering objects',
+            DEBUG_DEVELOPER
+        );
         global $PAGE;
 
         // The html will be refactored in the filter feature implementation.
@@ -1032,8 +1045,11 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function display_advanced_search_form($advancedsearch): void {
-        debugging('Function display_advanced_search_form() is deprecated, this method has been replaced with mustaches in filters,
-            please use filtering objects', DEBUG_DEVELOPER);
+        debugging(
+            'Function display_advanced_search_form() is deprecated, this method has been replaced with mustaches in ' .
+            'filters, please use filtering objects',
+            DEBUG_DEVELOPER
+        );
         print_collapsible_region_start('', 'advancedsearch',
             get_string('advancedsearchoptions', 'question'),
             'question_bank_advanced_search');
@@ -1199,8 +1215,10 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function display_top_pagnation($pagination): void {
-        debugging('Function display_top_pagnation() is deprecated, please use display_questions()
-         for ajax based pagination.', DEBUG_DEVELOPER);
+        debugging(
+            'Function display_top_pagnation() is deprecated, please use display_questions() for ajax based pagination.',
+            DEBUG_DEVELOPER
+        );
         global $PAGE;
         $displaydata = [
             'pagination' => $pagination
@@ -1219,8 +1237,10 @@ class view {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function display_bottom_pagination($pagination, $totalnumber, $perpage, $pageurl): void {
-        debugging('Function display_bottom_pagination() is deprecated, please use display_questions()
-         for ajax based pagination.', DEBUG_DEVELOPER);
+        debugging(
+            'Function display_bottom_pagination() is deprecated, please use display_questions() for ajax based pagination.',
+            DEBUG_DEVELOPER
+        );
         global $PAGE;
         $displaydata = array (
             'extraclasses' => 'pagingbottom',

@@ -579,8 +579,10 @@ class question_finder implements cache_data_source {
      */
     public function get_questions_from_categories_with_usage_counts($categoryids,
             qubaid_condition $qubaids, $extraconditions = '', $extraparams = array()) {
-        debugging('Function get_questions_from_categories_with_usage_counts() is deprecated,
-         please do not use the function.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_questions_from_categories_with_usage_counts() is deprecated, please do not use the function.',
+            DEBUG_DEVELOPER
+        );
         return $this->get_questions_from_categories_and_tags_with_usage_counts(
                 $categoryids, $qubaids, $extraconditions, $extraparams);
     }
@@ -603,8 +605,10 @@ class question_finder implements cache_data_source {
      */
     public function get_questions_from_categories_and_tags_with_usage_counts($categoryids,
             qubaid_condition $qubaids, $extraconditions = '', $extraparams = array(), $tagids = array()) {
-        debugging('Function get_questions_from_categories_and_tags_with_usage_counts() is deprecated,
-         please do not use the function.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_questions_from_categories_and_tags_with_usage_counts() is deprecated, please do not use the function.',
+            DEBUG_DEVELOPER
+        );
         global $DB;
 
         list($qcsql, $qcparams) = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED, 'qc');

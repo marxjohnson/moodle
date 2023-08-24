@@ -116,8 +116,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function get_next_question_id($categoryid, $includesubcategories, $tagids = []): ?int {
-        debugging('Function get_next_question_id() is deprecated,
-         please use get_next_filtered_question_id() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_next_question_id() is deprecated, please use get_next_filtered_question_id() instead.',
+            DEBUG_DEVELOPER
+        );
 
         $this->ensure_questions_for_category_loaded($categoryid, $includesubcategories, $tagids);
 
@@ -158,8 +160,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     protected function get_category_key($categoryid, $includesubcategories, $tagids = []): string {
-        debugging('Function get_category_key() is deprecated,
-         please get_fitlered_questions_key instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_category_key() is deprecated, please get_fitlered_questions_key instead.',
+            DEBUG_DEVELOPER
+        );
         if ($includesubcategories) {
             $key = $categoryid . '|1';
         } else {
@@ -285,8 +289,11 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     protected function ensure_questions_for_category_loaded($categoryid, $includesubcategories, $tagids = []): void {
-        debugging('Function ensure_questions_for_category_loaded() is deprecated,
-         please use the function ensure_filtered_questions_loaded.', DEBUG_DEVELOPER);
+        debugging(
+            'Function ensure_questions_for_category_loaded() is deprecated, please use the function ' .
+                'ensure_filtered_questions_loaded.',
+            DEBUG_DEVELOPER
+        );
 
         global $DB;
 
@@ -395,8 +402,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     protected function get_question_ids($categoryid, $includesubcategories, $tagids = []): array {
-        debugging('Function get_question_ids() is deprecated,
-         please use get_filtered_question_ids() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_question_ids() is deprecated, please use get_filtered_question_ids() instead.',
+            DEBUG_DEVELOPER
+        );
 
         $this->ensure_questions_for_category_loaded($categoryid, $includesubcategories, $tagids);
         $categorykey = $this->get_category_key($categoryid, $includesubcategories, $tagids);
@@ -448,8 +457,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function is_question_available($categoryid, $includesubcategories, $questionid, $tagids = []): bool {
-        debugging('Function is_question_available() is deprecated,
-         please use is_filtered_question_available() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function is_question_available() is deprecated, please use is_filtered_question_available() instead.',
+            DEBUG_DEVELOPER
+        );
         $this->ensure_questions_for_category_loaded($categoryid, $includesubcategories, $tagids);
         $categorykey = $this->get_category_key($categoryid, $includesubcategories, $tagids);
 
@@ -525,8 +536,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function get_questions($categoryid, $includesubcategories, $tagids = [], $limit = 100, $offset = 0, $fields = []) {
-        debugging('Function get_questions() is deprecated,
-         please use get_filtered_questions() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function get_questions() is deprecated, please use get_filtered_questions() instead.',
+            DEBUG_DEVELOPER
+        );
         global $DB;
 
         $questionids = $this->get_question_ids($categoryid, $includesubcategories, $tagids);
@@ -586,8 +599,10 @@ class random_question_loader {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function count_questions($categoryid, $includesubcategories, $tagids = []): int {
-        debugging('Function count_questions() is deprecated,
-         please use count_filtered_questions() instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function count_questions() is deprecated, please use count_filtered_questions() instead.',
+            DEBUG_DEVELOPER
+        );
         $questionids = $this->get_question_ids($categoryid, $includesubcategories, $tagids);
         return count($questionids);
     }

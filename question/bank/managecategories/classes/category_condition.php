@@ -143,8 +143,10 @@ class category_condition extends condition {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function display_category_form($contexts, $pageurl, $current) {
-        debugging('Function display_category_form() is deprecated,
-         please use the core_question renderer instead.', DEBUG_DEVELOPER);
+        debugging(
+            'Function display_category_form() is deprecated, please use the core_question renderer instead.',
+            DEBUG_DEVELOPER
+        );
         echo \html_writer::start_div('choosecategory');
         $catmenu = question_category_options($contexts, true, 0, true, -1, false);
         echo \html_writer::label(get_string('selectacategory', 'question'), 'id_selectacategory', true, ["class" => "mr-1"]);
@@ -159,8 +161,11 @@ class category_condition extends condition {
      * @todo Final deprecation in Moodle 4.7 MDL-78090
      */
     public static function print_choose_category_message(): void {
-        debugging('Function print_choose_category_message() is deprecated, please use
-                qbank_managecategories/choose_category template instead.');
+        debugging(
+            'Function print_choose_category_message() is deprecated, please use ' .
+                'qbank_managecategories/choose_category template instead.',
+            DEBUG_DEVELOPER
+        );
         global $OUTPUT;
         echo $OUTPUT->render_from_template('qbank_managecategories/choose_category', []);
     }
@@ -173,7 +178,7 @@ class category_condition extends condition {
      * @todo Final deprecation in Moodle 4.7 MDL-78090
      */
     public static function get_current_category($categoryandcontext) {
-        debugging('Function get_current_category() is deprecated. Please do not use it anymore.');
+        debugging('Function get_current_category() is deprecated. Please do not use it anymore.', DEBUG_DEVELOPER);
         global $DB, $OUTPUT;
         [$categoryid, $contextid] = explode(',', $categoryandcontext);
         if (!$categoryid) {
@@ -228,7 +233,7 @@ class category_condition extends condition {
      * @todo Final deprecation on Moodle 4.7 MDL-78090
      */
     protected function print_category_info($category): string {
-        debugging('Function print_category_info() is deprecated. Please do not use it anymore');
+        debugging('Function print_category_info() is deprecated. Please do not use it anymore', DEBUG_DEVELOPER);
         $formatoptions = new \stdClass();
         $formatoptions->noclean = true;
         $formatoptions->overflowdiv = true;
