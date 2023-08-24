@@ -1,4 +1,4 @@
-@core @core_question @javascript
+@core @core_question
 Feature: The questions in the question bank can be filtered by tags
   In order to find the questions I need
   As a teacher
@@ -30,11 +30,13 @@ Feature: The questions in the question bank can be filtered by tags
       | Tags | bar |
     And I press "id_submitbutton"
 
+  @javascript
   Scenario: The questions can be filtered by tag
     When I apply question bank filter "Tag" with value "foo"
     Then I should see "question 1 name" in the "categoryquestions" "table"
     And I should not see "question 2 name" in the "categoryquestions" "table"
 
+  @javascript
   Scenario: Empty condition should not result in exception
     When I am on the "Course 1" "core_question > course question bank" page
     And I set the field "Type or select..." in the "Filter 1" "fieldset" to "Test questions"

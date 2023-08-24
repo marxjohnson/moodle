@@ -1,4 +1,4 @@
-@core @core_question @javascript
+@core @core_question
 Feature: The questions in the question bank can be filtered by combine various conditions
   In order to find the questions I need
   As a teacher
@@ -30,6 +30,7 @@ Feature: The questions in the question bank can be filtered by combine various c
       | question 3 name | foo |
     And I am on the "Course 1" "core_question > course question bank" page logged in as "teacher1"
 
+  @javascript
   Scenario: The questions can be filtered by matching all conditions
     When I apply question bank filter "Category" with value "Test questions 1"
     And I apply question bank filter "Tag" with value "foo"

@@ -1,4 +1,4 @@
-@qbank @qbank_viewquestiontext @javascript
+@qbank @qbank_viewquestiontext
 Feature: Use the qbank plugin manager page for viewquestiontext
   In order to check the plugin behaviour with enable and disable
 
@@ -34,12 +34,14 @@ Feature: Use the qbank plugin manager page for viewquestiontext
     And I apply question bank filter "Show question text in the question list?" with value "No"
     And I should not see "Answer the first question"
 
+  @javascript
   Scenario: Option does not show if the plugin is disabled
     Given the following config values are set as admin:
       | disabled | 1 | qbank_viewquestiontext |
     When I am on the "Test quiz" "mod_quiz > question bank" page logged in as admin
     Then I should not see "Show question text in the question list"
 
+  @javascript
   Scenario: Enable/disable viewquestiontext column from the base view
     Given I log in as "admin"
     And I navigate to "Plugins > Question bank plugins > Manage question bank plugins" in site administration
