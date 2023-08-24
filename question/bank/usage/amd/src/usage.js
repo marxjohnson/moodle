@@ -83,14 +83,12 @@ const usageEvent = async(questionId, contextId, specificVersion) => {
  * @param {boolean} specificVersion Is the view listing specific question versions?
  */
 export const init = (specificVersion = false) => {
-    let target = document.querySelector('#categoryquestions');
+    const target = document.querySelector('#categoryquestions');
     if (target !== null) {
         target.addEventListener('click', (e) => {
             if (e.target.dataset.target && e.target.dataset.target.includes('questionusagepreview')) {
-                let questionId = e.target.dataset.questionid;
-                let contextId = e.target.dataset.contextid;
                 // Call for the event listener to listed for clicks in any usage count row.
-                usageEvent(questionId, contextId, specificVersion);
+                usageEvent(e.target.dataset.questionid, e.target.dataset.contextid, specificVersion);
             }
         });
     }
