@@ -53,15 +53,17 @@ class add_random_questions extends external_api {
                 'randomcount' => new external_value(PARAM_INT, 'Number of random questions'),
                 'filtercondition' => new external_value(PARAM_TEXT, 'Filter condition'),
                 'newcategory' => new external_value(
-                        PARAM_TEXT,
-                        '(Optional) The name of a new question category to create and use for the random questions.',
-                        VALUE_DEFAULT,
-                        ''),
+                    PARAM_TEXT,
+                    '(Optional) The name of a new question category to create and use for the random questions.',
+                    VALUE_DEFAULT,
+                    '',
+                ),
                 'parentcategory' => new external_value(
-                        PARAM_TEXT,
-                        '(Optional) The parent of the new question category, if creating one.',
-                        VALUE_DEFAULT,
-                        0),
+                    PARAM_TEXT,
+                    '(Optional) The parent of the new question category, if creating one.',
+                    VALUE_DEFAULT,
+                    0,
+                ),
             ]
         );
     }
