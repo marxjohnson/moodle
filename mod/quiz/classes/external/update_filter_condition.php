@@ -43,13 +43,11 @@ class update_filter_condition extends external_api {
      * @return external_function_parameters
      */
     public static function execute_parameters(): external_function_parameters {
-        return new external_function_parameters (
-            [
-                'cmid' => new external_value(PARAM_INT, 'The cmid of the quiz'),
-                'slotid' => new external_value(PARAM_INT, 'The quiz slot ID for the random question.'),
-                'filtercondition' => new external_value(PARAM_TEXT, 'Filter condition'),
-            ]
-        );
+        return new external_function_parameters ([
+            'cmid' => new external_value(PARAM_INT, 'The cmid of the quiz'),
+            'slotid' => new external_value(PARAM_INT, 'The quiz slot ID for the random question.'),
+            'filtercondition' => new external_value(PARAM_TEXT, 'Filter condition'),
+        ]);
     }
 
     /**
