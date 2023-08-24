@@ -25,13 +25,10 @@ Feature: A teacher can pagimate through question bank questions
     And the following "questions" exist:
       | questioncategory | qtype | name                  | questiontext                  |
       | Used category    | essay | Not on first page     | Write about whatever you want |
-    And I log in as "teacher1"
-    And I am on "Course 1" course homepage
 
   Scenario: Questions can be paginated
-    Given I wait "10" seconds
-    When I navigate to "Question bank" in current page administration
-    And I apply question bank filter "Category" with value "Course 1"
+    When I am on the "Course 1" "core_question > course question bank" page logged in as "teacher1"
+    When I apply question bank filter "Category" with value "Course 1"
     And I follow "Sort by Question name ascending"
     And I follow "Sort by Question name descending"
     And I should see "Tests question 1"
