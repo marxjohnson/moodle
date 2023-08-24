@@ -1891,8 +1891,10 @@ function quiz_update_section_firstslots($quizid, $direction, $afterslot, $before
  * @todo Final deprecation in Moodle 4.7 MDL-78091
  */
 function quiz_add_random_questions(stdClass $quiz, int $addonpage, int $categoryid, int $number): void {
-    debugging('quiz_add_random_questions is deprecated. Please use mod_quiz\structure::add_random_questions() instead.',
-            DEBUG_DEVELOPER);
+    debugging(
+        'quiz_add_random_questions is deprecated. Please use mod_quiz\structure::add_random_questions() instead.',
+        DEBUG_DEVELOPER
+    );
 
     $settings = quiz_settings::create($quiz->id);
     $structure = \mod_quiz\structure::create_for_quiz($settings);

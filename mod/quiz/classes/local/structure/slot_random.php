@@ -135,8 +135,10 @@ class slot_random {
      * @todo Final deprecation on Moodle 4.7 MDL-78091
      */
     public function set_tags_by_id($tagids) {
-        debugging('Method set_tags_by_id() is deprecated, ' .
-            'please do not use this function.', DEBUG_DEVELOPER);
+        debugging(
+            'Method set_tags_by_id() is deprecated, please do not use this function.',
+            DEBUG_DEVELOPER
+        );
         $this->tags = \core_tag_tag::get_bulk($tagids, 'id, name');
     }
 

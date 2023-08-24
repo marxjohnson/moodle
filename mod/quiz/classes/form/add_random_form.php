@@ -44,7 +44,10 @@ class add_random_form extends moodleform {
      * @todo Final deprecation in Moodle 4.7 MDL-78091
      */
     protected function definition() {
-        debugging('add_random_form is deprecated. Please use mod_quiz/add_random_question_form.mustache instead.');
+        debugging(
+            'add_random_form is deprecated. Please use mod_quiz/add_random_question_form.mustache instead.',
+            DEBUG_DEVELOPER
+        );
         global $OUTPUT, $PAGE, $CFG;
 
         $mform = $this->_form;
@@ -140,7 +143,10 @@ class add_random_form extends moodleform {
      * @todo Final deprecation in Moodle 4.7 MDL-78091
      */
     public function validation($fromform, $files) {
-        debugging('add_random_form is deprecated. Please use mod_quiz/add_random_question_form.mustache instead.');
+        debugging(
+            'add_random_form is deprecated. Please use mod_quiz/add_random_question_form.mustache instead.',
+            DEBUG_DEVELOPER
+        );
         $errors = parent::validation($fromform, $files);
 
         if (!empty($fromform['newcategory']) && trim($fromform['name']) == '') {
