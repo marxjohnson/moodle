@@ -125,7 +125,7 @@ export const init = (filterRegionId, defaultcourseid, defaultcategoryid,
                 }
                 return {questionhtml, jsfooter};
             })
-            .fail(Notification.exception);
+            .catch(Notification.exception);
     };
 
     // Init core filter processor with apply callback.
