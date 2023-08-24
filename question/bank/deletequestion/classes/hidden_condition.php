@@ -58,7 +58,7 @@ class hidden_condition extends condition {
 
     public function get_join_list(): array {
         return [
-                datafilter::JOINTYPE_ANY,
+            datafilter::JOINTYPE_ANY,
         ];
     }
 
