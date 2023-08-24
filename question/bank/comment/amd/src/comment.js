@@ -103,15 +103,12 @@ const commentEvent = (questionId, courseID, contextId) => {
  * @method init
  */
 export const init = () => {
-    let target = document.querySelector('#categoryquestions');
+    const target = document.querySelector('#categoryquestions');
     if (target !== null) {
         target.addEventListener('click', (e) => {
             if (e.target.dataset.target && e.target.dataset.target.includes('questioncommentpreview')) {
-                let contextId = e.target.dataset.contextid;
-                let courseId = e.target.dataset.courseid;
-                let questionId = e.target.dataset.questionid;
                 // Call for the event listener to listed for clicks in any comment count row.
-                commentEvent(questionId, courseId, contextId);
+                commentEvent(e.target.dataset.questionid, e.target.dataset.courseid, e.target.dataset.contextid);
             }
         });
     }
