@@ -195,7 +195,7 @@ export const init = (
         const clearLink = e.target.closest(Selectors.filterset.actions.resetFilters);
         if (sortableLink) {
             e.preventDefault();
-            let oldSort = filterCondition.sortdata;
+            const oldSort = filterCondition.sortdata;
             filterCondition.sortdata = {};
             filterCondition.sortdata[sortableLink.dataset.sortname] = sortableLink.dataset.sortorder;
             for (const sortname in oldSort) {
@@ -208,7 +208,7 @@ export const init = (
         }
         if (paginationLink) {
             e.preventDefault();
-            let paginationURL = new URL(paginationLink.getAttribute("href"));
+            const paginationURL = new URL(paginationLink.getAttribute("href"));
             const qpage = paginationURL.searchParams.get('qpage');
             if (paginationURL.search !== null) {
                 filterCondition.qpage = qpage;
