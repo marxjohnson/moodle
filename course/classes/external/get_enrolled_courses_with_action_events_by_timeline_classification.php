@@ -129,8 +129,15 @@ class get_enrolled_courses_with_action_events_by_timeline_classification extends
             [
                 'courses' => $coursesfetched,
                 'nextoffset' => $offset,
-            ] = core_course_external::get_enrolled_courses_by_timeline_classification($classification, $limit,
-                    $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue);
+            ] = \core_course\external\get_enrolled_courses_by_timeline_classification::execute(
+                $classification,
+                $limit,
+                $offset,
+                $sort,
+                $customfieldname,
+                $customfieldvalue,
+                $searchvalue
+            );
 
             $courseids = array_column($coursesfetched, 'id');
             $coursesfetched = array_combine($courseids, $coursesfetched);

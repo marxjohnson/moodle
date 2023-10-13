@@ -15,15 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details for the My overview block.
+ * Custom webservice for myoverview block to change how the courses are retrieved (MDL-78370).
  *
  * @package    block_myoverview
- * @copyright  Mark Nelson <markn@moodle.com>
+ * @copyright  2023 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Conn Warwicker <conn.warwicker@catalyst-eu.net>
  */
 
-defined('MOODLE_INTERNAL') || die();
+defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2022112801;         // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2022111800;         // Requires this Moodle version.
-$plugin->component = 'block_myoverview'; // Full name of the plugin (used for diagnostics).
+$functions = [
+    'block_myoverview_get_courses' => [
+        'classname'   => 'block_myoverview\external\get_courses',
+        'description' => 'Gets the courses for the myoverview block',
+        'type'        => 'read',
+        'ajax'        => true,
+        'services' => [],
+        'readonlysession' => true,
+    ],
+];

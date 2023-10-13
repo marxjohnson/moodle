@@ -3561,7 +3561,7 @@ class externallib_test extends externallib_advanced_testcase {
         // filtering is done.
         // E.g. In our example if an offset of 2 is given then it would mean the first
         // two courses (afuture, ainprogress) are ignored.
-        $result = core_course_external::get_enrolled_courses_by_timeline_classification(
+        $result = core_course\external\get_enrolled_courses_by_timeline_classification::execute(
             $classification,
             $limit,
             $offset,
@@ -3571,7 +3571,7 @@ class externallib_test extends externallib_advanced_testcase {
             $searchvalue
         );
         $result = external_api::clean_returnvalue(
-            core_course_external::get_enrolled_courses_by_timeline_classification_returns(),
+            core_course\external\get_enrolled_courses_by_timeline_classification::execute_returns(),
             $result
         );
 

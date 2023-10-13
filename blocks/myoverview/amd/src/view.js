@@ -62,6 +62,8 @@ let lastLimit = 0;
 
 let namespace = null;
 
+let includesummary = null;
+
 /**
  * Get filter values from DOM.
  *
@@ -96,7 +98,18 @@ const DEFAULT_PAGED_CONTENT_CONFIG = {
  * @return {promise} Resolved with an array of courses.
  */
 const getMyCourses = (filters, limit) => {
-    return Repository.getEnrolledCoursesByTimeline({
+
+    let method;
+
+    // If we are including the course summary, use the default (getEnrolledCoursesByTimeline) method.
+    if (includesummary) {
+        method = 'getEnrolledCoursesByTimeline';
+    } else {
+        // Otherwise, use (getCourses) which will exclude that data.
+        method = 'getCourses';
+    }
+
+    return Repository[method]({
         offset: courseOffset,
         limit: limit,
         classification: filters.grouping,
@@ -115,7 +128,18 @@ const getMyCourses = (filters, limit) => {
  * @return {promise} Resolved with an array of courses.
  */
 const getSearchMyCourses = (filters, limit, searchValue) => {
-    return Repository.getEnrolledCoursesByTimeline({
+
+    let method;
+
+    // If we are including the course summary, use the default (getEnrolledCoursesByTimeline) method.
+    if (includesummary) {
+        method = 'getEnrolledCoursesByTimeline';
+    } else {
+        // Otherwise, use (getCourses) which will exclude that data.
+        method = 'getCourses';
+    }
+
+    return Repository[method]({
         offset: courseOffset,
         limit: limit,
         classification: 'search',
@@ -810,12 +834,18 @@ const activeSearch = (clearIcon) => {
  * Intialise the courses list and cards views on page load.
  *
  * @param {object} root The root element for the courses view.
+ * @param {object} args Any additional arguments
  */
-export const init = root => {
+export const init = (root, args) => {
     root = $(root);
     loadedPages = [];
     lastPage = 0;
     courseOffset = 0;
+
+    // Are we including the summary data from the course?
+    if (typeof(args) !== 'undefined' && 'includesummary' in args) {
+        includesummary = args.includesummary;
+    }
 
     if (!root.attr('data-init')) {
         const page = document.querySelector(SELECTORS.region.selectBlock);

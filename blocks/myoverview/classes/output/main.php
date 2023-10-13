@@ -448,6 +448,8 @@ class main implements renderable, templatable {
             $sort = $this->sort == BLOCK_MYOVERVIEW_SORTING_TITLE ? 'fullname' : 'ul.timeaccess desc';
         }
 
+        $includesummary = (in_array('summary', $this->layouts));
+
         $defaultvariables = [
             'totalcoursecount' => count(enrol_get_all_users_courses($USER->id, true)),
             'nocoursesimg' => $nocoursesurl,
@@ -474,6 +476,7 @@ class main implements renderable, templatable {
             'customfieldvalues' => $customfieldvalues,
             'selectedcustomfield' => $selectedcustomfield,
             'showsortbyshortname' => $CFG->courselistshortnames,
+            'includesummary' => $includesummary,
         ];
         return array_merge($defaultvariables, $preferences);
 
