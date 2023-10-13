@@ -47,6 +47,27 @@ export const getEnrolledCoursesByTimeline = args => {
 };
 
 /**
+ * Retrieve a list of enrolled courses for the myoverview block.
+ *
+ * Valid args are:
+ * string classification    future, inprogress, past
+ * int limit                number of records to retreive
+ * int offset               offset for pagination
+ * int sort                 sort by lastaccess or name
+ *
+ * @method getCourses
+ * @param {object} args The request arguments
+ * @return {promise} Resolved with an array of courses
+ */
+export const getCourses = args => {
+    const request = {
+        methodname: 'block_myoverview_get_courses',
+        args: args
+    };
+    return Ajax.call([request])[0];
+};
+
+/**
  * Set the favourite state on a list of courses.
  *
  * Valid args are:
