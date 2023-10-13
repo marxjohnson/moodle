@@ -14,16 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+// The majority of this class is copied from the get_enrolled_courses_by_timeline_classification_*
+// functions in course/externallib.php with some minor changes.
+
+namespace block_myoverview\external;
+
+use core_course\external\get_enrolled_courses_by_timeline_classification;
+
 /**
- * Version details for the My overview block.
+ * Webservice class for get_courses for the myoverview block.
  *
  * @package    block_myoverview
- * @copyright  Mark Nelson <markn@moodle.com>
+ * @copyright  2023 onwards Catalyst IT {@link http://www.catalyst-eu.net/}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Conn Warwicker <conn.warwicker@catalyst-eu.net>
  */
+class get_courses extends get_enrolled_courses_by_timeline_classification {
 
-defined('MOODLE_INTERNAL') || die();
+    /**
+     * This is the exporter class we are using.
+     */
+    const EXPORTER_CLASS = '\core_course\external\course_info_exporter';
 
-$plugin->version   = 2023100901;         // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2023100400;         // Requires this Moodle version.
-$plugin->component = 'block_myoverview'; // Full name of the plugin (used for diagnostics).
+}
