@@ -71,7 +71,9 @@ define([
         CALENDAR_MONTH_WRAPPER: ".calendarwrapper",
         TODAY: '.today',
         DAY_NUMBER_CIRCLE: '.day-number-circle',
-        DAY_NUMBER: '.day-number'
+        DAY_NUMBER: '.day-number',
+        SCREEN_READER_ANNOUNCEMENTS: '.calendar-announcements',
+        CURRENT_MONTH: '.calendar-controls .current'
     };
 
     /**
@@ -164,6 +166,10 @@ define([
         // When an event is successfully moved we should updated the UI.
         body.on(CalendarEvents.eventMoved, function() {
             CalendarViewManager.reloadCurrentMonth(root);
+        });
+        // Announce the newly loaded month to screen readers.
+        body.on(CalendarEvents.monthChanged, root, function() {
+            body.find(SELECTORS.SCREEN_READER_ANNOUNCEMENTS).html(body.find(SELECTORS.CURRENT_MONTH).textContent);
         });
 
         CalendarCrud.registerEditListeners(root, eventFormModalPromise);
