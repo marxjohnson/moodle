@@ -44,6 +44,11 @@ const showPopover = target => {
             trigger: 'manual',
             placement: 'top',
             html: true,
+            template: '<div class="popover" role="alert">' + // Use alert so that this is read out by screen readers when shown.
+                '<div class="arrow"></div>' +
+                '<h3 class="popover-header"></h3>' +
+                '<div class="popover-body"></div>' +
+                '</div>',
             content: () => {
                 const source = dateEle.find(CalendarSelectors.elements.dateContent);
                 const content = jQuery('<div>');
