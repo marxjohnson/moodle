@@ -188,7 +188,8 @@ final class helper_test extends \advanced_testcase {
         // Submit attempt.
         $attemptobj = quiz_attempt::create($attempt->id);
         $attemptobj->process_submitted_actions($timenow, false, $answers);
-        $attemptobj->process_finish($timenow, false);
+        $attemptobj->process_submit($timenow, false);
+        $attemptobj->process_grade_submission($timenow);
     }
 
     /**
