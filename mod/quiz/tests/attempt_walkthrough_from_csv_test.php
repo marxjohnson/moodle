@@ -286,7 +286,8 @@ class attempt_walkthrough_from_csv_test extends \advanced_testcase {
             // Finish the attempt.
             if (!isset($step['finished']) || ($step['finished'] == 1)) {
                 $attemptobj = quiz_attempt::create($attemptid);
-                $attemptobj->process_finish($timenow, false);
+                $attemptobj->process_submit($timenow, false);
+                $attemptobj->process_grade_submission($timenow);
             }
         }
         return $attemptids;

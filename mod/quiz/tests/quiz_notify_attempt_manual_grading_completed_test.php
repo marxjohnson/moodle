@@ -128,7 +128,8 @@ class quiz_notify_attempt_manual_grading_completed_test extends advanced_testcas
         $attemptobj1 = quiz_attempt::create($attempt1->id);
         $tosubmit = [2 => ['answer' => 'Student 1 answer', 'answerformat' => FORMAT_HTML]];
         $attemptobj1->process_submitted_actions($timenow - 30 * MINSECS, false, $tosubmit);
-        $attemptobj1->process_finish($timenow - 20 * MINSECS, false);
+        $attemptobj1->process_submit($timenow - 20 * MINSECS, false);
+        $attemptobj1->process_grade_submission($timenow - 10 * MINSECS);
 
         // Finish the attempt of student (now).
         $attemptobj1->get_question_usage()->manual_grade(2, 'Good!', 1, FORMAT_HTML);
@@ -171,7 +172,8 @@ class quiz_notify_attempt_manual_grading_completed_test extends advanced_testcas
         $attemptobj2 = quiz_attempt::create($attempt2->id);
         $tosubmit = [2 => ['answer' => 'Answer of student 2.', 'answerformat' => FORMAT_HTML]];
         $attemptobj2->process_submitted_actions($timenow - 30 * MINSECS, false, $tosubmit);
-        $attemptobj2->process_finish($timenow, false);
+        $attemptobj2->process_submit($timenow, false);
+        $attemptobj2->process_grade_submission($timenow);
 
         // After time to notify, except attempt not graded, so it won't appear.
         $task = new quiz_notify_attempt_manual_grading_completed();
@@ -197,7 +199,8 @@ class quiz_notify_attempt_manual_grading_completed_test extends advanced_testcas
         $attemptobj = quiz_attempt::create($attempt->id);
         $tosubmit = [2 => ['answer' => 'Essay answer.', 'answerformat' => FORMAT_HTML]];
         $attemptobj->process_submitted_actions($timenow - 30 * MINSECS, false, $tosubmit);
-        $attemptobj->process_finish($timenow - 20 * MINSECS, false);
+        $attemptobj->process_submit($timenow - 20 * MINSECS, false);
+        $attemptobj->process_grade_submission($timenow - 10 * MINSECS);
 
         // Grade the attempt.
         $attemptobj->get_question_usage()->manual_grade(2, 'Good!', 1, FORMAT_HTML);
@@ -219,7 +222,7 @@ class quiz_notify_attempt_manual_grading_completed_test extends advanced_testcas
         $task->execute();
 
         $attemptobj = quiz_attempt::create($attempt->id);
-        $this->assertEquals($attemptobj->get_attempt()->timefinish, $attemptobj->get_attempt()->gradednotificationsenttime);
+        $this->assertEquals($timenow - 10 * MINSECS, $attemptobj->get_attempt()->gradednotificationsenttime);
     }
 
     /**
@@ -241,7 +244,8 @@ class quiz_notify_attempt_manual_grading_completed_test extends advanced_testcas
         $attemptobj = quiz_attempt::create($attempt->id);
         $tosubmit = [2 => ['answer' => 'Answer of student.', 'answerformat' => FORMAT_HTML]];
         $attemptobj->process_submitted_actions($timenow - 30 * MINSECS, false, $tosubmit);
-        $attemptobj->process_finish($timenow - 20 * MINSECS, false);
+        $attemptobj->process_submit($timenow - 20 * MINSECS, false);
+        $attemptobj->process_grade_submission($timenow - 10 * MINSECS);
 
         // Finish the attempt of student.
         $attemptobj->get_question_usage()->manual_grade(2, 'Good!', 1, FORMAT_HTML);
