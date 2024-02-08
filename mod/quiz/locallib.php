@@ -2008,10 +2008,20 @@ function quiz_validate_new_attempt(quiz_settings $quizobj, access_manager $acces
     $lastattempt = end($attempts);
 
     $attemptnumber = null;
-    // If an in-progress attempt exists, check password then redirect to it.
-    if ($lastattempt && ($lastattempt->state == quiz_attempt::IN_PROGRESS ||
-            $lastattempt->state == quiz_attempt::OVERDUE)) {
+    if (
+        $lastattempt
+        && in_array($lastattempt->state, [quiz_attempt::NOT_STARTED, quiz_attempt::IN_PROGRESS, quiz_attempt::OVERDUE])
+    ) {
+        // If an in-progress attempt exists, check password then redirect to it.
         $currentattemptid = $lastattempt->id;
+
+        if ($lastattempt->state == quiz_attempt::NOT_STARTED) {
+            // If the attempt was pre-created, start it now.
+            $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
+            $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
+            quiz_attempt_save_started($quizobj, $quba, $lastattempt);
+        }
+
         $messages = $accessmanager->prevent_access();
 
         // If the attempt is now overdue, deal with that.
