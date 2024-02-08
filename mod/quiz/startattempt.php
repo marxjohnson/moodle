@@ -99,7 +99,7 @@ if ($accessmanager->is_preflight_check_required($currentattemptid)) {
     // Pre-flight check passed.
     $accessmanager->notify_preflight_check_passed($currentattemptid);
 }
-if ($currentattemptid) {
+if ($currentattemptid && $lastattempt->state !== quiz_attempt::NOT_STARTED) {
     if ($lastattempt->state == quiz_attempt::OVERDUE) {
         redirect($quizobj->summary_url($lastattempt->id));
     } else {
