@@ -147,3 +147,45 @@ Feature: Settings form fields disabled if not required
     And I am on the "Quiz 1" "quiz activity editing" page
     And I expand all fieldsets
     And I should not see "Repaginate now"
+
+  @javascript
+  Scenario Outline: Pre-create attempts setting is not shown unless if precreateperiod is set, precreateattempts is unlocked and timeopen is enabled.
+    Given the following config values are set as admin:
+      | precreateattempts        | 1        | quiz |
+      | precreateattempts_locked | <locked> | quiz |
+      | precreateperiod          | <period> | quiz |
+    And I log in as "admin"
+    When I add a "quiz" activity to course "Course 1" section 1
+    And I click on "Timing" "link"
+    And I set the field "timeopen[enabled]" to "<timeopen>"
+    Then I should not see "Pre-create attempts"
+    And "Pre-create attempts" "select" <exists> exist
+
+    Examples:
+      | period | locked | timeopen | exists     |
+      | 0      | 0      | 1        | should not |
+      | 0      | 0      | 0        | should not |
+      | 0      | 1      | 1        | should not |
+      | 0      | 1      | 0        | should not |
+      | 3600   | 0      | 0        | should     |
+      | 3600   | 1      | 0        | should not |
+
+  @javascript
+  Scenario Outline: Pre-create attempts setting is only shown if precreateperiod is set, precreateattempts is unlocked and timeopen is enabled.
+    Given the following config values are set as admin:
+      | precreateattempts        | 1        | quiz |
+      | precreateattempts_locked | <locked> | quiz |
+      | precreateperiod          | <period> | quiz |
+    And I log in as "admin"
+    When I add a "quiz" activity to course "Course 1" section 1
+    And I click on "Timing" "link"
+    And I set the field "timeopen[enabled]" to "<timeopen>"
+    And I expand all fieldsets
+    Then I should see "Pre-create attempts"
+    And "Pre-create attempts" "select" <exists> exist
+    And I should see "<value>"
+
+    Examples:
+      | period | locked | timeopen | exists     | value                                                      |
+      | 3600   | 0      | 1        | should     | Yes, 1 hours before quiz open time                         |
+      | 3600   | 1      | 1        | should not | Use site-wide default (Yes, 1 hours before quiz open time) |
