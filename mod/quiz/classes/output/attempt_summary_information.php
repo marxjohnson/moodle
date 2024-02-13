@@ -140,7 +140,8 @@ class attempt_summary_information implements renderable, named_templatable {
         $quiz = $attemptobj->get_quiz();
         $overtime = 0;
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        $submitted = in_array($attempt->state, [quiz_attempt::SUBMITTED, quiz_attempt::FINISHED]);
+        if ($submitted) {
             if ($timetaken = ($attempt->timefinish - $attempt->timestart)) {
                 if ($quiz->timelimit && $timetaken > ($quiz->timelimit + 60)) {
                     $overtime = $timetaken - $quiz->timelimit;
@@ -156,7 +157,7 @@ class attempt_summary_information implements renderable, named_templatable {
 
         $summary->add_item('startedon', get_string('startedon', 'quiz'), userdate($attempt->timestart));
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        if ($submitted) {
             $summary->add_item('completedon', get_string('completedon', 'quiz'),
                 userdate($attempt->timefinish));
             $summary->add_item('timetaken', get_string('attemptduration', 'quiz'), $timetaken);
@@ -204,8 +205,13 @@ class attempt_summary_information implements renderable, named_templatable {
             return $grade;
         }
 
-        if (!quiz_has_grades($quiz) || $attemptobj->get_state() != quiz_attempt::FINISHED) {
+        if (!quiz_has_grades($quiz) || !in_array($attemptobj->get_state(), [quiz_attempt::FINISHED, quiz_attempt::SUBMITTED])) {
             // No grades to show.
+            return $grade;
+        }
+
+        if ($attemptobj->get_state() == quiz_attempt::SUBMITTED) {
+            $this->add_item('grade', get_string('gradenoun'), get_string('gradinginprogress', 'quiz'));
             return $grade;
         }
 

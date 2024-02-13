@@ -45,6 +45,8 @@ Feature: Preview a quiz with multiple maker question.
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
     When I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     Then I should see "2.00/2.00"
     And the state of "Please place the markers on the map of Milton Keynes and be aware that" question is shown as "Correct"
     And I should see "Well done!"

@@ -43,6 +43,7 @@ Feature: Set a quiz to be marked complete when the student uses all attempts all
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
     And I am on "Course 1" course homepage
     Then the "Receive a grade" completion condition of "Test quiz name" is displayed as "done"
     And the "Receive a passing grade" completion condition of "Test quiz name" is displayed as "<passcompletionexpected>"

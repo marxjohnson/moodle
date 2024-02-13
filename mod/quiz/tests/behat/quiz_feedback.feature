@@ -52,6 +52,8 @@ Feature: Enable deferred or immediate feedback for quiz
     And I press "Submit all and finish"
     # Confirm that quiz answer feedback only appears when attempt is submitted
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I should see "This is the wrong answer."
     And I should see "You should have selected true."
     And I should see "The correct answer is 'True'."

@@ -104,6 +104,8 @@ Feature: Attempt a quiz
 
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I should see "1.00 out of 6.00 (16.67%)" in the "Grade" "table_row"
     And I should see question "1" in section "Section 1" in the quiz navigation
     And I should see question "2" in section "Section 1" in the quiz navigation
@@ -144,6 +146,8 @@ Feature: Attempt a quiz
     And I should see "Once you submit your answers, you won’t be able to change them." in the "Submit all your answers and finish?" "dialogue"
     And I should see "Questions without a response: 2" in the "Submit all your answers and finish?" "dialogue"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I should see "0.00 out of 100.00" in the "Grade" "table_row"
     And I should see "First question"
     And I should see "Second question"

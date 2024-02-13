@@ -46,7 +46,7 @@ Feature: View attempt states
       |   3  | False    |
     When I am on the "Quiz 1" "mod_quiz > Grades report" page logged in as "teacher 1"
     Then the following should exist in the "attempts" table:
-      | Email address        | State       | Started on                   | Completed                    | Grade/100.00 |
+      | Email address        | Status      | Started                      | Completed                    | Grade/100.00 |
       | student1@example.com | In progress | ## now ##%d %B %Y %I:%M %p## | -                            | -            |
       | student2@example.com | Finished    | ## now ##%d %B %Y %I:%M %p## | ## now ##%d %B %Y %I:%M %p## | 25.00        |
       | student3@example.com | Not started | -                            | -                            | -            |

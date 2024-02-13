@@ -45,6 +45,8 @@ Feature: Backup user data
     And I press "Finish attempt"
     And I press "Submit all and finish"
     And I click on "Submit" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I should see "50.00 out of 100.00"
     And I log out
     And I log in as "teacher1"

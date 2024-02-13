@@ -194,6 +194,7 @@ Feature: Basic use of the Manual grading report
     And I follow "Finish attempt ..."
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
     And I log out
 
     And I am on the "Quiz 2" "mod_quiz > Manual grading report" page logged in as "teacher1"

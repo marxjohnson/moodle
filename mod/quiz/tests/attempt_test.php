@@ -588,4 +588,56 @@ class attempt_test extends \advanced_testcase {
         $questionattempt->render(new \question_display_options(), 1);
         $this->assertEqualsWithDelta(time(), $questionattempt->get_step(0)->get_timecreated(), 1);
     }
+
+    /**
+     * An attempt with only manually gradable questions (e.g. essays) returns false. A quiz with other questions returns true.
+     *
+     * @return void
+     * @covers \quiz_attempt::has_automatically_gradable_questions
+     */
+    public function test_has_automatically_gradable_questions(): void {
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance([
+            'course' => $course->id,
+            'grade' => 100.0,
+            'sumgrades' => 2,
+        ]);
+
+        $quizobj = quiz_settings::create($quiz->id, $user->id);
+
+        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $cat = $questiongenerator->create_question_category();
+
+        $question1 = $questiongenerator->create_question('essay', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question1->id, $quiz, 1);
+        $question2 = $questiongenerator->create_question('essay', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question2->id, $quiz, 1);
+
+        $attemptrecord = quiz_prepare_and_start_new_attempt(
+            $quizobj,
+            1,
+            null,
+            userid: $user->id,
+        );
+        $attempt1 = quiz_attempt::create($attemptrecord->id);
+
+        $this->assertFalse($attempt1->has_automatically_gradable_questions());
+
+        $question3 = $questiongenerator->create_question('truefalse', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question3->id, $quiz, 1);
+
+        $attemptrecord = quiz_prepare_and_start_new_attempt(
+            $quizobj,
+            2,
+            1,
+            userid: $user->id,
+        );
+        $attempt2 = quiz_attempt::create($attemptrecord->id);
+
+        $this->assertTrue($attempt2->has_automatically_gradable_questions());
+    }
 }

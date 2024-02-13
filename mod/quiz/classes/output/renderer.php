@@ -71,6 +71,9 @@ class renderer extends plugin_renderer_base {
         $output = '';
         $output .= $this->header();
         $output .= $this->review_attempt_summary($summarydata, $page);
+        if ($attemptobj->get_state() === quiz_attempt::SUBMITTED) {
+            $output .= $this->output->notification(get_string('reviewsubmitted', 'mod_quiz'), 'warning');
+        }
         $output .= $this->review_form($page, $showall, $displayoptions,
                 $this->questions($attemptobj, true, $slots, $page, $showall, $displayoptions),
                 $attemptobj);
@@ -1272,6 +1275,14 @@ class renderer extends plugin_renderer_base {
                                 get_string('statefinisheddetails', 'quiz',
                                         userdate($attemptobj->get_submitted_date())),
                                 ['class' => 'statedetails']);
+
+            case quiz_attempt::SUBMITTED:
+                return get_string('statesubmitted', 'quiz') .
+                    html_writer::tag(
+                        'span',
+                        get_string('statefinisheddetails', 'quiz', userdate($attemptobj->get_submitted_date())),
+                        ['class' => 'statedetails'],
+                    );
 
             case quiz_attempt::ABANDONED:
                 return get_string('stateabandoned', 'quiz');

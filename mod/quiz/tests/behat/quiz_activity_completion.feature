@@ -73,8 +73,11 @@ Feature: View activity completion in the quiz activity
     And the "View" completion condition of "Test quiz name" is displayed as "done"
     And the "Make attempts: 1" completion condition of "Test quiz name" is displayed as "done"
     And the "Receive a grade" completion condition of "Test quiz name" is displayed as "done"
-    And the "Receive a passing grade" completion condition of "Test quiz name" is displayed as "<passcompletionexpected>"
+    And the "Receive a passing grade" completion condition of "Test quiz name" is displayed as "failed"
     And the "Receive a pass grade or complete all available attempts" completion condition of "Test quiz name" is displayed as "done"
+    And I run all adhoc tasks
+    And I reload the page
+    And the "Receive a passing grade" completion condition of "Test quiz name" is displayed as "<passcompletionexpected>"
     And I log out
     And I log in as "teacher1"
     And I am on "Course 1" course homepage

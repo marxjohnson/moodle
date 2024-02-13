@@ -44,6 +44,8 @@ Feature: Attempt a quiz with multiple grades
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
 
     Then I should see "1.00 out of 1.00" in the "Grade for reading" "table_row"
     And I should see "0.00 out of 1.00" in the "Grade for listening" "table_row"
