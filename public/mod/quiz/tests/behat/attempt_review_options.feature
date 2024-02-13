@@ -70,3 +70,37 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
     And I am on the "C1" "quiz index" page
     And I should see "Quiz 1"
     And I should see "Quiz 2"
+
+  @javascript
+  Scenario: Review attempt before and after asynchronous grading
+    Given the following config values are set as admin:
+     | asyncgrading | true  | quiz |
+    And I am on the "Quiz 1" "quiz activity" page logged in as "student1"
+    And I click on "Attempt quiz" "button"
+    And I click on "True" "radio" in the "First question" "question"
+    And I click on "Finish attempt ..." "button" in the "region-main" "region"
+    And I press "Submit all and finish"
+    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I should see "Submitted" in the "Status" "table_row"
+    And "Completed" "table_row" should exist
+    And "Duration" "table_row" should exist
+    And "Marks" "table_row" should not exist
+    And I should see "Grading in progress" in the "Grade" "table_row"
+    And I should see "This attempt has been submitted"
+    And the field "True" matches value "1"
+    And the field "False" matches value "0"
+    And I should not see "Correct" in the ".info" "css_element"
+    And I should not see "Mark 2.00 out of 2.00" in the ".info" "css_element"
+    And I should not see "This is the right answer."
+    When I run all adhoc tasks
+    Then I should see "Finished" in the "Status" "table_row"
+    And "Completed" "table_row" should exist
+    And "Duration" "table_row" should exist
+    And I should see "2.00/2.00" in the "Marks" "table_row"
+    And I should see "100.00 out of 100.00" in the "Grade" "table_row"
+    And I should not see "This attempt has been submitted"
+    And the field "True" matches value "1"
+    And the field "False" matches value "0"
+    And I should see "Correct" in the ".info" "css_element"
+    And I should see "Mark 2.00 out of 2.00" in the ".info" "css_element"
+    And I should see "This is the right answer."

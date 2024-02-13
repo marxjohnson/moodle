@@ -92,6 +92,24 @@ if ($ADMIN->fulltree) {
     $quizsettings->add(new admin_setting_configduration('quiz/autosaveperiod',
         get_string('autosaveperiod', 'quiz'), get_string('autosaveperiod_desc', 'quiz'), 60, 1));
 
+    // Heading explanation that all the settings below apply site-wide, but are experimental.
+    $quizsettings->add(
+        new admin_setting_heading(
+            'experimentalsettings',
+            new lang_string('expermimentalsettings', 'quiz'),
+            new lang_string('expermimentalsettings_desc', 'quiz'),
+        ),
+    );
+
+    $quizsettings->add(
+        new admin_setting_configcheckbox(
+            'asyncgrading',
+            new lang_string('configasyncgrading', 'quiz'),
+            new lang_string('configasyncgrading_desc', 'quiz'),
+            0,
+        ),
+    );
+
     // Heading explanation that all the settings below are defaults for the add quiz form.
     $name = new lang_string('defaultsettings', 'quiz');
     $description = new lang_string('configintro', 'quiz');

@@ -61,12 +61,13 @@ final class grade_submission_test extends advanced_testcase {
      * Test that passing through an invalid attempt id does not break the task in any way
      */
     public function test_invalid_attempt(): void {
+        $this->resetAfterTest();
         // Try a negative number which will always be invalid as an ID.
         $task = grade_submission::instance(-1);
 
         // Execute the task and confirm that nothing untoward happens.
         $task->execute();
-        $this->expectOutputString("Attempt ID -1 not found, or not in submitted state.\n");
+        $this->expectOutputRegex("~^Attempt ID -1 not found, or not in submitted state.\n~");
     }
 
     /**
@@ -82,7 +83,7 @@ final class grade_submission_test extends advanced_testcase {
         $task->execute();
 
         // This should not be executed by the task.
-        $this->expectOutputString("Attempt ID " . $attempt->get_attemptid() . " not found, or not in submitted state.\n");
+        $this->expectOutputRegex("~^Attempt ID " . $attempt->get_attemptid() . " not found, or not in submitted state.\n~");
     }
 
     /**
@@ -122,6 +123,6 @@ final class grade_submission_test extends advanced_testcase {
         $task->execute();
 
         // This should not be executed by the task.
-        $this->expectOutputString("Attempt ID {$attempt->get_attemptid()} not found, or not in submitted state.\n");
+        $this->expectOutputRegex("~^Attempt ID {$attempt->get_attemptid()} not found, or not in submitted state.\n~");
     }
 }
