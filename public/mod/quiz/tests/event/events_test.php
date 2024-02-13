@@ -117,6 +117,13 @@ final class events_test extends \advanced_testcase {
         return $this->prepare_quiz_attempt($quizobj, $ispreview);
     }
 
+
+    /**
+     * Submitting a quiz attempt should trigger the attempt_submitted event.
+     *
+     * @return void
+     * @covers \mod_quiz\quiz_attempt::process_submit
+     */
     public function test_attempt_submitted(): void {
 
         [$quizobj, , $attempt] = $this->prepare_quiz_data();

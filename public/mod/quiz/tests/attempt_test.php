@@ -661,4 +661,59 @@ final class attempt_test extends \advanced_testcase {
         $order2b = array_map(fn($slot) => $attemptobj2->get_question_attempt($slot)->get_question()->id, $slots2b);
         $this->assertEquals($order2a, $order2b, 'Non-shuffled section should have same order between attempts.');
     }
+
+    /**
+     * An attempt with only manually gradable questions (e.g. essays) returns false. A quiz with other questions returns true.
+     *
+     * @covers \quiz_attempt::can_use_async_grading
+     */
+    public function test_can_use_async_grading(): void {
+        $this->resetAfterTest();
+        set_config('asyncgrading', true, 'quiz'); // Enable async grading globally.
+
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance([
+            'course' => $course->id,
+            'grade' => 100.0,
+            'sumgrades' => 2,
+        ]);
+
+        $quizobj = quiz_settings::create($quiz->id, $user->id);
+
+        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $cat = $questiongenerator->create_question_category();
+
+        $question1 = $questiongenerator->create_question('essay', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question1->id, $quiz, 1);
+        $question2 = $questiongenerator->create_question('essay', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question2->id, $quiz, 1);
+
+        $attemptrecord = quiz_prepare_and_start_new_attempt(
+            $quizobj,
+            1,
+            null,
+            userid: $user->id,
+        );
+        $attempt1 = quiz_attempt::create($attemptrecord->id);
+
+        $this->assertFalse($attempt1->can_use_async_grading());
+
+        $question3 = $questiongenerator->create_question('truefalse', null, ['category' => $cat->id]);
+        quiz_add_quiz_question($question3->id, $quiz, 1);
+
+        $attemptrecord = quiz_prepare_and_start_new_attempt(
+            $quizobj,
+            2,
+            1,
+            userid: $user->id,
+        );
+        $attempt2 = quiz_attempt::create($attemptrecord->id);
+
+        $this->assertTrue($attempt2->can_use_async_grading());
+
+        set_config('asyncgrading', false, 'quiz'); // Disable async grading globally.
+        $this->assertFalse($attempt2->can_use_async_grading());
+    }
 }
