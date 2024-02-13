@@ -42,6 +42,9 @@ use mod_quiz\quiz_settings;
  */
 class behat_mod_quiz extends behat_question_base {
 
+    /** @var \core\lock\lock[] Question flag locks indexed by question usage ID. */
+    private array $questionflaglocks = [];
+
     /**
      * Convert page names to URLs for steps like 'When I am on the "[page name]" page'.
      *
@@ -1096,4 +1099,52 @@ class behat_mod_quiz extends behat_question_base {
         $quiz = $DB->get_record('quiz', ['name' => $quizname], 'id, course', MUST_EXIST);
         \mod_quiz\task\precreate_attempts::precreate_attempts_for_quiz($quiz->id, $quiz->course);
     }
+
+    /**
+     * Lock question flags for a student's latest non-preview attempt.
+     *
+     * @param string $username Student username.
+     * @param string $quizname Quiz name.
+     * @Given I lock question flags for the latest attempt by :username in quiz :quizname
+     */
+    public function i_lock_question_flags_for_the_latest_attempt(string $username, string $quizname): void {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/question/engine/lib.php');
+
+        $quiz = $this->get_quiz_by_name($quizname);
+        $user = $DB->get_record('user', ['username' => $username], '*', MUST_EXIST);
+        $attempts = $DB->get_records(
+            'quiz_attempts',
+            ['quiz' => $quiz->id, 'userid' => $user->id, 'preview' => 0],
+            'attempt DESC',
+            '*',
+            0,
+            1,
+        );
+        if (!$attempts) {
+            throw new DriverException("No non-preview attempt by '{$username}' exists in quiz '{$quizname}'.");
+        }
+        $attempt = reset($attempts);
+
+        $quba = question_engine::load_questions_usage_by_activity($attempt->uniqueid);
+        $lock = $quba->get_question_flag_lock();
+        if (!$lock) {
+            throw new DriverException("Could not acquire the question flag lock for attempt {$attempt->id}.");
+        }
+        $this->questionflaglocks[$attempt->uniqueid] = $lock;
+    }
+
+    /**
+     * Release question flag locks even if the scenario failed.
+     *
+     * @AfterScenario
+     */
+    public function release_question_flag_locks(): void {
+        foreach ($this->questionflaglocks as $lock) {
+            $lock->release();
+        }
+        $this->questionflaglocks = [];
+    }
+
 }

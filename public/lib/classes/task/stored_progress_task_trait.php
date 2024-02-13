@@ -65,6 +65,13 @@ trait stored_progress_task_trait {
     }
 
     /**
+     * Re-initialise stored progress bar to a pending state.
+     */
+    public function reset_stored_progress(): void {
+        $this->progress->reset();
+    }
+
+    /**
      * Get a stored object for the stored progress record.
      *
      * @return stored

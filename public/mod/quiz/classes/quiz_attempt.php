@@ -23,6 +23,7 @@ use coding_exception;
 use context_module;
 use core\di;
 use core\hook;
+use core\task\manager;
 use Exception;
 use html_writer;
 use mod_quiz\hook\attempt_state_changed;
@@ -31,6 +32,7 @@ use mod_quiz\output\links_to_other_attempts;
 use mod_quiz\output\renderer;
 use mod_quiz\question\bank\qbank_helper;
 use mod_quiz\question\display_options;
+use mod_quiz\task\grade_submission;
 use moodle_exception;
 use moodle_url;
 use popup_action;
@@ -546,13 +548,15 @@ class quiz_attempt {
     /**
      * Has this attempt been finished?
      *
-     * States {@see FINISHED} and {@see ABANDONED} are both considered finished in this state.
+     * States {@see SUBMITTED}, {@see FINISHED} and {@see ABANDONED} are all considered finished in this state.
      * Other states are not.
      *
      * @return bool
      */
     public function is_finished() {
-        return $this->attempt->state == self::FINISHED || $this->attempt->state == self::ABANDONED;
+        return $this->attempt->state == self::SUBMITTED
+            || $this->attempt->state == self::FINISHED
+            || $this->attempt->state == self::ABANDONED;
     }
 
     /**
@@ -1680,7 +1684,16 @@ class quiz_attempt {
             case 'autosubmit':
                 $transaction = $DB->start_delegated_transaction();
                 $this->process_submit($timestamp, false, $studentisonline ? $timestamp : $timeclose, $studentisonline);
-                $this->process_grade_submission($studentisonline ? $timestamp : $timeclose);
+                if ($this->can_use_async_grading()) {
+                    $task = grade_submission::instance($this->get_attemptid());
+                    $taskid = manager::queue_adhoc_task($task, true);
+                    if ($taskid) {
+                        $task->set_id($taskid);
+                        $task->initialise_stored_progress();
+                    }
+                } else {
+                    $this->process_grade_submission($studentisonline ? $timestamp : $timeclose);
+                }
                 $transaction->allow_commit();
                 return;
 
@@ -1891,6 +1904,8 @@ class quiz_attempt {
             // Trigger event.
             $this->fire_state_transition_event('\mod_quiz\event\attempt_submitted', $timestamp, $studentisonline);
             \core\hook\manager::get_instance()->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
+            // Tell any access rules that care that the attempt is over.
+            $this->get_access_manager($timestamp)->current_attempt_finished();
         }
 
         $transaction->allow_commit();
@@ -1905,37 +1920,41 @@ class quiz_attempt {
         global $DB;
 
         $transaction = $DB->start_delegated_transaction();
-        $this->quba->finish_all_questions($timestamp);
-        question_engine::save_questions_usage_by_activity($this->quba);
+        // Lock flags so they can't be toggled during review when the grading is being performed,
+        // otherwise they will be overwritten with the original values.
+        $lock = $this->quba->get_question_flag_lock(60);
+        try {
+            $this->quba->finish_all_questions($timestamp);
+            question_engine::save_questions_usage_by_activity($this->quba);
 
-        $originalattempt = clone $this->attempt;
+            $originalattempt = clone $this->attempt;
 
-        $this->attempt->timemodified = $timestamp;
+            $this->attempt->timemodified = $timestamp;
 
-        $this->attempt->sumgrades = $this->quba->get_total_mark();
-        $this->attempt->state = self::FINISHED;
+            $this->attempt->sumgrades = $this->quba->get_total_mark();
+            $this->attempt->state = self::FINISHED;
 
-        if (
-            !$this->requires_manual_grading() ||
-            !has_capability('mod/quiz:emailnotifyattemptgraded', $this->get_quizobj()->get_context(), $this->get_userid())
-        ) {
-            $this->attempt->gradednotificationsenttime = $timestamp;
+            if (
+                !$this->requires_manual_grading() ||
+                !has_capability('mod/quiz:emailnotifyattemptgraded', $this->get_quizobj()->get_context(), $this->get_userid())
+            ) {
+                $this->attempt->gradednotificationsenttime = $timestamp;
+            }
+
+            $DB->update_record('quiz_attempts', $this->attempt);
+
+            if (!$this->is_preview()) {
+                $this->recompute_final_grade();
+
+                // Trigger event.
+                $this->fire_state_transition_event('\mod_quiz\event\attempt_graded', $timestamp, false);
+
+                di::get(hook\manager::class)->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
+            }
+            $transaction->allow_commit();
+        } finally {
+            $lock->release();
         }
-
-        $DB->update_record('quiz_attempts', $this->attempt);
-
-        if (!$this->is_preview()) {
-            $this->recompute_final_grade();
-
-            // Trigger event.
-            $this->fire_state_transition_event('\mod_quiz\event\attempt_graded', $timestamp, false);
-
-            di::get(hook\manager::class)->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
-            // Tell any access rules that care that the attempt is over.
-            $this->get_access_manager($timestamp)->current_attempt_finished();
-        }
-
-        $transaction->allow_commit();
     }
 
     /**
@@ -2037,7 +2056,16 @@ class quiz_attempt {
         $timeclose = $this->get_access_manager($timestamp)->get_end_time($this->attempt);
         if ($timeclose && $timestamp > $timeclose) {
             $this->process_submit($timestamp, false, $timeclose);
-            $this->process_grade_submission($timeclose);
+            if ($this->can_use_async_grading()) {
+                $task = grade_submission::instance($this->get_attemptid());
+                $taskid = manager::queue_adhoc_task($task, true);
+                if ($taskid) {
+                    $task->set_id($taskid);
+                    $task->initialise_stored_progress();
+                }
+            } else {
+                $this->process_grade_submission($timeclose);
+            }
         }
 
         $transaction->allow_commit();
@@ -2249,7 +2277,16 @@ class quiz_attempt {
                     $finishtime = $timeclose;
                 }
                 $this->process_submit($timenow, !$toolate, $finishtime, true);
-                $this->process_grade_submission($finishtime);
+                if ($this->can_use_async_grading()) {
+                    $task = grade_submission::instance($this->get_attemptid());
+                    $taskid = manager::queue_adhoc_task($task, true);
+                    if ($taskid) {
+                        $task->set_id($taskid);
+                        $task->initialise_stored_progress();
+                    }
+                } else {
+                    $this->process_grade_submission($finishtime);
+                }
             }
 
         } catch (question_out_of_sequence_exception $e) {
@@ -2566,5 +2603,25 @@ class quiz_attempt {
         } else {
             throw new moodle_exception('attempterrorcontentchangeforuser', 'quiz', $continuelink);
         }
+    }
+
+    /**
+     * Return true if async grading is enabled, and the attempt contains questions which can be automatically graded.
+     *
+     * @return bool
+     */
+    public function can_use_async_grading(): bool {
+        if (!get_config('quiz', 'asyncgrading')) {
+            return false;
+        }
+        foreach ($this->get_slots() as $slot) {
+            if (!$this->is_real_question($slot)) {
+                continue;
+            }
+            if ($this->quba->get_question($slot) instanceof \question_automatically_gradable) {
+                return true;
+            }
+        }
+        return false;
     }
 }

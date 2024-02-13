@@ -418,4 +418,20 @@ class stored_progress_bar extends progress_bar {
         return $this->recordid;
     }
 
+    /**
+     * Reset the stored progress bar to a pending state.
+     *
+     * @return void
+     */
+    public function reset(): void {
+        global $DB;
+
+        $stored = $DB->get_record('stored_progress', ['idnumber' => $this->idnumber], MUST_EXIST);
+        $stored->lastupdate = null;
+        $stored->percentcompleted = 0;
+        $stored->message = '';
+        $stored->haserrored = false;
+        $DB->update_record('stored_progress', $stored);
+    }
+
 }

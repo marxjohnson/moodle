@@ -16,7 +16,11 @@
 
 namespace mod_quiz\task;
 
+use core\exception\moodle_exception;
+use core\lock\lock_config;
+use core\lock\lock_utils;
 use core\task\adhoc_task;
+use core\task\stored_progress_task_trait;
 use mod_quiz\quiz_attempt;
 
 /**
@@ -31,6 +35,13 @@ use mod_quiz\quiz_attempt;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class grade_submission extends adhoc_task {
+    use stored_progress_task_trait;
+
+    /**
+     * How long to wait for a lock if another process is grading an attempt for the same user and quiz.
+     */
+    const LOCK_TIMEOUT = 60;
+
     /**
      * Return an instance of the task, with the attempt ID stored in custom data.
      *
@@ -49,17 +60,62 @@ class grade_submission extends adhoc_task {
     public function execute(): void {
         global $DB;
         $data = $this->get_custom_data();
-        if ($DB->record_exists('quiz_attempts', ['id' => $data->attemptid, 'state' => quiz_attempt::SUBMITTED])) {
-            $attempt = quiz_attempt::create($data->attemptid);
-            mtrace(
-                'Grading attempt for user ID ' .
-                $attempt->get_userid() . ' for quiz ' .
-                $attempt->get_quiz_name() . ' on course ' .
-                $attempt->get_course()->shortname
-            );
-            $attempt->process_grade_submission(time());
-        } else {
-            mtrace('Attempt ID ' . $data->attemptid . ' not found, or not in submitted state.');
+        try {
+            $this->start_stored_progress();
+            $progress = $this->get_progress();
+            $progress->start_progress(get_string('gradinginprogress', 'quiz'));
+            if ($DB->record_exists('quiz_attempts', ['id' => $data->attemptid, 'state' => quiz_attempt::SUBMITTED])) {
+                $attempt = quiz_attempt::create($data->attemptid);
+                mtrace(
+                    'Grading attempt for user ID ' .
+                    $attempt->get_userid() . ' for quiz ' .
+                    $attempt->get_quiz_name() . ' on course ' .
+                    $attempt->get_course()->shortname
+                );
+                $lockfactory = lock_config::get_lock_factory('quiz_grade_submission');
+                $lockkey = $attempt->get_quizid() . ':' . $attempt->get_userid();
+                $lock = $lockfactory->get_lock($lockkey, 0);
+                if (!$lock) {
+                    $lock = lock_utils::wait_for_lock_with_progress(
+                        $lockfactory,
+                        $lockkey,
+                        $progress,
+                        self::LOCK_TIMEOUT,
+                        get_string('lockgradesubmission', 'quiz')
+                    );
+                    if (!$lock) {
+                        throw new moodle_exception(
+                            'lockgradesubmissionfailed',
+                            'quiz',
+                            a: (object) [
+                                'quizid' => $attempt->get_quizid(),
+                                'userid' => $attempt->get_userid(),
+                                'timeout' => self::LOCK_TIMEOUT,
+                            ],
+                        );
+                    }
+                }
+                try {
+                    // Reload the attempt and check it still needs grading.
+                    $attempt = quiz_attempt::create($data->attemptid);
+                    if ($attempt->get_state() !== quiz_attempt::SUBMITTED) {
+                        mtrace('Attempt ID ' . $data->attemptid . ' no longer in submitted state, skipping grading.');
+                        $lock->release();
+                        $progress->end_progress();
+                        return;
+                    }
+                    $attempt->process_grade_submission(time());
+                } finally {
+                    $lock->release();
+                }
+            } else {
+                mtrace('Attempt ID ' . $data->attemptid . ' not found, or not in submitted state.');
+            }
+            $progress->end_progress();
+        } catch (\Throwable $t) {
+            // Re-initialise the progress bar for the next attempt.
+            $this->reset_stored_progress();
+            throw $t;
         }
     }
 }
