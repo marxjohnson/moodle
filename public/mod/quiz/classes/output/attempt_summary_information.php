@@ -18,10 +18,12 @@ namespace mod_quiz\output;
 
 use action_link;
 use core\output\named_templatable;
+use core\output\task_indicator;
 use html_writer;
 use mod_quiz\grade_calculator;
 use mod_quiz\output\grades\grade_out_of;
 use mod_quiz\quiz_attempt;
+use mod_quiz\task\grade_submission;
 use moodle_url;
 use mod_quiz\question\display_options;
 use question_display_options;
@@ -233,7 +235,8 @@ class attempt_summary_information implements renderable, named_templatable {
         $quiz = $attemptobj->get_quiz();
         $overtime = 0;
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        $submitted = in_array($attempt->state, [quiz_attempt::SUBMITTED, quiz_attempt::FINISHED]);
+        if ($submitted) {
             if ($timetaken = ($attempt->timefinish - $attempt->timestart)) {
                 if ($quiz->timelimit && $timetaken > ($quiz->timelimit + 60)) {
                     $overtime = $timetaken - $quiz->timelimit;
@@ -249,7 +252,7 @@ class attempt_summary_information implements renderable, named_templatable {
 
         $summary->add_item('startedon', get_string('startedon', 'quiz'), userdate($attempt->timestart));
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        if ($submitted) {
             $summary->add_item('completedon', get_string('completedon', 'quiz'),
                 userdate($attempt->timefinish));
             $summary->add_item('timetaken', get_string('attemptduration', 'quiz'), $timetaken);
@@ -289,6 +292,7 @@ class attempt_summary_information implements renderable, named_templatable {
         quiz_attempt $attemptobj,
         display_options $options,
     ): ?float {
+        global $OUTPUT, $PAGE;
         $quiz = $attemptobj->get_quiz();
         $grade = quiz_rescale_grade($attemptobj->get_sum_marks(), $quiz, false);
 
@@ -297,8 +301,21 @@ class attempt_summary_information implements renderable, named_templatable {
             return $grade;
         }
 
-        if (!quiz_has_grades($quiz) || $attemptobj->get_state() != quiz_attempt::FINISHED) {
+        if (!quiz_has_grades($quiz) || !in_array($attemptobj->get_state(), [quiz_attempt::FINISHED, quiz_attempt::SUBMITTED])) {
             // No grades to show.
+            return $grade;
+        }
+
+        if ($attemptobj->get_state() == quiz_attempt::SUBMITTED) {
+            $task = grade_submission::instance($attemptobj->get_attemptid());
+            $indicator = new task_indicator(
+                $task,
+                '',
+                get_string('gradinginprogress', 'quiz'),
+                $PAGE->url,
+                compact: true,
+            );
+            $this->add_item('grade', get_string('gradenoun'), $OUTPUT->render($indicator));
             return $grade;
         }
 

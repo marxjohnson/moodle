@@ -20,6 +20,7 @@ use cm_info;
 use coding_exception;
 use context;
 use context_module;
+use core\output\task_indicator;
 use html_table;
 use html_table_cell;
 use html_writer;
@@ -28,6 +29,7 @@ use mod_quiz\form\preflight_check_form;
 use mod_quiz\output\grades\grade_out_of;
 use mod_quiz\question\display_options;
 use mod_quiz\quiz_attempt;
+use mod_quiz\task\grade_submission;
 use moodle_url;
 use plugin_renderer_base;
 use popup_action;
@@ -71,6 +73,9 @@ class renderer extends plugin_renderer_base {
         $output = '';
         $output .= $this->header();
         $output .= $this->review_attempt_summary($summarydata, $page);
+        if ($attemptobj->get_state() === quiz_attempt::SUBMITTED) {
+            $output .= $this->output->notification(get_string('reviewsubmitted', 'mod_quiz'), 'warning');
+        }
         $output .= $this->review_form($page, $showall, $displayoptions,
                 $this->questions($attemptobj, true, $slots, $page, $showall, $displayoptions),
                 $attemptobj);
@@ -1251,6 +1256,14 @@ class renderer extends plugin_renderer_base {
                                 get_string('statefinisheddetails', 'quiz',
                                         userdate($attemptobj->get_submitted_date())),
                                 ['class' => 'statedetails']);
+
+            case quiz_attempt::SUBMITTED:
+                return get_string('statesubmitted', 'quiz') .
+                    html_writer::tag(
+                        'span',
+                        get_string('statefinisheddetails', 'quiz', userdate($attemptobj->get_submitted_date())),
+                        ['class' => 'statedetails'],
+                    );
 
             case quiz_attempt::ABANDONED:
                 return get_string('stateabandoned', 'quiz');

@@ -17,6 +17,7 @@
 namespace mod_quiz\task;
 
 use core\task\adhoc_task;
+use core\task\stored_progress_task_trait;
 use mod_quiz\quiz_attempt;
 
 /**
@@ -31,6 +32,8 @@ use mod_quiz\quiz_attempt;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class grade_submission extends adhoc_task {
+    use stored_progress_task_trait;
+
     /**
      * Return an instance of the task, with the attempt ID stored in custom data.
      *
@@ -49,6 +52,9 @@ class grade_submission extends adhoc_task {
     public function execute(): void {
         global $DB;
         $data = $this->get_custom_data();
+        $this->start_stored_progress();
+        $progress = $this->get_progress();
+        $progress->start_progress(get_string('gradinginprogress', 'quiz'));
         if ($DB->record_exists('quiz_attempts', ['id' => $data->attemptid, 'state' => quiz_attempt::SUBMITTED])) {
             $attempt = quiz_attempt::create($data->attemptid);
             mtrace(
@@ -61,5 +67,6 @@ class grade_submission extends adhoc_task {
         } else {
             mtrace('Attempt ID ' . $data->attemptid . ' not found, or not in submitted state.');
         }
+        $progress->end_progress();
     }
 }
