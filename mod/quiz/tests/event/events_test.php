@@ -110,6 +110,13 @@ class events_test extends \advanced_testcase {
         return $this->prepare_quiz_attempt($quizobj, $ispreview);
     }
 
+
+    /**
+     * Submitting a quiz attempt should trigger the attempt_submitted event.
+     *
+     * @return void
+     * @covers \mod_quiz\quiz_attempt::process_submit
+     */
     public function test_attempt_submitted(): void {
 
         [$quizobj, , $attempt] = $this->prepare_quiz_data();
@@ -134,7 +141,13 @@ class events_test extends \advanced_testcase {
         $this->assertEventContextNotUsed($event);
     }
 
-    public function test_attempt_graded() {
+    /**
+     * Processing a submitted attempt should trigger the attempt_graded event.
+     *
+     * @return void
+     * @covers \mod_quiz\quiz_attempt::process_grade_submission
+     */
+    public function test_attempt_graded(): void {
 
         [$quizobj, , $attempt] = $this->prepare_quiz_data();
         $attemptobj = quiz_attempt::create($attempt->id);

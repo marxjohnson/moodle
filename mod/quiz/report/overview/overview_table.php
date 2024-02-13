@@ -230,7 +230,11 @@ class quiz_overview_table extends attempts_report_table {
 
     public function col_sumgrades($attempt) {
         if ($attempt->state != quiz_attempt::FINISHED) {
-            return '-';
+            if ($attempt->state == quiz_attempt::SUBMITTED) {
+                return get_string('gradinginprogress', 'quiz');
+            } else {
+                return '-';
+            }
         }
 
         $grade = quiz_rescale_grade($attempt->sumgrades, $this->quiz);

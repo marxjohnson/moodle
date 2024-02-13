@@ -295,6 +295,7 @@ Feature: Regrading quiz attempts using the Grades report
     And I click on "Finish attempt ..." "button"
     And I press "Submit all and finish"
     And I click on "Submit" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
     And I am on the "Quiz for testing regrading" "mod_quiz > question bank" page logged in as teacher
     And I choose "Edit question" action for "TF" in the question bank
     And I set the field "Correct answer" to "False"

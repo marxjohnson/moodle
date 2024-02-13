@@ -56,6 +56,8 @@ Feature: Set a quiz with certainty-based marking
     And I press "Finish attempt ..."
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     # As student1, confirm the results of own attempt
     And the following should exist in the "quizreviewsummary" table:
       | -1-              | -2-                                                                                                                 |

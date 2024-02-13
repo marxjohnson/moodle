@@ -47,6 +47,8 @@ Feature: Add a quiz
   @javascript @skip_chrome_zerosize
   Scenario: Add and configure small quiz and perform an attempt as a student with Javascript enabled
     Then I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I should see "So you think it is true"
     And I should see "Thank you, this is the general feedback"
     And I should see "The correct answer is 'False'."
@@ -54,6 +56,8 @@ Feature: Add a quiz
     And I should see "Highest grade: 0.00 / 10.00."
 
   Scenario: Add and configure small quiz and perform an attempt as a student with Javascript disabled
+    When I run all adhoc tasks
+    And I reload the page
     Then I should see "So you think it is true"
     And I should see "Thank you, this is the general feedback"
     And I should see "The correct answer is 'False'."

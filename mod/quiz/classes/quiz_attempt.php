@@ -23,6 +23,7 @@ use coding_exception;
 use context_module;
 use core\di;
 use core\hook;
+use core\task\manager;
 use Exception;
 use html_writer;
 use mod_quiz\hook\attempt_state_changed;
@@ -31,6 +32,7 @@ use mod_quiz\output\links_to_other_attempts;
 use mod_quiz\output\renderer;
 use mod_quiz\question\bank\qbank_helper;
 use mod_quiz\question\display_options;
+use mod_quiz\task\grade_submission;
 use moodle_exception;
 use moodle_url;
 use popup_action;
@@ -546,13 +548,15 @@ class quiz_attempt {
     /**
      * Has this attempt been finished?
      *
-     * States {@see FINISHED} and {@see ABANDONED} are both considered finished in this state.
+     * States {@see SUBMITTED}, {@see FINISHED} and {@see ABANDONED} are all considered finished in this state.
      * Other states are not.
      *
      * @return bool
      */
     public function is_finished() {
-        return $this->attempt->state == self::FINISHED || $this->attempt->state == self::ABANDONED;
+        return $this->attempt->state == self::SUBMITTED
+            || $this->attempt->state == self::FINISHED
+            || $this->attempt->state == self::ABANDONED;
     }
 
     /**
@@ -1653,7 +1657,11 @@ class quiz_attempt {
         switch ($this->quizobj->get_quiz()->overduehandling) {
             case 'autosubmit':
                 $this->process_submit($timestamp, false, $studentisonline ? $timestamp : $timeclose, $studentisonline);
-                $this->process_grade_submission($timestamp);
+                if ($this->has_automatically_gradable_questions()) {
+                    manager::queue_adhoc_task(grade_submission::instance($this->get_attemptid()));
+                } else {
+                    $this->process_grade_submission($timestamp);
+                }
                 return;
 
             case 'graceperiod':
@@ -1811,7 +1819,7 @@ class quiz_attempt {
      *      (otherwise use $timestamp as the finish time as well).
      * @param bool $studentisonline is the student currently interacting with Moodle?
      * @deprecated since Moodle 4.5 MDL-68806 use process_submit() and process_grade_submission() instead
-     * @todo Final deprecation in Moodle 4.9
+     * @todo Final deprecation in Moodle 4.9 (MDL-80956)
      */
     public function process_finish($timestamp, $processsubmitted, $timefinish = null, $studentisonline = false) {
         debugging('quiz_attempt::process_finish is deprecated. Please use quiz_attempt::process_submit to store ' .
@@ -2009,7 +2017,11 @@ class quiz_attempt {
         $timeclose = $this->get_access_manager($timestamp)->get_end_time($this->attempt);
         if ($timeclose && $timestamp > $timeclose) {
             $this->process_submit($timestamp, false, $timeclose);
-            $this->process_grade_submission($timestamp);
+            if ($this->has_automatically_gradable_questions()) {
+                manager::queue_adhoc_task(grade_submission::instance($this->get_attemptid()));
+            } else {
+                $this->process_grade_submission($timestamp);
+            }
         }
 
         $transaction->allow_commit();
@@ -2221,7 +2233,11 @@ class quiz_attempt {
                     $finishtime = $timeclose;
                 }
                 $this->process_submit($timenow, !$toolate, $finishtime, true);
-                $this->process_grade_submission($timenow);
+                if ($this->has_automatically_gradable_questions()) {
+                    manager::queue_adhoc_task(grade_submission::instance($this->get_attemptid()));
+                } else {
+                    $this->process_grade_submission($finishtime);
+                }
             }
 
         } catch (question_out_of_sequence_exception $e) {
@@ -2516,5 +2532,22 @@ class quiz_attempt {
                 $this->recompute_final_grade();
             }
         }
+    }
+
+    /**
+     * Return true if the attempt contains questions which can be automatically graded
+     *
+     * @return bool
+     */
+    public function has_automatically_gradable_questions(): bool {
+        foreach ($this->get_slots() as $slot) {
+            if (!$this->is_real_question($slot)) {
+                continue;
+            }
+            if ($this->quba->get_question($slot) instanceof \question_automatically_gradable) {
+                return true;
+            }
+        }
+        return false;
     }
 }
