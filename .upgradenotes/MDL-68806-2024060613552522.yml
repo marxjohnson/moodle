@@ -1,0 +1,12 @@
+issueNumber: MDL-68806
+notes:
+  mod_quiz:
+    - message: >
+        External functions used by the app to get quiz attempts,
+        mod_quiz_get_user_attempts and mod_quiz_review_attempt, have been
+        modified to return SUBMITTED attempts as FINISHED, and NOT_STARTED
+        attempts as IN_PROGRESS, to retain backwards-compatibility with the app.
+        These functions have been deprecated in favour of
+        mod_quiz_get_user_quiz_attempts and mod_quiz_review_quiz_attempt, which
+        will return attempts in their true states.
+      type: deprecated
