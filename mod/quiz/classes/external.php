@@ -363,7 +363,15 @@ class mod_quiz_external extends external_api {
      *
      * @return external_function_parameters
      * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz_external::get_user_quiz_attempts_parameters',
+        since: '4.5',
+        reason: 'The old API for fetching attempts doesn\'t return true states for NOT_STARTED and SUBMITTED attempts',
+        mdl: 'MDL-68806'
+    )]
     public static function get_user_attempts_parameters() {
         return new external_function_parameters (
             [
@@ -379,15 +387,27 @@ class mod_quiz_external extends external_api {
     /**
      * Return a list of attempts for the given quiz and user.
      *
+     * For backwards compatibility, SUBMITTED attempts will be treated as FINISHED with marks hidden, and NOT_STARTED will be
+     * treated as IN_PROGRESS. To return all real states, call get_user_quiz_attempts instead.
+     *
      * @param int $quizid quiz instance id
      * @param int $userid user id
      * @param string $status quiz status: all, finished or unfinished
      * @param bool $includepreviews whether to include previews or not
      * @return array of warnings and the list of attempts
      * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz_external::get_user_quiz_attempts',
+        since: '4.5',
+        reason: 'The old API for fetching attempts doesn\'t return true states for NOT_STARTED and SUBMITTED attempts',
+        mdl: 'MDL-68806'
+    )]
     public static function get_user_attempts($quizid, $userid = 0, $status = 'finished', $includepreviews = false) {
         global $USER;
+        \core\deprecation::emit_deprecation_if_present(__METHOD__);
 
         $warnings = [];
 
@@ -427,8 +447,16 @@ class mod_quiz_external extends external_api {
         $attemptresponse = [];
         foreach ($attempts as $attempt) {
             $reviewoptions = quiz_get_review_options($quiz, $attempt, $context);
-            if (!has_capability('mod/quiz:viewreports', $context) &&
-                    ($reviewoptions->marks < question_display_options::MARK_AND_MAX || $attempt->state != quiz_attempt::FINISHED)) {
+            if (
+                $attempt->state == quiz_attempt::SUBMITTED ||
+                (
+                    !has_capability('mod/quiz:viewreports', $context) &&
+                    (
+                        $reviewoptions->marks < question_display_options::MARK_AND_MAX ||
+                        $attempt->state != quiz_attempt::FINISHED
+                    )
+                )
+            ) {
                 // Blank the mark if the teacher does not allow it.
                 $attempt->sumgrades = null;
             } else if (isset($gradeitemmarks[$attempt->uniqueid])) {
@@ -440,6 +468,12 @@ class mod_quiz_external extends external_api {
                         'maxgrade' => $gradeitem->maxgrade,
                     ];
                 }
+            }
+            if ($attempt->state == quiz_attempt::SUBMITTED) {
+                $attempt->state = quiz_attempt::FINISHED; // For backwards-compatibility.
+            }
+            if ($attempt->state == quiz_attempt::NOT_STARTED) {
+                $attempt->state = quiz_attempt::IN_PROGRESS; // For backwards-compatibility.
             }
             $attemptresponse[] = $attempt;
         }
@@ -498,13 +532,144 @@ class mod_quiz_external extends external_api {
      *
      * @return external_single_structure
      * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+            'mod_quiz_external::get_user_quiz_attempts_returns',
+            since: '4.5',
+            reason: 'The old API for fetching attempts doesn\'t return true states for NOT_STARTED and SUBMITTED attempts',
+            mdl: 'MDL-68806'
+    )]
     public static function get_user_attempts_returns() {
+        $attemptstructure = self::attempt_structure();
+        $attemptstructure->keys['state']->desc .= " For backwards compatibility, attempts in 'submitted' state will return " .
+            "'finished' and attempts in 'notstarted' state will return 'inprogress'. To get attempts with all real states, call " .
+            "get_user_quiz_attempts() instead.";
+        return new external_single_structure(
+            [
+                'attempts' => new external_multiple_structure($attemptstructure),
+                'warnings' => new external_warnings(),
+            ]
+        );
+    }
+
+    /**
+     * Mark get_user_attempts as deprecated.
+     *
+     * @return bool
+     */
+    public static function get_user_attempts_is_deprecated(): bool {
+        return true;
+    }
+
+    /**
+     * Describes the parameters for get_user_quiz_attempts.
+     *
+     * @return external_function_parameters
+     * @since Moodle 4.5
+     */
+    public static function get_user_quiz_attempts_parameters(): external_function_parameters {
+        return new external_function_parameters (
+            [
+                'quizid' => new external_value(PARAM_INT, 'quiz instance id'),
+                'userid' => new external_value(PARAM_INT, 'user id, empty for current user', VALUE_DEFAULT, 0),
+                'status' => new external_value(PARAM_ALPHA, 'quiz status: all, finished or unfinished', VALUE_DEFAULT, 'finished'),
+                'includepreviews' => new external_value(PARAM_BOOL, 'whether to include previews or not', VALUE_DEFAULT, false),
+            ],
+        );
+    }
+
+    /**
+     * Return a list of attempts for the given quiz and user.
+     *
+     * @param int $quizid quiz instance id
+     * @param int $userid user id
+     * @param string $status quiz status: all, finished or unfinished
+     * @param bool $includepreviews whether to include previews or not
+     * @return array of warnings and the list of attempts
+     * @since Moodle 4.5
+     */
+    public static function get_user_quiz_attempts(
+        int $quizid,
+        int $userid = 0,
+        string $status = 'finished',
+        bool $includepreviews = false
+    ): array {
+        global $USER;
+
+        $warnings = [];
+
+        $params = [
+            'quizid' => $quizid,
+            'userid' => $userid,
+            'status' => $status,
+            'includepreviews' => $includepreviews,
+        ];
+        $params = self::validate_parameters(self::get_user_quiz_attempts_parameters(), $params);
+
+        [$quiz, $course, $cm, $context] = self::validate_quiz($params['quizid']);
+
+        if (!in_array($params['status'], ['all', 'finished', 'unfinished'])) {
+            throw new invalid_parameter_exception('Invalid status value');
+        }
+
+        // Default value for userid.
+        if (empty($params['userid'])) {
+            $params['userid'] = $USER->id;
+        }
+
+        $user = core_user::get_user($params['userid'], '*', MUST_EXIST);
+        core_user::require_active_user($user);
+
+        // Extra checks so only users with permissions can view other users attempts.
+        if ($USER->id != $user->id) {
+            require_capability('mod/quiz:viewreports', $context);
+        }
+
+        // Update quiz with override information.
+        $quiz = quiz_update_effective_access($quiz, $params['userid']);
+        $attempts = quiz_get_user_attempts($quiz->id, $user->id, $params['status'], $params['includepreviews']);
+        $quizobj = new quiz_settings($quiz, $cm, $course);
+        $gradeitemmarks = $quizobj->get_grade_calculator()->compute_grade_item_totals_for_attempts(
+                array_column($attempts, 'uniqueid'));
+        $attemptresponse = [];
+        foreach ($attempts as $attempt) {
+            $reviewoptions = quiz_get_review_options($quiz, $attempt, $context);
+            if (!has_capability('mod/quiz:viewreports', $context) &&
+                    ($reviewoptions->marks < question_display_options::MARK_AND_MAX || $attempt->state != quiz_attempt::FINISHED)) {
+                // Blank the mark if the teacher does not allow it.
+                $attempt->sumgrades = null;
+            } else if (isset($gradeitemmarks[$attempt->uniqueid])) {
+                $attempt->gradeitemmarks = [];
+                foreach ($gradeitemmarks[$attempt->uniqueid] as $gradeitem) {
+                    $attempt->gradeitemmarks[] = [
+                            'name' => \core_external\util::format_string($gradeitem->name, $context),
+                            'grade' => $gradeitem->grade,
+                            'maxgrade' => $gradeitem->maxgrade,
+                    ];
+                }
+            }
+            $attemptresponse[] = $attempt;
+        }
+        $result = [];
+        $result['attempts'] = $attemptresponse;
+        $result['warnings'] = $warnings;
+        return $result;
+    }
+
+    /**
+     * Describes the get_user_attempts return value.
+     *
+     * @return external_single_structure
+     * @since Moodle 4.5
+     */
+    public static function get_user_quiz_attempts_returns(): external_single_structure {
         return new external_single_structure(
             [
                 'attempts' => new external_multiple_structure(self::attempt_structure()),
                 'warnings' => new external_warnings(),
-            ]
+            ],
         );
     }
 
@@ -1463,7 +1628,15 @@ class mod_quiz_external extends external_api {
      *
      * @return external_function_parameters
      * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz_external::get_quiz_attempt_review_parameters',
+        since: '4.5',
+        reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+        mdl: 'MDL-68806'
+    )]
     public static function get_attempt_review_parameters() {
         return new external_function_parameters (
             [
@@ -1477,12 +1650,24 @@ class mod_quiz_external extends external_api {
     /**
      * Returns review information for the given finished attempt, can be used by users or teachers.
      *
+     * For backwards compatibility, SUBMITTED attempts will be treated as FINISHED, with no grades.
+     *
      * @param int $attemptid attempt id
      * @param int $page page number, empty for all the questions in all the pages
      * @return array of warnings and the attempt data, feedback and questions
      * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz_external::get_quiz_attempt_review',
+        since: '4.5',
+        reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+        mdl: 'MDL-68806',
+    )]
     public static function get_attempt_review($attemptid, $page = -1) {
+        global $PAGE;
+        \core\deprecation::emit_deprecation_if_present(__METHOD__);
 
         $warnings = [];
 
@@ -1491,6 +1676,152 @@ class mod_quiz_external extends external_api {
             'page' => $page,
         ];
         $params = self::validate_parameters(self::get_attempt_review_parameters(), $params);
+
+        [$attemptobj, $displayoptions] = self::validate_attempt_review($params);
+
+        if ($params['page'] !== -1) {
+            $page = $attemptobj->force_page_number_into_range($params['page']);
+        } else {
+            $page = 'all';
+        }
+
+        // Make sure all users associated to the attempt steps are loaded. Otherwise, this will
+        // trigger a debugging message.
+        $attemptobj->preload_all_attempt_step_users();
+
+        // Prepare the output.
+        $result = [];
+        $result['attempt'] = $attemptobj->get_attempt();
+        if ($result['attempt']->state == quiz_attempt::SUBMITTED) {
+            $result['attempt']->state = quiz_attempt::FINISHED; // For backwards compatibility.
+        }
+        $result['questions'] = self::get_attempt_questions_data($attemptobj, true, $page, true);
+
+        $result['additionaldata'] = [];
+        // Summary data (from behaviours).
+        $summarydata = $attemptobj->get_additional_summary_data($displayoptions);
+        foreach ($summarydata as $key => $data) {
+            // This text does not need formatting (no need for external_format_[string|text]).
+            $result['additionaldata'][] = [
+                'id' => $key,
+                'title' => $data['title'], $attemptobj->get_quizobj()->get_context()->id,
+                'content' => $data['content'],
+            ];
+        }
+
+        // Feedback if there is any, and the user is allowed to see it now.
+        $grade = quiz_rescale_grade($attemptobj->get_attempt()->sumgrades, $attemptobj->get_quiz(), false);
+
+        $feedback = $attemptobj->get_overall_feedback($grade);
+        if ($displayoptions->overallfeedback && $feedback) {
+            $result['additionaldata'][] = [
+                'id' => 'feedback',
+                'title' => get_string('feedback', 'quiz'),
+                'content' => $feedback,
+            ];
+        }
+
+        if (!has_capability('mod/quiz:viewreports', $attemptobj->get_context()) &&
+                ($displayoptions->marks < question_display_options::MARK_AND_MAX ||
+                        $attemptobj->get_attempt()->state != quiz_attempt::FINISHED)) {
+            // Blank the mark if the teacher does not allow it.
+            $result['attempt']->sumgrades = null;
+        } else {
+            $result['attempt']->gradeitemmarks = [];
+            foreach ($attemptobj->get_grade_item_totals() as $gradeitem) {
+                $result['attempt']->gradeitemmarks[] = [
+                        'name' => \core_external\util::format_string($gradeitem->name, $attemptobj->get_context()),
+                        'grade' => $gradeitem->grade,
+                        'maxgrade' => $gradeitem->maxgrade,
+                ];
+            }
+        }
+
+        $result['grade'] = $grade;
+        $result['warnings'] = $warnings;
+        return $result;
+    }
+
+    /**
+     * Describes the get_attempt_review return value.
+     *
+     * @return external_single_structure
+     * @since Moodle 3.1
+     * @deprecated Since Moodle 4.5 MDL-68806.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
+     */
+    #[\core\attribute\deprecated(
+            'mod_quiz_external::get_quiz_attempt_review_returns',
+            since: '4.5',
+            reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+            mdl: 'MDL-68806',
+    )]
+    public static function get_attempt_review_returns() {
+        $attemptstructure = self::attempt_structure();
+        $attemptstructure->keys['state']->desc .= " For backwards compatibility, attempts in 'submitted' state will return " .
+            "'finished'. To get attempts with real 'submitted' states, call get_quiz_attempt_review() instead.";
+        return new external_single_structure(
+            [
+                'grade' => new external_value(PARAM_RAW, 'grade for the quiz (or empty or "notyetgraded")'),
+                'attempt' => $attemptstructure,
+                'additionaldata' => new external_multiple_structure(
+                    new external_single_structure(
+                        [
+                            'id' => new external_value(PARAM_ALPHANUMEXT, 'id of the data'),
+                            'title' => new external_value(PARAM_TEXT, 'data title'),
+                            'content' => new external_value(PARAM_RAW, 'data content'),
+                        ]
+                    )
+                ),
+                'questions' => new external_multiple_structure(self::question_structure()),
+                'warnings' => new external_warnings(),
+            ]
+        );
+    }
+
+    /**
+     * Mark get_attempt_review deprecated.
+     *
+     * @return bool
+     */
+    public static function get_attempt_review_is_deprecated(): bool {
+        return true;
+    }
+
+    /**
+     * Describes the parameters for get_quiz_attempt_review.
+     *
+     * @return external_function_parameters
+     * @since Moodle 4.5
+     */
+    public static function get_quiz_attempt_review_parameters(): external_function_parameters {
+        return new external_function_parameters (
+            [
+                'attemptid' => new external_value(PARAM_INT, 'attempt id'),
+                'page' => new external_value(PARAM_INT, 'page number, empty for all the questions in all the pages',
+                    VALUE_DEFAULT, -1),
+            ]
+        );
+    }
+
+    /**
+     * Returns review information for the given finished attempt, can be used by users or teachers.
+     *
+     * For backwards compatibility, SUBMITTED attempts will be treated as FINISHED, with no grades.
+     *
+     * @param int $attemptid attempt id
+     * @param int $page page number, empty for all the questions in all the pages
+     * @return array of warnings and the attempt data, feedback and questions
+     * @since Moodle 4.5
+     */
+    public static function get_quiz_attempt_review(int $attemptid, int $page = -1): array {
+        $warnings = [];
+
+        $params = [
+            'attemptid' => $attemptid,
+            'page' => $page,
+        ];
+        $params = self::validate_parameters(self::get_quiz_attempt_review_parameters(), $params);
 
         [$attemptobj, $displayoptions] = self::validate_attempt_review($params);
 
@@ -1558,9 +1889,9 @@ class mod_quiz_external extends external_api {
      * Describes the get_attempt_review return value.
      *
      * @return external_single_structure
-     * @since Moodle 3.1
+     * @since Moodle 4.5
      */
-    public static function get_attempt_review_returns() {
+    public static function get_quiz_attempt_review_returns(): external_single_structure {
         return new external_single_structure(
             [
                 'grade' => new external_value(PARAM_RAW, 'grade for the quiz (or empty or "notyetgraded")'),
