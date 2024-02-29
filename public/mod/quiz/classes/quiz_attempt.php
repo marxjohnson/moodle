@@ -2618,4 +2618,171 @@ class quiz_attempt {
         }
         return false;
     }
+
+    /**
+     * Return questions information for a given attempt.
+     *
+     * @param quiz_attempt $attemptobj  the quiz attempt object
+     * @param bool $review whether if we are in review mode or not
+     * @param int|null $page  string 'all' or integer page number
+     * @return array array of questions including data
+     */
+    public static function get_attempt_questions_data(quiz_attempt $attemptobj, bool $review, ?int $page = null) {
+        global $PAGE;
+
+        $questions = [];
+        $displayoptions = $attemptobj->get_display_options($review);
+        $renderer = $PAGE->get_renderer('mod_quiz');
+        $contextid = $attemptobj->get_quizobj()->get_context()->id;
+
+        foreach ($attemptobj->get_slots($page ?? 'all') as $slot) {
+            $qtype = $attemptobj->get_question_type_name($slot);
+            $qattempt = $attemptobj->get_question_attempt($slot);
+            $questiondef = $qattempt->get_question(true);
+
+            // Check display settings for question.
+            $settings = $questiondef->get_question_definition_for_external_rendering($qattempt, $displayoptions);
+
+            // Navigation information.
+            $question = new quiz_attempt_question(
+                $slot,
+                $attemptobj->get_question_page($slot),
+                $attemptobj->get_question_number($slot),
+                $attemptobj->is_question_flagged($slot),
+                $qattempt->get_sequence_check_count(),
+                $qattempt->get_last_step()->get_timecreated(),
+                $qattempt->has_autosaved_step(),
+            );
+
+            if ($attemptobj->is_real_question($slot)) {
+                $showcorrectness = $displayoptions->correctness && $qattempt->has_marks();
+                if ($showcorrectness) {
+                    $question->state = (string) $attemptobj->get_question_state($slot);
+                }
+                // The stateclass is used for CSS classes but also for the lang strings.
+                $question->stateclass = $attemptobj->get_question_state_class($slot, $displayoptions->correctness);
+                $question->status = $attemptobj->get_question_status($slot, $displayoptions->correctness);
+                $question->blockedbyprevious = $attemptobj->is_blocked_by_previous_question($slot);
+            }
+            if ($displayoptions->marks >= question_display_options::MAX_ONLY) {
+                $question->maxmark = $qattempt->get_max_mark();
+            }
+            if ($displayoptions->marks >= question_display_options::MARK_AND_MAX) {
+                $question->mark = $attemptobj->get_question_mark($slot);
+            }
+
+            // Check access. This is needed especially when sequential navigation is enforced.
+            // To prevent the student see "future" questions.
+            $haveaccess = $attemptobj->check_page_access($attemptobj->get_question_page($slot), false);
+            if (!$haveaccess) {
+                $question->type = '';
+                $question->html = '';
+            }
+
+            // For visited pages/questions it is ok to keep data the user already saw.
+            $questionalreadyseen = $attemptobj->get_currentpage() >= $attemptobj->get_question_page($slot);
+
+            // Information when only the user has access to the question at any moment (free navigation) or already seen.
+            if ($haveaccess || $questionalreadyseen) {
+                // Get response files (for questions like essay that allows attachments).
+                $responsefileareas = [];
+                foreach (question_bank::get_qtype($qtype)->response_file_areas() as $area) {
+                    if ($files = $attemptobj->get_question_attempt($slot)->get_last_qt_files($area, $contextid)) {
+                        $responsefileareas[$area]['area'] = $area;
+                        $responsefileareas[$area]['files'] = [];
+
+                        foreach ($files as $file) {
+                            $responsefileareas[$area]['files'][] = [
+                                'filename' => $file->get_filename(),
+                                'fileurl' => $qattempt->get_response_file_url($file),
+                                'filesize' => $file->get_filesize(),
+                                'filepath' => $file->get_filepath(),
+                                'mimetype' => $file->get_mimetype(),
+                                'timemodified' => $file->get_timemodified(),
+                            ];
+                        }
+                    }
+                }
+                $question->type = $qtype;
+                $question->html = $attemptobj->render_question($slot, $review, $renderer) . $PAGE->requires->get_end_code();
+                $question->responsefileareas = $responsefileareas;
+                $question->settings = !empty($settings) ? json_encode($settings) : null;
+            }
+            $questions[] = $question;
+        }
+        return $questions;
+    }
+
+    /**
+     * Return review data for this attempt.
+     *
+     * @param int|null $page The quiz page to review, null for all pages.
+     * @return array The attempt record, questions, additional data, and the grade.
+     */
+    public function get_review(?int $page = null): array {
+        $this->check_review_capability();
+
+        $displayoptions = $this->get_display_options(true);
+        if ($this->is_own_attempt()) {
+            if (!$this->is_finished()) {
+                throw new moodle_exception('attemptclosed', 'quiz', $this->view_url());
+            } else if (!$displayoptions->attempt) {
+                throw new moodle_exception('noreview', 'quiz', $this->view_url(), null, $this->cannot_review_message());
+            }
+        } else if (!$this->is_review_allowed()) {
+            throw new moodle_exception('noreviewattempt', 'quiz', $this->view_url());
+        }
+
+        if ($page) {
+            $page = $this->force_page_number_into_range($page);
+        }
+
+        // Make sure all users associated to the attempt steps are loaded. Otherwise, this will
+        // trigger a debugging message.
+        $this->preload_all_attempt_step_users();
+
+        // Prepare the output.
+        $review = [];
+        $review['attempt'] = $this->get_attempt();
+        $review['questions'] = self::get_attempt_questions_data($this, true, $page);
+
+        $review['additionaldata'] = [];
+        // Summary data (from behaviours).
+        $summarydata = $this->get_additional_summary_data($displayoptions);
+        foreach ($summarydata as $key => $data) {
+            // This text does not need formatting (no need for external_format_[string|text]).
+            $review['additionaldata'][] = new quiz_attempt_datum($key, $data['title'], $data['content']);
+        }
+
+        // Feedback if there is any, and the user is allowed to see it now.
+        $grade = quiz_rescale_grade($this->get_attempt()->sumgrades, $this->get_quiz(), false);
+
+        $feedback = $this->get_overall_feedback($grade);
+        if ($displayoptions->overallfeedback && $feedback) {
+            $review['additionaldata'][] = new quiz_attempt_datum('feedback', get_string('feedback', 'quiz'), $feedback);
+        }
+
+        if (
+            !has_capability('mod/quiz:viewreports', $this->get_context())
+            && (
+                $displayoptions->marks < question_display_options::MARK_AND_MAX
+                || $this->get_attempt()->state != self::FINISHED
+            )
+        ) {
+            // Blank the mark if the teacher does not allow it.
+            $review['attempt']->sumgrades = null;
+        } else {
+            $review['attempt']->gradeitemmarks = [];
+            foreach ($this->get_grade_item_totals() as $gradeitem) {
+                $review['attempt']->gradeitemmarks[] = [
+                    'name' => format_string($gradeitem->name, $this->get_context()),
+                    'grade' => $gradeitem->grade,
+                    'maxgrade' => $gradeitem->maxgrade,
+                ];
+            }
+        }
+
+        $review['grade'] = is_float($grade) ? $grade : null;
+        return $review;
+    }
 }

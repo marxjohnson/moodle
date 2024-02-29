@@ -1216,92 +1216,7 @@ class mod_quiz_external extends external_api {
      * @return array array of questions including data
      */
     private static function get_attempt_questions_data(quiz_attempt $attemptobj, $review, $page = 'all') {
-        global $PAGE;
-
-        $questions = [];
-        $displayoptions = $attemptobj->get_display_options($review);
-        $renderer = $PAGE->get_renderer('mod_quiz');
-        $contextid = $attemptobj->get_quizobj()->get_context()->id;
-
-        foreach ($attemptobj->get_slots($page) as $slot) {
-            $qtype = $attemptobj->get_question_type_name($slot);
-            $qattempt = $attemptobj->get_question_attempt($slot);
-            $questiondef = $qattempt->get_question(true);
-
-            // Check display settings for question.
-            $settings = $questiondef->get_question_definition_for_external_rendering($qattempt, $displayoptions);
-
-            // Navigation information.
-            $question = [
-                'slot' => $slot,
-                'page' => $attemptobj->get_question_page($slot),
-                'questionnumber' => $attemptobj->get_question_number($slot),
-                'flagged' => $attemptobj->is_question_flagged($slot),
-                'sequencecheck' => $qattempt->get_sequence_check_count(),
-                'lastactiontime' => $qattempt->get_last_step()->get_timecreated(),
-                'hasautosavedstep' => $qattempt->has_autosaved_step(),
-            ];
-
-            if ($question['questionnumber'] === (string) (int) $question['questionnumber']) {
-                $question['number'] = $question['questionnumber'];
-            }
-
-            if ($attemptobj->is_real_question($slot)) {
-                $showcorrectness = $displayoptions->correctness && $qattempt->has_marks();
-                if ($showcorrectness) {
-                    $question['state'] = (string) $attemptobj->get_question_state($slot);
-                }
-                // The stateclass is used for CSS classes but also for the lang strings.
-                $question['stateclass'] = $attemptobj->get_question_state_class($slot, $displayoptions->correctness);
-                $question['status'] = $attemptobj->get_question_status($slot, $displayoptions->correctness);
-                $question['blockedbyprevious'] = $attemptobj->is_blocked_by_previous_question($slot);
-            }
-            if ($displayoptions->marks >= question_display_options::MAX_ONLY) {
-                $question['maxmark'] = $qattempt->get_max_mark();
-            }
-            if ($displayoptions->marks >= question_display_options::MARK_AND_MAX) {
-                $question['mark'] = $attemptobj->get_question_mark($slot);
-            }
-
-            // Check access. This is needed especially when sequential navigation is enforced. To prevent the student see "future" questions.
-            $haveaccess = $attemptobj->check_page_access($attemptobj->get_question_page($slot), false);
-            if (!$haveaccess) {
-                $question['type'] = '';
-                $question['html'] = '';
-            }
-
-            // For visited pages/questions it is ok to keep data the user already saw.
-            $questionalreadyseen = $attemptobj->get_currentpage() >= $attemptobj->get_question_page($slot);
-
-            // Information when only the user has access to the question at any moment (free navigation) or already seen.
-            if ($haveaccess || $questionalreadyseen) {
-                // Get response files (for questions like essay that allows attachments).
-                $responsefileareas = [];
-                foreach (question_bank::get_qtype($qtype)->response_file_areas() as $area) {
-                    if ($files = $attemptobj->get_question_attempt($slot)->get_last_qt_files($area, $contextid)) {
-                        $responsefileareas[$area]['area'] = $area;
-                        $responsefileareas[$area]['files'] = [];
-
-                        foreach ($files as $file) {
-                            $responsefileareas[$area]['files'][] = [
-                                'filename' => $file->get_filename(),
-                                'fileurl' => $qattempt->get_response_file_url($file),
-                                'filesize' => $file->get_filesize(),
-                                'filepath' => $file->get_filepath(),
-                                'mimetype' => $file->get_mimetype(),
-                                'timemodified' => $file->get_timemodified(),
-                            ];
-                        }
-                    }
-                }
-                $question['type'] = $qtype;
-                $question['html'] = $attemptobj->render_question($slot, $review, $renderer) . $PAGE->requires->get_end_code();
-                $question['responsefileareas'] = $responsefileareas;
-                $question['settings'] = !empty($settings) ? json_encode($settings) : null;
-            }
-            $questions[] = $question;
-        }
-        return $questions;
+        return quiz_attempt::get_attempt_questions_data($attemptobj, $review, ($page === 'all' ? null : $page));
     }
 
     /**
@@ -1690,7 +1605,15 @@ class mod_quiz_external extends external_api {
      *
      * @return external_function_parameters
      * @since Moodle 3.1
+     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz\route\api\attempts::get_review()',
+        since: '5.2',
+        reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+        mdl: 'MDL-82654',
+    )]
     public static function get_attempt_review_parameters() {
         return new external_function_parameters (
             [
@@ -1704,12 +1627,24 @@ class mod_quiz_external extends external_api {
     /**
      * Returns review information for the given finished attempt, can be used by users or teachers.
      *
+     * For backwards compatibility, SUBMITTED attempts will be treated as FINISHED, with no grades.
+     *
      * @param int $attemptid attempt id
      * @param int $page page number, empty for all the questions in all the pages
      * @return array of warnings and the attempt data, feedback and questions
      * @since Moodle 3.1
+     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz\route\api\attempts::get_review()',
+        since: '5.2',
+        reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+        mdl: 'MDL-82654',
+    )]
     public static function get_attempt_review($attemptid, $page = -1) {
+        global $PAGE;
+        \core\deprecation::emit_deprecation_if_present(__METHOD__);
 
         $warnings = [];
 
@@ -1734,6 +1669,9 @@ class mod_quiz_external extends external_api {
         // Prepare the output.
         $result = [];
         $result['attempt'] = $attemptobj->get_attempt();
+        if ($result['attempt']->state == quiz_attempt::SUBMITTED) {
+            $result['attempt']->state = quiz_attempt::FINISHED; // For backwards compatibility.
+        }
         $result['questions'] = self::get_attempt_questions_data($attemptobj, true, $page, true);
 
         $result['additionaldata'] = [];
@@ -1769,9 +1707,9 @@ class mod_quiz_external extends external_api {
             $result['attempt']->gradeitemmarks = [];
             foreach ($attemptobj->get_grade_item_totals() as $gradeitem) {
                 $result['attempt']->gradeitemmarks[] = [
-                    'name' => \core_external\util::format_string($gradeitem->name, $attemptobj->get_context()),
-                    'grade' => $gradeitem->grade,
-                    'maxgrade' => $gradeitem->maxgrade,
+                        'name' => \core_external\util::format_string($gradeitem->name, $attemptobj->get_context()),
+                        'grade' => $gradeitem->grade,
+                        'maxgrade' => $gradeitem->maxgrade,
                 ];
             }
         }
@@ -1786,12 +1724,23 @@ class mod_quiz_external extends external_api {
      *
      * @return external_single_structure
      * @since Moodle 3.1
+     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
+    #[\core\attribute\deprecated(
+        'mod_quiz\route\api\attempts::get_review()',
+        since: '5.2',
+        reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
+        mdl: 'MDL-82654',
+    )]
     public static function get_attempt_review_returns() {
+        $attemptstructure = self::attempt_structure();
+        $attemptstructure->keys['state']->desc .= " For backwards compatibility, attempts in 'submitted' state will return " .
+            "'finished'. To get attempts with real 'submitted' states, call get_quiz_attempt_review() instead.";
         return new external_single_structure(
             [
                 'grade' => new external_value(PARAM_RAW, 'grade for the quiz (or empty or "notyetgraded")'),
-                'attempt' => self::attempt_structure(),
+                'attempt' => $attemptstructure,
                 'additionaldata' => new external_multiple_structure(
                     new external_single_structure(
                         [
@@ -1805,6 +1754,15 @@ class mod_quiz_external extends external_api {
                 'warnings' => new external_warnings(),
             ]
         );
+    }
+
+    /**
+     * Mark get_attempt_review deprecated.
+     *
+     * @return bool
+     */
+    public static function get_attempt_review_is_deprecated(): bool {
+        return true;
     }
 
     /**

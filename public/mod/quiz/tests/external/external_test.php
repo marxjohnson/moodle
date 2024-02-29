@@ -1656,10 +1656,9 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $attemptobj->process_grade_submission(time());
 
         // Now we should receive the question state.
-        $result = mod_quiz_external::get_attempt_review($attempt->id, 1);
-        $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
-        $this->assertEquals('notanswered', $result['questions'][0]['stateclass']);
-        $this->assertEquals('gaveup', $result['questions'][0]['state']);
+        $result = $attemptobj->get_review(1);
+        $this->assertEquals('notanswered', $result['questions'][0]->stateclass);
+        $this->assertEquals('gaveup', $result['questions'][0]->state);
 
         // Change setting and expect two pages.
         $quiz->questionsperpage = 4;
@@ -2111,6 +2110,8 @@ final class external_test extends \core_external\tests\externallib_testcase {
 
     /**
      * Test get_attempt_review
+     *
+     * @todo Remove in Moodle 6.0 as part of MDL-80956 final deprecations.
      */
     public function test_get_attempt_review(): void {
         global $DB;
@@ -2135,6 +2136,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
 
         $result = mod_quiz_external::get_attempt_review($attempt->id);
         $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
 
         // Two questions, one completed and correct, the other gave up.
         $this->assertEquals(50, $result['grade']);
@@ -2148,8 +2150,10 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertEquals(2, $result['questions'][1]['slot']);
 
         // Only first page.
+        $this->resetDebugging();
         $result = mod_quiz_external::get_attempt_review($attempt->id, 0);
         $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
 
         $this->assertEquals(50, $result['grade']);
         $this->assertEquals(1, $result['attempt']['attempt']);
@@ -2166,7 +2170,10 @@ final class external_test extends \core_external\tests\externallib_testcase {
     }
 
     /**
-     * Test get_attempt_review
+     * Test get_attempt_review for an attempt in 'submitted' state.
+     *
+     * @todo Remove in Moodle 6.0 as part of MDL-80956 final deprecations.
+     * @covers \mod_quiz_external::get_attempt_review
      */
     public function test_get_attempt_review_with_extra_grades(): void {
         global $DB;
@@ -2183,8 +2190,10 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $structure->update_slot_grade_item($structure->get_slot_by_number(1), $listeninggrade->id);
         $structure->update_slot_grade_item($structure->get_slot_by_number(2), $readinggrade->id);
 
+        $this->resetDebugging();
         $result = mod_quiz_external::get_attempt_review($attempt->id);
         $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
 
         // Two questions, one completed and correct, the other gave up.
         $this->assertEquals(50, $result['grade']);
@@ -2198,8 +2207,10 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertEquals(2, $result['questions'][1]['slot']);
 
         // Only first page.
+        $this->resetDebugging();
         $result = mod_quiz_external::get_attempt_review($attempt->id, 0);
         $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
 
         $this->assertEquals(50, $result['grade']);
         $this->assertEquals(1, $result['attempt']['attempt']);
@@ -2215,14 +2226,50 @@ final class external_test extends \core_external\tests\externallib_testcase {
 
         // Now change the review options, so marks are not displayed, and check the result.
         $DB->set_field('quiz', 'reviewmarks', 0, ['id' => $attemptobj->get_quizid()]);
+        $this->resetDebugging();
         $result = mod_quiz_external::get_attempt_review($attempt->id, 0);
         $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
 
         $this->assertEquals(1, $result['attempt']['attempt']);
         $this->assertEquals('finished', $result['attempt']['state']);
         $this->assertNull($result['attempt']['sumgrades']);
         $this->assertArrayNotHasKey('gradeitemmarks', $result['attempt']);
     }
+
+    /**
+     * Test get_attempt_review for an attempt in 'submitted' state.
+     *
+     * @todo Remove in Moodle 6.0 as part of MDL-80956 final deprecations.
+     * @covers \mod_quiz_external::get_attempt_review
+     */
+    public function test_get_attempt_review_submitted(): void {
+        // Create a new quiz with two questions and one attempt submitted.
+        [, , , $attempt, $attemptobj, ] = $this->create_quiz_with_questions($this->course->id, $this->student->id, true);
+        // Submit the attempt but do not finish it.
+        // Process some responses from the student.
+        $tosubmit = [1 => ['answer' => '3.14']];
+        $attemptobj->process_submitted_actions(time(), false, $tosubmit);
+        $attemptobj->process_submit(time(), false);
+
+        $result = mod_quiz_external::get_attempt_review($attempt->id);
+        $result = external_api::clean_returnvalue(mod_quiz_external::get_attempt_review_returns(), $result);
+        $this->assertDebuggingCalled();
+
+        // Two questions, one completed, one not.
+        $this->assertNull($result['grade']);
+        $this->assertEquals(1, $result['attempt']['attempt']);
+        $this->assertEquals('finished', $result['attempt']['state']); // State is finished, although it's really submitted.
+        $this->assertNull($result['attempt']['sumgrades']);
+        $this->assertCount(2, $result['questions']);
+        $this->assertEquals('complete', $result['questions'][0]['state']);
+        $this->assertEquals(1, $result['questions'][0]['slot']);
+        $this->assertEquals('todo', $result['questions'][1]['state']);
+        $this->assertEquals(2, $result['questions'][1]['slot']);
+
+        $this->assertCount(0, $result['additionaldata']);
+    }
+
 
     /**
      * Test test_view_attempt
@@ -2659,11 +2706,11 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->setUser($this->student);
         // Check that we do not return content from other questions except than the ones currently viewed.
         $result = mod_quiz_external::get_attempt_summary($attemptobj->get_attemptid());
-        $this->assertStringContainsString('Question (1)', $result['questions'][0]['html']); // Current question.
-        $this->assertEmpty($result['questions'][1]['html']); // Next question.
-        $this->assertEmpty($result['questions'][2]['html']); // And more.
-        $this->assertEmpty($result['questions'][3]['html']); // And more.
-        $this->assertEmpty($result['questions'][4]['html']); // And more.
+        $this->assertStringContainsString('Question (1)', $result['questions'][0]->html); // Current question.
+        $this->assertEmpty($result['questions'][1]->html); // Next question.
+        $this->assertEmpty($result['questions'][2]->html); // And more.
+        $this->assertEmpty($result['questions'][3]->html); // And more.
+        $this->assertEmpty($result['questions'][4]->html); // And more.
         $this->assertNotContains('totalunanswered', $result);   // For sequential quizzes, unanswered questions are not considered.
     }
 
@@ -2702,7 +2749,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
         // Now we can see page 1.
         $result = mod_quiz_external::get_attempt_data($attemptobj->get_attemptid(), 1);
         $this->assertCount(1, $result['questions']);
-        $this->assertStringContainsString('Question (2)', $result['questions'][0]['html']);
+        $this->assertStringContainsString('Question (2)', $result['questions'][0]->html);
     }
 
     /**
