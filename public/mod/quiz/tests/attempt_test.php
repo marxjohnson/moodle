@@ -19,6 +19,7 @@ namespace mod_quiz;
 use core_question\local\bank\condition;
 use core_question\local\bank\question_version_status;
 use core_question_generator;
+use mod_quiz\tests\attempt_helper_test_trait;
 use mod_quiz_generator;
 use question_engine;
 
@@ -37,6 +38,7 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
  * @covers \mod_quiz\quiz_attempt
  */
 final class attempt_test extends \advanced_testcase {
+    use attempt_helper_test_trait;
 
     /**
      * Create quiz and attempt data with layout.
@@ -716,4 +718,169 @@ final class attempt_test extends \advanced_testcase {
         set_config('asyncgrading', false, 'quiz'); // Disable async grading globally.
         $this->assertFalse($attempt2->can_use_async_grading());
     }
+
+    /**
+     * Test get_review with feedback.
+     */
+    public function test_get_quiz_attempt_review(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $student = $generator->create_user();
+        $generator->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+
+        // Create a new quiz with two questions and one attempt finished.
+        [$quiz, , , , $attemptobj] = $this->create_quiz_with_questions($course->id, $student->id, true, true);
+
+        // Add feedback to the quiz.
+        $feedback = new \stdClass();
+        $feedback->quizid = $quiz->id;
+        $feedback->feedbacktext = 'Feedback text 1';
+        $feedback->feedbacktextformat = 1;
+        $feedback->mingrade = 49;
+        $feedback->maxgrade = 100;
+        $feedback->id = $DB->insert_record('quiz_feedback', $feedback);
+
+        $feedback->feedbacktext = 'Feedback text 2';
+        $feedback->feedbacktextformat = 1;
+        $feedback->mingrade = 30;
+        $feedback->maxgrade = 48;
+        $feedback->id = $DB->insert_record('quiz_feedback', $feedback);
+
+        $result = $attemptobj->get_review();
+
+        // Two questions, one completed and correct, the other gave up.
+        $this->assertEquals(50, $result['grade']);
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('finished', $result['attempt']->state);
+        $this->assertEquals(1, $result['attempt']->sumgrades);
+        $this->assertCount(2, $result['questions']);
+        $this->assertEquals('gradedright', $result['questions'][0]->state);
+        $this->assertEquals(1, $result['questions'][0]->slot);
+        $this->assertEquals('gaveup', $result['questions'][1]->state);
+        $this->assertEquals(2, $result['questions'][1]->slot);
+
+        $this->assertCount(1, $result['additionaldata']);
+        $this->assertEquals('feedback', $result['additionaldata'][0]->id);
+        $this->assertEquals('Feedback', $result['additionaldata'][0]->title);
+        $this->assertEquals('Feedback text 1', $result['additionaldata'][0]->content);
+
+        // Only first page.
+        $result = $attemptobj->get_review(0);
+
+        $this->assertEquals(50, $result['grade']);
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('finished', $result['attempt']->state);
+        $this->assertEquals(1, $result['attempt']->sumgrades);
+        $this->assertCount(1, $result['questions']);
+        $this->assertEquals('gradedright', $result['questions'][0]->state);
+        $this->assertEquals(1, $result['questions'][0]->slot);
+
+        $this->assertCount(1, $result['additionaldata']);
+        $this->assertEquals('feedback', $result['additionaldata'][0]->id);
+        $this->assertEquals('Feedback', $result['additionaldata'][0]->title);
+        $this->assertEquals('Feedback text 1', $result['additionaldata'][0]->content);
+    }
+
+    /**
+     * Test get_review with extra grades
+     */
+    public function test_get_quiz_attempt_review_with_extra_grades(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        // Create a new quiz with two questions and one attempt finished.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $student = $generator->create_user();
+        $generator->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+        [, , , , $attemptobj] = $this->create_quiz_with_questions($course->id, $student->id, true, true);
+
+        // Add some extra grade items.
+        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
+        $listeninggrade = $quizgenerator->create_grade_item(['quizid' => $attemptobj->get_quizid(), 'name' => 'Listening']);
+        $readinggrade = $quizgenerator->create_grade_item(['quizid' => $attemptobj->get_quizid(), 'name' => 'Reading']);
+        $structure = $attemptobj->get_quizobj()->get_structure();
+        $structure->update_slot_grade_item($structure->get_slot_by_number(1), $listeninggrade->id);
+        $structure->update_slot_grade_item($structure->get_slot_by_number(2), $readinggrade->id);
+        // Reload the attempt object with the new grade items.
+        $attemptobj = quiz_attempt::create($attemptobj->get_attemptid());
+
+        $result = $attemptobj->get_review();
+
+        // Two questions, one completed and correct, the other gave up.
+        $this->assertEquals(50, $result['grade']);
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('finished', $result['attempt']->state);
+        $this->assertEquals(1, $result['attempt']->sumgrades);
+        $this->assertCount(2, $result['questions']);
+        $this->assertEquals('gradedright', $result['questions'][0]->state);
+        $this->assertEquals(1, $result['questions'][0]->slot);
+        $this->assertEquals('gaveup', $result['questions'][1]->state);
+        $this->assertEquals(2, $result['questions'][1]->slot);
+
+        // Only first page.
+        $result = $attemptobj->get_review(0);
+
+        $this->assertEquals(50, $result['grade']);
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('finished', $result['attempt']->state);
+        $this->assertEquals(1, $result['attempt']->sumgrades);
+        $this->assertCount(1, $result['questions']);
+        $this->assertEquals('gradedright', $result['questions'][0]->state);
+        $this->assertEquals(1, $result['questions'][0]->slot);
+
+        // Verify additional grades.
+        $this->assertEquals(['name' => 'Listening', 'grade' => 1, 'maxgrade' => 1], $result['attempt']->gradeitemmarks[0]);
+        $this->assertEquals(['name' => 'Reading', 'grade' => 0, 'maxgrade' => 1], $result['attempt']->gradeitemmarks[1]);
+
+        // Now change the review options, so marks are not displayed, and check the result.
+        $DB->set_field('quiz', 'reviewmarks', 0, ['id' => $attemptobj->get_quizid()]);
+        $attemptobj = quiz_attempt::create($attemptobj->get_attemptid());
+        $result = $attemptobj->get_review(0);
+
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('finished', $result['attempt']->state);
+        $this->assertNull($result['attempt']->sumgrades);
+        $this->assertObjectNotHasProperty('gradeitemmarks', $result['attempt']);
+    }
+
+    /**
+     * Test get_review for an attempt in 'submitted' state.
+     */
+    public function test_get_quiz_attempt_review_submitted(): void {
+        $this->resetAfterTest();
+        // Create a new quiz with two questions and one attempt submitted.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $student = $generator->create_user();
+        $generator->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+        [, , , , $attemptobj] = $this->create_quiz_with_questions($course->id, $student->id, true);
+        // Submit the attempt but do not finish it.
+        // Process some responses from the student.
+        $tosubmit = [1 => ['answer' => '3.14']];
+        $attemptobj->process_submitted_actions(time(), false, $tosubmit);
+        $attemptobj->process_submit(time(), false);
+
+        $result = $attemptobj->get_review();
+
+        // Two questions, one completed, one not.
+        $this->assertNull($result['grade']);
+        $this->assertEquals(1, $result['attempt']->attempt);
+        $this->assertEquals('submitted', $result['attempt']->state);
+        $this->assertNull($result['attempt']->sumgrades);
+        $this->assertCount(2, $result['questions']);
+        $this->assertEquals('complete', $result['questions'][0]->state);
+        $this->assertEquals(1, $result['questions'][0]->slot);
+        $this->assertEquals('todo', $result['questions'][1]->state);
+        $this->assertEquals(2, $result['questions'][1]->slot);
+
+        $this->assertCount(0, $result['additionaldata']);
+    }
+
 }
