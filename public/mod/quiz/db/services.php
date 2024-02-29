@@ -133,7 +133,8 @@ $functions = [
     'mod_quiz_get_attempt_review' => [
         'classname'     => 'mod_quiz_external',
         'methodname'    => 'get_attempt_review',
-        'description'   => 'Returns review information for the given finished attempt, can be used by users or teachers.',
+        'description'   => 'Returns review information for the given finished attempt, can be used by users or teachers. ' .
+            '(Deprecated in favour of /api/rest/v2/mod_quiz/attempts/{id}/review)',
         'type'          => 'read',
         'capabilities'  => 'mod/quiz:reviewmyattempts',
         'services'      => [MOODLE_OFFICIAL_MOBILE_SERVICE]
