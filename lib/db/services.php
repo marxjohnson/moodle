@@ -808,7 +808,8 @@ $functions = array(
         'description' => 'Get the list of potential users to enrol',
         'ajax' => true,
         'type' => 'read',
-        'capabilities' => 'moodle/course:enrolreview'
+        'capabilities' => 'moodle/course:enrolreview',
+        'readononlysession' => true,
     ),
     'core_enrol_search_users' => [
         'classname' => 'core_enrol_external',
