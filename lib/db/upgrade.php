@@ -977,6 +977,7 @@ function xmldb_main_upgrade($oldversion) {
 
         // Main savepoint reached.
         upgrade_main_savepoint(true, 2024012300.00);
+
     }
 
     if ($oldversion < 2024020200.01) {
@@ -1165,6 +1166,34 @@ function xmldb_main_upgrade($oldversion) {
 
         // Main savepoint reached.
         upgrade_main_savepoint(true, 2024041200.00);
+    }
+
+    if ($oldversion < 2024050300.01) {
+        // Define table stored_progress to be created.
+        $table = new xmldb_table('stored_progress');
+
+        // Adding fields to table stored_progress.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('idnumber', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timestart', XMLDB_TYPE_INTEGER, '20', null, null, null, null);
+        $table->add_field('lastupdate', XMLDB_TYPE_INTEGER, '20', null, null, null, null);
+        $table->add_field('percent', XMLDB_TYPE_NUMBER, '5, 2', null, null, null, '0');
+        $table->add_field('message', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('haserrored', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table stored_progress.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+
+        // Adding indexes to table stored_progress.
+        $table->add_index('uid_index', XMLDB_INDEX_NOTUNIQUE, ['idnumber']);
+
+        // Conditionally launch create table for stored_progress.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024050300.01);
     }
 
     // Automatically generated Moodle v4.4.0 release upgrade line.
