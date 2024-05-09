@@ -1531,6 +1531,41 @@ EOD;
     }
 
     /**
+     * Generate a stored_progress record and return the ID.
+     *
+     * All fields are optional, required fields will be generated if not supplied.
+     *
+     * @param ?string $idnumber The unique ID Number for this stored progress.
+     * @param ?int $timestart The time progress was started, defaults to now.
+     * @param ?int $lastupdate The time the progress was last updated.
+     * @param ?float $percent The percentage progress so far.
+     * @param ?string $message An error message.
+     * @param ?bool $haserrored Whether the process has encountered an error.
+     * @return stdClass The record including the inserted id.
+     * @throws dml_exception
+     */
+    public function create_stored_progress(
+        ?string $idnumber = null,
+        ?int $timestart = null,
+        ?int $lastupdate = null,
+        float $percent = 0.00,
+        ?string $message = null,
+        ?bool $haserrored = false,
+    ): stdClass {
+        global $DB;
+        $record = (object)[
+            'idnumber' => $idnumber ?? random_string(),
+            'timestart' => $timestart ?? time(),
+            'lastupdate' => $lastupdate,
+            'percent' => $percent,
+            'message' => $message,
+            'haserrored' => $haserrored,
+        ];
+        $record->id = $DB->insert_record('stored_progress', $record);
+        return $record;
+    }
+
+    /**
      * Gets a default generator for a given component.
      *
      * @param string $component The component name, e.g. 'mod_forum' or 'core_question'.

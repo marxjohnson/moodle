@@ -26,7 +26,7 @@ namespace core\task;
  */
 trait stored_progress_task_trait {
 
-    /** @var stored_progress_bar|null $progress */
+    /** @var \core\stored_progress_bar|null $progress */
     protected $progress = null;
 
     /**
