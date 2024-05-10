@@ -1566,6 +1566,22 @@ EOD;
     }
 
     /**
+     * Generate a stored progress record from an array of fields.
+     *
+     * For use as a behat createable entity. Use {@see self::create_stored_progress()} if calling directly.
+     */
+    public function create_stored_progress_bar(array $data): void {
+        $this->create_stored_progress(
+            $data['idnumber'] ?? null,
+            $data['timestart'] ?? null,
+            $data['lastupdate'] ?? null,
+            $data['percent'] ?? 0.00,
+            $data['message'] ?? null,
+            $data['haserrored'] ?? false,
+        );
+    }
+
+    /**
      * Gets a default generator for a given component.
      *
      * @param string $component The component name, e.g. 'mod_forum' or 'core_question'.
