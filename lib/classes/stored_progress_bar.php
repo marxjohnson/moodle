@@ -279,6 +279,12 @@ class stored_progress_bar extends \progress_bar {
     protected function render_update(): void {
         global $OUTPUT;
 
+        // If no output buffering, don't render it at all.
+        if (defined('NO_OUTPUT_BUFFERING') && NO_OUTPUT_BUFFERING) {
+            $this->auto_update(false);
+        }
+
+        // If we want the screen to auto update, render it.
         if ($this->autoupdate) {
             echo $OUTPUT->render_progress_bar_update(
                 $this->idnumber, sprintf("%.1f", $this->percent), $this->message, $this->get_estimate_message($this->percent)
