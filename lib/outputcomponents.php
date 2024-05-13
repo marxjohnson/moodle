@@ -5151,35 +5151,46 @@ class preferences_group implements renderable {
  * @category output
  */
 class progress_bar implements renderable, templatable {
-    /** @var string html id */
-    private $html_id;
+
+    /** @var string unique id */
+    protected $idnumber;
+
     /** @var int total width */
-    private $width;
+    protected $width;
+
     /** @var int last percentage printed */
-    private $percent = 0;
+    protected $percent = 0;
+
     /** @var int time when last printed */
-    private $lastupdate = 0;
+    protected $lastupdate = 0;
+
     /** @var int when did we start printing this */
-    private $time_start = 0;
+    protected $timestart = 0;
+
+    /** @var bool Whether or not to auto render updates to the screen */
+    protected $autoupdate = true;
+
+    /** @var bool Whether or not an error has occured */
+    protected $haserrored = false;
 
     /**
      * Constructor
      *
      * Prints JS code if $autostart true.
      *
-     * @param string $htmlid The container ID.
+     * @param string $idnumber The unique ID for the progress bar.
      * @param int $width The suggested width.
      * @param bool $autostart Whether to start the progress bar right away.
      */
-    public function __construct($htmlid = '', $width = 500, $autostart = false) {
+    public function __construct($idnumber = '', $width = 500, $autostart = false) {
         if (!CLI_SCRIPT && !NO_OUTPUT_BUFFERING) {
             debugging('progress_bar used in a non-CLI script without setting NO_OUTPUT_BUFFERING.', DEBUG_DEVELOPER);
         }
 
-        if (!empty($htmlid)) {
-            $this->html_id  = $htmlid;
+        if (!empty($idnumber)) {
+            $this->idnumber  = $idnumber;
         } else {
-            $this->html_id  = 'pbar_'.uniqid();
+            $this->idnumber  = 'pbar_'.uniqid();
         }
 
         $this->width = $width;
@@ -5194,7 +5205,15 @@ class progress_bar implements renderable, templatable {
      * @return string id
      */
     public function get_id(): string {
-        return $this->html_id;
+        return $this->idnumber;
+    }
+
+    /**
+     * Get the percent
+     * @return float
+     */
+    public function get_percent(): float {
+        return $this->percent;
     }
 
     /**
@@ -5203,13 +5222,43 @@ class progress_bar implements renderable, templatable {
      * @return void Echo's output
      */
     public function create() {
+
+        $this->timestart = $this->now();
+        $this->render();
+
+    }
+
+    /**
+     * Render the progress bar.
+     *
+     * @return void
+     */
+    public function render(): void {
         global $OUTPUT;
 
-        $this->time_start = microtime(true);
+        flush();
+        echo $this->get_content();
+        flush();
+    }
 
-        flush();
-        echo $OUTPUT->render($this);
-        flush();
+    /**
+     * Get the content to be rendered
+     *
+     * @return string
+     */
+    public function get_content(): string {
+        global $OUTPUT;
+        return $OUTPUT->render($this);
+    }
+
+    /**
+     * Set whether or not to auto render updates to the screen
+     *
+     * @param bool $value
+     * @return void
+     */
+    public function auto_update(bool $value): void {
+        $this->autoupdate = $value;
     }
 
     /**
@@ -5220,10 +5269,10 @@ class progress_bar implements renderable, templatable {
      * @return void Echo's output
      * @throws coding_exception
      */
-    private function _update($percent, $msg) {
+    protected function _update($percent, $msg) {
         global $OUTPUT;
 
-        if (empty($this->time_start)) {
+        if (empty($this->timestart)) {
             throw new coding_exception('You must call create() (or use the $autostart ' .
                 'argument to the constructor) before you try updating the progress bar.');
         }
@@ -5241,17 +5290,15 @@ class progress_bar implements renderable, templatable {
             return;
         }
 
-        $estimatemsg = '';
-        if ($estimate != 0 && is_numeric($estimate)) {
-            // Err on the conservative side and also avoid showing 'now' as the estimate.
-            $estimatemsg = format_time(ceil($estimate));
-        }
+        $estimatemsg = $this->get_estimate_message($percent);
 
         $this->percent = $percent;
-        $this->lastupdate = microtime(true);
+        $this->lastupdate = $this->now();
 
-        echo $OUTPUT->render_progress_bar_update($this->html_id, $this->percent, $msg, $estimatemsg);
-        flush();
+        if ($this->autoupdate) {
+            echo $OUTPUT->render_progress_bar_update($this->idnumber, sprintf("%.1f", $this->percent), $msg, $estimatemsg);
+            flush();
+        }
     }
 
     /**
@@ -5260,7 +5307,7 @@ class progress_bar implements renderable, templatable {
      * @param int $pt From 1-100.
      * @return mixed Null (unknown), or int.
      */
-    private function estimate($pt) {
+    protected function estimate($pt) {
         if ($this->lastupdate == 0) {
             return null;
         }
@@ -5270,7 +5317,7 @@ class progress_bar implements renderable, templatable {
         if ($pt > 99.99999) {
             return 0; // Nearly done, right?
         }
-        $consumed = microtime(true) - $this->time_start;
+        $consumed = $this->now() - $this->timestart;
         if ($consumed < 0.001) {
             return null;
         }
@@ -5307,7 +5354,7 @@ class progress_bar implements renderable, templatable {
     public function restart() {
         $this->percent    = 0;
         $this->lastupdate = 0;
-        $this->time_start = 0;
+        $this->timestart = 0;
     }
 
     /**
@@ -5318,8 +5365,75 @@ class progress_bar implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         return [
-            'id' => $this->html_id,
+            'id' => '',
+            'idnumber' => $this->idnumber,
             'width' => $this->width,
+            'class' => '',
+            'value' => 0,
+            'error' => 0,
         ];
     }
+
+    /**
+     * Get the current timestamp in microseconds.
+     *
+     * @return float
+     */
+    protected function now() {
+        return microtime(true);
+    }
+
+    /**
+     * This gets the estimate message to be displayed with the progress bar.
+     *
+     * @param float $percent
+     * @return string
+     */
+    public function get_estimate_message(float $percent): string {
+        $estimate = $this->estimate($percent);
+        $estimatemsg = '';
+        if ($estimate != 0 && is_numeric($estimate)) {
+            $estimatemsg = format_time(ceil($estimate));
+        }
+
+        return $estimatemsg;
+    }
+
+    /**
+     * Set the error flag on the object
+     *
+     * @param bool $value
+     * @return void
+     */
+    protected function set_haserrored(bool $value): void {
+        $this->haserrored = $value;
+    }
+
+    /**
+     * Check if the process has errored
+     *
+     * @return bool
+     */
+    public function get_haserrored(): bool {
+        return $this->haserrored;
+    }
+
+    /**
+     * Set that the process running has errored
+     *
+     * @param string $errormsg
+     * @return void
+     */
+    public function error(string $errormsg): void {
+        global $OUTPUT;
+
+        $this->haserrored = true;
+        $this->message = $errormsg;
+
+        if ($this->autoupdate) {
+            echo $OUTPUT->render_progress_bar_update($this->idnumber, sprintf("%.1f", $this->percent), $errormsg, '', true);
+            flush();
+        }
+    }
+
 }
