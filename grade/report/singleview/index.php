@@ -178,12 +178,36 @@ if ($course->groupmode && $itemtype !== 'select') {
     $PAGE->requires->js_call_amd('gradereport_singleview/group', 'init', [$itemtype]);
 }
 
+// Make sure we have proper final grades.
+$regradetask = \core_course\task\regrade_final_grades::create($courseid);
+$indicatormessage = get_string('recalculatinggradesadhoc', 'grades');
+$taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+if (!$taskindicator->has_task_record()) {
+    grade_regrade_final_grades_if_required($course);
+    $taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+}
+
 if ($itemtype == 'user') {
-    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, $button,
-        true, null, null, $report->screen->item, $actionbar);
+    print_grade_page_head(
+        $course->id,
+        'report',
+        'singleview',
+        $reportname,
+        buttons: $button,
+        user: $report->screen->item,
+        actionbar: $actionbar,
+        taskindicator: $taskindicator,
+    );
 } else {
-    print_grade_page_head($course->id, 'report', 'singleview', $reportname, false, $button,
-        true, null, null, null, $actionbar);
+    print_grade_page_head(
+            $course->id,
+            'report',
+            'singleview',
+            $reportname,
+            buttons: $button,
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+    );
 }
 
 if ($data = data_submitted()) {
@@ -206,9 +230,6 @@ if ($data = data_submitted()) {
         );
     }
 }
-
-// Make sure we have proper final grades.
-grade_regrade_final_grades_if_required($course);
 
 // Save the screen state in a session variable as last viewed state.
 $SESSION->gradereport_singleview["itemtype-{$context->id}"] = $itemtype;

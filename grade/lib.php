@@ -882,7 +882,8 @@ class grade_plugin_info {
  */
 function print_grade_page_head(int $courseid, string $active_type, ?string $active_plugin = null, string|bool $heading = false,
        bool $return = false, $buttons = false, bool $shownavigation = true, ?string $headerhelpidentifier = null,
-       ?string $headerhelpcomponent = null, ?stdClass $user = null, ?action_bar $actionbar = null, $unused = null) {
+       ?string $headerhelpcomponent = null, ?stdClass $user = null, ?action_bar $actionbar = null, $unused = null,
+       ?\core\output\task_indicator $taskindicator = null) {
     global $CFG, $OUTPUT, $PAGE, $USER;
 
     if ($heading !== false) {
@@ -990,6 +991,10 @@ function print_grade_page_head(int $courseid, string $active_type, ?string $acti
         $output = $renderer->user_heading($user, $courseid, $showuserbuttons);
     } else if (!empty($heading)) {
         $output = $OUTPUT->heading($heading);
+    }
+
+    if ($taskindicator && $taskindicator->has_task_record()) {
+        $output .= $OUTPUT->render($taskindicator);
     }
 
     if ($return) {

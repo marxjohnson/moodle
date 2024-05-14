@@ -109,9 +109,18 @@ if (has_capability('moodle/grade:viewall', $context) && $courseid != SITEID) {
         $user_selector = true;
     }
 
+    $regradetask = \core_course\task\regrade_final_grades::create($courseid);
+    $indicatormessage = get_string('recalculatinggradesadhoc', 'grades');
+
     if (empty($userid)) {
-        print_grade_page_head($courseid, 'report', 'overview', false, false, false,
-            true, null, null, null, $actionbar);
+        $taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+        print_grade_page_head(
+            $courseid,
+            'report',
+            'overview',
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+        );
 
         groups_print_course_menu($course, $gpr->get_return_url('index.php?id='.$courseid, array('userid'=>0)));
 
@@ -126,9 +135,16 @@ if (has_capability('moodle/grade:viewall', $context) && $courseid != SITEID) {
         // Make sure we have proper final grades - this report shows grades from other courses, not just the
         // selected one, so we need to check and regrade all courses the user is enrolled in.
         $report->regrade_all_courses_if_needed(true);
-        print_grade_page_head($courseid, 'report', 'overview', get_string('pluginname', 'gradereport_overview') .
-            ' - ' . fullname($report->user), false, false, true, null, null,
-            $report->user, $actionbar);
+        $taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+        print_grade_page_head(
+            $courseid,
+            'report',
+            'overview',
+            get_string('pluginname', 'gradereport_overview') . ' - ' . fullname($report->user),
+            user: $report->user,
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+        );
         groups_print_course_menu($course, $gpr->get_return_url('index.php?id='.$courseid, array('userid'=>0)));
 
         if ($user_selector) {

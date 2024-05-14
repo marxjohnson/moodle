@@ -44,7 +44,13 @@ if (empty($CFG->enableoutcomes)) {
 }
 
 // First make sure we have proper final grades.
-grade_regrade_final_grades_if_required($course);
+$regradetask = \core_course\task\regrade_final_grades::create($courseid);
+$indicatormessage = get_string('recalculatinggradesadhoc', 'grades');
+$taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+if (!$taskindicator->has_task_record()) {
+    grade_regrade_final_grades_if_required($course);
+    $taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+}
 
 // Grab all outcomes used in course.
 $report_info = array();
@@ -176,7 +182,7 @@ foreach ($report_info as $outcomeid => $outcomedata) {
 
 $html .= '</table>';
 
-print_grade_page_head($courseid, 'report', 'outcomes');
+print_grade_page_head($courseid, 'report', 'outcomes', taskindicator: $taskindicator);
 
 echo $html;
 

@@ -84,7 +84,13 @@ if (!isset($USER->grade_last_report)) {
 $USER->grade_last_report[$course->id] = 'user';
 
 // First make sure we have proper final grades.
-grade_regrade_final_grades_if_required($course);
+$regradetask = \core_course\task\regrade_final_grades::create($courseid);
+$indicatormessage = get_string('recalculatinggradesadhoc', 'grades');
+$taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+if (!$taskindicator->has_task_record()) {
+    grade_regrade_final_grades_if_required($course);
+    $taskindicator = new \core\output\task_indicator($regradetask, $indicatormessage);
+}
 
 $gradesrenderer = $PAGE->get_renderer('core_grades');
 
@@ -141,8 +147,13 @@ if (has_capability('moodle/grade:viewall', $context)) {
     if (is_null($userid)) { // Zero state.
         $actionbar = new \gradereport_user\output\action_bar($context, $userview, null, $currentgroup);
         // Print header.
-        print_grade_page_head($courseid, 'report', 'user', false, false, null, true,
-            null, null, null, $actionbar);
+        print_grade_page_head(
+            $courseid,
+            'report',
+            'user',
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+        );
 
         if (empty($gradableusers)) { // There are no available gradable users, display a notification.
             $message = $currentgroup ? get_string('nostudentsingroup') : get_string('nostudentsyet');
@@ -156,8 +167,13 @@ if (has_capability('moodle/grade:viewall', $context)) {
         $SESSION->gradereport_user["useritem-{$context->id}"] = $userid;
 
         $actionbar = new \gradereport_user\output\action_bar($context, $userview, 0, $currentgroup);
-        print_grade_page_head($courseid, 'report', 'user', false, false, null, true,
-            null, null, null, $actionbar);
+        print_grade_page_head(
+            $courseid,
+            'report',
+            'user',
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+        );
 
         while ($userdata = $gui->next_user()) {
             $user = $userdata->user;
@@ -177,7 +193,14 @@ if (has_capability('moodle/grade:viewall', $context)) {
         $report = new gradereport_user\report\user($courseid, $gpr, $context, $userid, $viewasuser);
         $actionbar = new \gradereport_user\output\action_bar($context, $userview, $report->user->id, $currentgroup);
 
-        print_grade_page_head($courseid, 'report', 'user', false, false, false, true, null, null, $report->user, $actionbar);
+        print_grade_page_head(
+            $courseid,
+            'report',
+            'user',
+            user: $report->user,
+            actionbar: $actionbar,
+            taskindicator: $taskindicator,
+        );
 
         if ($currentgroup && !groups_is_member($currentgroup, $userid)) {
             echo $OUTPUT->notification(get_string('groupusernotmember', 'error'));
@@ -199,7 +222,13 @@ if (has_capability('moodle/grade:viewall', $context)) {
     $report = new gradereport_user\report\user($courseid, $gpr, $context, $userid ?? $USER->id);
 
     // Print the page.
-    print_grade_page_head($courseid, 'report', 'user', false, false, false, true, null, null, $report->user);
+    print_grade_page_head(
+        $courseid,
+        'report',
+        'user',
+        user: $report->user,
+        taskindicator: $taskindicator,
+    );
 
     if ($report->fill_table()) {
         echo $report->print_table(true);
