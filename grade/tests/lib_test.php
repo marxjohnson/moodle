@@ -280,8 +280,8 @@ class lib_test extends \advanced_testcase {
         // Trigger a regrade.
         grade_force_full_regrading($course1->id);
         grade_force_full_regrading($course2->id);
-        grade_regrade_final_grades($course1->id);
-        grade_regrade_final_grades($course2->id);
+        grade_regrade_final_grades($course1->id, async: false);
+        grade_regrade_final_grades($course2->id, async: false);
 
         // Initialise reports.
         $context1 = \context_course::instance($course1->id);
@@ -411,7 +411,7 @@ class lib_test extends \advanced_testcase {
 
         // Trigger a regrade.
         grade_force_full_regrading($course->id);
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // Initialise reports.
         $context = \context_course::instance($course->id);
@@ -532,7 +532,7 @@ class lib_test extends \advanced_testcase {
 
         // Trigger a regrade.
         grade_force_full_regrading($course->id);
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // Initialise report.
         $context = \context_course::instance($course->id);
@@ -683,7 +683,7 @@ class lib_test extends \advanced_testcase {
 
         // Trigger a regrade.
         grade_force_full_regrading($course->id);
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // Initialise reports.
         $context = \context_course::instance($course->id);
@@ -1002,7 +1002,7 @@ class lib_test extends \advanced_testcase {
         $this->getDataGenerator()->create_group_member(['groupid' => $group2->id, 'userid' => $student3->id]);
 
         // Perform a regrade before creating the report.
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         // Should return all gradable users (only students).
         $gradableusers = get_gradable_users($course->id);
         $this->assertEqualsCanonicalizing([$student1->id, $student2->id, $student3->id], array_keys($gradableusers));
