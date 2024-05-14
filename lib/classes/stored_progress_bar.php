@@ -38,11 +38,25 @@ class stored_progress_bar extends \progress_bar {
     /**
      * This overwrites the progress_bar::__construct method.
      *
+     * The stored progress bar does not need to check NO_OUTPUT_BUFFERING since it outputs to the page
+     * then polls for updates asynchronously, rather than waiting for synchronous updates in later output.
+     *
      * @param string $idnumber
+     * @param int $width
+     * @param bool $autostart
      */
-    public function __construct($idnumber) {
-        // Construct from the parent.
-        parent::__construct($idnumber, 0, true);
+    public function __construct(string $idnumber, int $width = 0, bool $autostart = true) {
+        if (!empty($idnumber)) {
+            $this->idnumber  = $idnumber;
+        } else {
+            $this->idnumber  = 'pbar_'.uniqid();
+        }
+
+        $this->width = $width;
+
+        if ($autostart) {
+            $this->create();
+        }
     }
 
     /**
@@ -118,10 +132,10 @@ class stored_progress_bar extends \progress_bar {
     /**
      * Set the time we started the process.
      *
-     * @param int $value
+     * @param ?int $value
      * @return void
      */
-    protected function set_time_started(int $value): void {
+    protected function set_time_started(?int $value): void {
         $this->timestart = $value;
     }
 
@@ -219,8 +233,19 @@ class stored_progress_bar extends \progress_bar {
     public function start(): int {
         global $DB;
 
-        // Delete any existing records for this.
-        $this->end();
+        $record = $DB->get_record('stored_progress', ['idnumber' => $this->idnumber]);
+        if ($record) {
+            if ($record->timestart == 0) {
+                // Set the timestart now and return.
+                $record->timestart = $this->timestart;
+                $DB->update_record('stored_progress', $record);
+                $this->recordid = $record->id;
+                return $this->recordid;
+            } else {
+                // Delete any existing records for this.
+                $this->end();
+            }
+        }
 
         // Create new progress record.
         $this->recordid = $DB->insert_record('stored_progress', [
@@ -357,6 +382,27 @@ class stored_progress_bar extends \progress_bar {
     public static function get_timeout(): int {
         global $CFG;
         return $CFG->progresspollinterval ?? 5;
+    }
+
+    /**
+     * Store a progress bar record in a pending state.
+     *
+     * @return int ID of the DB record
+     */
+    public function store_pending(): int {
+        global $DB;
+
+        // Delete any existing records for this.
+        $this->end();
+
+        // Create new progress record.
+        $this->recordid = $DB->insert_record('stored_progress', [
+            'idnumber' => $this->idnumber,
+            'timestart' => $this->timestart,
+            'message' => 'Task pending',
+        ]);
+
+        return $this->recordid;
     }
 
 }
