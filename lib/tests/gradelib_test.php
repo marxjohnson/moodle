@@ -154,7 +154,7 @@ final class gradelib_test extends \advanced_testcase {
         // Everything needs updating.
         $this->assertEquals(4, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
 
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // See that everything has been updated.
         $this->assertEquals(0, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
@@ -165,7 +165,7 @@ final class gradelib_test extends \advanced_testcase {
         $this->assertEquals(1, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
 
         // This can cause an infinite loop if things go... poorly.
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // Now because of the failure, two things need updating.
         $this->assertEquals(2, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
