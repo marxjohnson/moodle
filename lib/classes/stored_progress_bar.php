@@ -231,7 +231,13 @@ class stored_progress_bar extends \progress_bar {
      * @return int ID of the DB record
      */
     public function start(): int {
-        global $DB;
+        global $DB, $OUTPUT;
+
+        // If we are running in an non-interactive CLI environment, call the progress bar renderer to avoid warnings
+        // when we do an update.
+        if (defined('STDOUT') && !stream_isatty(STDOUT)) {
+            $OUTPUT->render_progress_bar($this);
+        }
 
         $record = $DB->get_record('stored_progress', ['idnumber' => $this->idnumber]);
         if ($record) {

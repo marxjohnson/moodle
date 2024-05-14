@@ -154,7 +154,7 @@ class gradelib_test extends \advanced_testcase {
         // Everything needs updating.
         $this->assertEquals(4, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
 
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         // See that everything has been updated.
         $this->assertEquals(0, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
@@ -165,7 +165,7 @@ class gradelib_test extends \advanced_testcase {
         $this->assertEquals(1, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
 
         // This can cause an infinite loop if things go... poorly.
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false); // CATALYST CUSTOM WR423619. Add aync: false.
 
         // Now because of the failure, two things need updating.
         $this->assertEquals(2, $DB->count_records('grade_items', ['courseid' => $course->id, 'needsupdate' => 1]));
@@ -310,6 +310,7 @@ class gradelib_test extends \advanced_testcase {
      * @return void
      */
     public function test_grade_get_grades_errors() {
+        $this->markTestSkipped('WR423619: grade_get_grades will not return errors.');  // CATALYST CUSTOM WR423619.
         $this->resetAfterTest();
 
         // Setup some basics.

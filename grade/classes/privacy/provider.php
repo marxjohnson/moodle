@@ -510,7 +510,7 @@ class provider implements
 
         // Ensure that the grades are final and do not need regrading.
         array_walk($courseids, function($courseid) {
-            grade_regrade_final_grades($courseid);
+            grade_regrade_final_grades($courseid, async: false);
         });
 
         // Export own grades.

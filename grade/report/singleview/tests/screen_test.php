@@ -60,7 +60,7 @@ class screen_test extends \advanced_testcase {
         $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $user2->id]);
 
         // Perform a regrade before creating the report.
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $screentest = new gradereport_singleview_screen_testable($course->id, 0, $group->id);
         $groupusers = $screentest->test_load_users();
         $this->assertDebuggingCalled('The function load_users() is deprecated. ' .

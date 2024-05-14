@@ -687,7 +687,7 @@ class grade_grade_test extends \grade_base_testcase {
         $this->assertTrue(in_array($gradeitem1a->id, array_keys($hidingaffectedunlocked['altered'])));
 
         // This creates all the grade_grades we need.
-        grade_regrade_final_grades($course1->id);
+        grade_regrade_final_grades($course1->id, async: false);
 
         // Set grade override.
         $gradegrade = \grade_grade::fetch([

@@ -789,7 +789,7 @@ class grade_category_test extends \grade_base_testcase {
         $this->assertTrue($category->set_locked(1));
         // The category should not be locked yet as we are waiting for a recalculation.
         $this->assertFalse($category->is_locked());
-        grade_regrade_final_grades($this->courseid);
+        grade_regrade_final_grades($this->courseid, async: false);
 
         // Get the category from the db again.
         $category = new \grade_category($this->grade_categories[0]);

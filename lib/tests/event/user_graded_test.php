@@ -120,7 +120,7 @@ class user_graded_test extends \advanced_testcase {
         // Remove the grades, force the regrading and re-fetch the item. This is needed because the item
         // will be set as needing an update when the grades are deleted.
         $gradeitem->delete_all_grades();
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $gradeitem = \grade_item::fetch($quizitemparams);
 
         // Now, create a grade using \grade_item::update_final_grade().
@@ -152,7 +152,7 @@ class user_graded_test extends \advanced_testcase {
         // Remove the grades, force the regrading and re-fetch the item. This is needed because the item
         // will be set as needing an update when the grades are deleted.
         $gradeitem->delete_all_grades();
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $gradeitem = \grade_item::fetch($quizitemparams);
 
         // Now, create a grade using \grade_item::update_final_grade().
@@ -191,7 +191,7 @@ class user_graded_test extends \advanced_testcase {
 
         // Now force the computation of the grade.
         $sink = $this->redirectEvents();
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $events = $sink->get_events();
         $sink->close();
 
@@ -211,7 +211,7 @@ class user_graded_test extends \advanced_testcase {
         $gradegrade->update();
 
         $sink = $this->redirectEvents();
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $events = $sink->get_events();
         $sink->close();
 

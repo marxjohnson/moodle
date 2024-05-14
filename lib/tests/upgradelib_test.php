@@ -202,7 +202,7 @@ class upgradelib_test extends advanced_testcase {
         $grade->finalgrade = 50;
         $grade->update();
         // Creating all the grade_grade items.
-        grade_regrade_final_grades($course1->id);
+        grade_regrade_final_grades($course1->id, async: false);
         // Updating the grade category to a new grade max and min.
         $gradecategoryitem->grademax = 50;
         $gradecategoryitem->grademin = 5;
@@ -233,7 +233,7 @@ class upgradelib_test extends advanced_testcase {
         $grade->update();
 
         // Setting all of the grade_grade items.
-        grade_regrade_final_grades($course2->id);
+        grade_regrade_final_grades($course2->id, async: false); // CATALYST CUSTOM WR423619. Add aync: false.
 
         // Different manual grade item for course 3. We are creating a course with a calculated grade item that has a grade max of
         // 50. The grade_grade will have a rawgrademax of 100 regardless.
@@ -260,7 +260,7 @@ class upgradelib_test extends advanced_testcase {
         $grade->update();
 
         // Setting all of the grade_grade items.
-        grade_regrade_final_grades($course3->id);
+        grade_regrade_final_grades($course3->id, async: false); // CATALYST CUSTOM WR423619. Add aync: false.
         // Need to do this first before changing the other courses, otherwise they will be flagged too early.
         set_config('gradebook_calculations_freeze_' . $course3->id, null);
         upgrade_calculated_grade_items($course3->id);
@@ -319,7 +319,7 @@ class upgradelib_test extends advanced_testcase {
         $gradeitem->force_regrading();
 
         // Trigger regrade because the grade items needs to be updated.
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         $coursegrade = new \grade_grade($courseitem->get_final($user->id), false);
         $this->assertEquals(20, $coursegrade->finalgrade);
@@ -374,7 +374,7 @@ class upgradelib_test extends advanced_testcase {
         $grade->finalgrade = 50;
         $grade->update();
 
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
         $grade = grade_grade::fetch(array('itemid' => $gradecategoryitem->id, 'userid' => $user->id));
         $grade->rawgrademax = 100;
         $grade->rawgrademin = 0;
@@ -385,7 +385,7 @@ class upgradelib_test extends advanced_testcase {
         // This is the function that we are testing. If we comment out this line, then the test fails because the grade items
         // are not flagged for regrading.
         upgrade_calculated_grade_items();
-        grade_regrade_final_grades($course->id);
+        grade_regrade_final_grades($course->id, async: false);
 
         $grade = grade_grade::fetch(array('itemid' => $gradecategoryitem->id, 'userid' => $user->id));
 
