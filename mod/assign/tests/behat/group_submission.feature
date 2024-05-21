@@ -369,7 +369,7 @@ Feature: Group assignment submissions
     And I should see "Submitted for grading" in the "Submission status" "table_row"
     And I should not see "Users who need to submit"
 
-  Scenario: Group submission does not use non-participation groups
+  Scenario: Students cannot make a group submission under a non-participation group
     Given the following "groups" exist:
       | name    | course | idnumber | participation |
       | Group A | C1     | CG1      | 0             |
@@ -386,3 +386,32 @@ Feature: Group assignment submissions
     When I am on the "Test assignment name" Activity page logged in as student1
     Then I should see "Default group"
     And I should not see "Group A"
+
+  @javascript
+  Scenario: All groups including non-participation groups can be used for filtering submissions
+    Given the following "groups" exist:
+      | name    | course | idnumber | participation |
+      | Group 2 | C1     | G2       | 0             |
+    And the following "group members" exist:
+      | group | user     |
+      | G1    | student1 |
+      | G2    | student1 |
+      | G1    | student2 |
+      | G2    | student3 |
+    And the following "activity" exists:
+      | activity         | assign               |
+      | course           | C1                   |
+      | name             | Test assignment name |
+      | submissiondrafts | 0                    |
+      | teamsubmission   | 1                    |
+      | groupmode        | 1                    |
+    And the following "mod_assign > submissions" exist:
+      | assign                | user      | onlinetext                          |
+      | Test assignment name  | student1  | I'm the student's first submission  |
+      | Test assignment name  | student3  | I'm the student's first submission  |
+    When I am on the "Test assignment name" Activity page logged in as teacher1
+    And I follow "View all submissions"
+    And I set the field "Separate groups" to "Group 2"
+    Then I should see "Student 1"
+    And I should see "Student 3"
+    And I should not see "Student 2"
