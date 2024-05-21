@@ -1,6 +1,13 @@
 This files describes API changes in /group/*,
 information provided here is intended especially for developers.
 
+=== 4.4.1 ===
+* `groups_print_activity_menu()` and `groups_get_activity_group()` now include an additional `$participationonly` parameter,
+  which is true by default. This can be set false when we want the user to be able to select a non-participation group within
+  an activity, for example if a teacher wants to filter assignment submissions by non-participation groups. It should never be
+  used when the menu is displayed to students, as this may allow them to participate using non-participation groups.
+  Non-participation groups are listed in their own optgroup.
+
 === 4.3 ===
 * The following external methods now return group names correctly formatted:
   - `core_group_get_groups`
