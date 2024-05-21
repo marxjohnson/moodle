@@ -41,12 +41,13 @@
 }
 
 // Add dropdown menu items styles for each theme color mantainning default hover/focus colour for contrast.
-@each $color, $value in $theme-colors {
+@each $color, $value in map-merge($theme-colors, ('muted': $text-muted)) {
     .dropdown-item {
         &:hover,
         &:focus {
             &.text-#{$color},
-            a.text-#{$color} {
+            a.text-#{$color},
+            span.text-#{$color} {
                 color: $dropdown-link-hover-color !important; /* stylelint-disable-line declaration-no-important */
             }
         }
