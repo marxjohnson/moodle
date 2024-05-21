@@ -4555,7 +4555,7 @@ class assign {
         $o .= $this->get_renderer()->heading(get_string('gradeitem:submissions', 'mod_assign'), 2);
         $o .= $this->get_renderer()->render($gradingactions);
 
-        $o .= groups_print_activity_menu($this->get_course_module(), $currenturl, true);
+        $o .= groups_print_activity_menu($this->get_course_module(), $currenturl, true, participationonly: false);
 
         // Plagiarism update status apearring in the grading book.
         if (!empty($CFG->enableplagiarism)) {
