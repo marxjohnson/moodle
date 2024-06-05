@@ -58,7 +58,7 @@ Feature: A teacher can put questions in categories in the question bank
     And I set the following fields to these values:
       | Name            | New name     |
       | Category info   | I was edited |
-    And I press "Edit category"
+    And I press "Save changes"
     Then I should see "New name"
     And I click on "Show descriptions" "checkbox"
     And I should see "I was edited"

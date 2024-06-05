@@ -36,6 +36,7 @@ import Templates from 'core/templates';
  * @returns {String} title string
  */
 const getTitle = isEdit => getString(isEdit ? 'editcategory' : 'addcategory', 'question');
+const getSave = isEdit => isEdit ? getString('savechanges', 'core') : getString('addcategory', 'question');
 
 /**
  * Function handling display of moodle form.
@@ -58,6 +59,7 @@ export const initModal = () => {
         e.preventDefault();
         // Data for the modal.
         const title = getTitle(addEditButton.dataset.actiontype === 'edit');
+        const save = getSave(addEditButton.dataset.actiontype === 'edit');
         const contextid = addEditButton.dataset.contextid;
         const categoryid = addEditButton.dataset.categoryid;
         const cmid = addEditButton.dataset.cmid;
@@ -79,7 +81,7 @@ export const initModal = () => {
                 title: title,
                 large: true,
             },
-            saveButtonText: title,
+            saveButtonText: save,
             returnFocus: addEditButton,
         });
         modalForm.addEventListener(modalForm.events.FORM_SUBMITTED, () => {

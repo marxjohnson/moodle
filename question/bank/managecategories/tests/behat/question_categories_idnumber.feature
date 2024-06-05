@@ -51,5 +51,5 @@ Feature: A teacher can put questions with idnumbers in categories with idnumbers
     And I am on the "Course 1" "core_question > course question categories" page
     Then I click on "Edit" "text" in the "Used category" "list_item"
     And I choose "Edit settings" in the open action menu
-    And I click on "Edit category" "button" in the "Edit category" "dialogue"
+    And I click on "Save changes" "button" in the "Edit category" "dialogue"
     Then I should not see "This ID number is already in use"

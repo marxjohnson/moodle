@@ -66,7 +66,7 @@ Feature: A teacher can reorder question categories
     And I open the action menu in "Course category 2" "list_item"
     And I choose "Edit settings" in the open action menu
     And I set the field "ID number" to "questioncat1"
-    And I click on "Edit category" "button" in the "Edit category" "dialogue"
+    And I click on "Save changes" "button" in the "Edit category" "dialogue"
     And I open the action menu in "Course category 2" "list_item"
     And I choose "Move" in the open action menu
     And I click on "After System category" "link" in the "Move Course category 2" "dialogue"
