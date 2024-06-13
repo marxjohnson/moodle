@@ -210,6 +210,11 @@ class attempt_summary_information implements renderable, named_templatable {
             return $grade;
         }
 
+        if ($attemptobj->get_state() == quiz_attempt::SUBMITTED) {
+            $this->add_item('grade', get_string('gradenoun'), get_string('gradinginprogress', 'quiz'));
+            return $grade;
+        }
+
         if (is_null($grade)) {
             // Attempt needs ot be graded.
             $this->add_item('grade', get_string('gradenoun'), quiz_format_grade($quiz, $grade));

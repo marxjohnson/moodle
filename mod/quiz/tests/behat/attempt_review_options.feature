@@ -79,7 +79,7 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
     And "Completed" "table_row" should exist
     And "Duration" "table_row" should exist
     And "Marks" "table_row" should not exist
-    And "Grade" "table_row" should not exist
+    And I should see "Grading in progress" in the "Grade" "table_row"
     And I should see "This attempt has been submitted and is queued for grading"
     And the field "True" matches value "1"
     And the field "False" matches value "0"
