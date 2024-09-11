@@ -410,8 +410,9 @@ Feature: Group assignment submissions
       | Test assignment name  | student1  | I'm the student's first submission  |
       | Test assignment name  | student3  | I'm the student's first submission  |
     When I am on the "Test assignment name" Activity page logged in as teacher1
-    And I follow "View all submissions"
-    And I set the field "Separate groups" to "Group 2"
+    And I follow "Submissions"
+    And I confirm "Group 2" exists in the "Search groups" search combo box
+    And I click on "Group 2" in the "Search groups" search combo box
     Then I should see "Student 1"
     And I should see "Student 3"
     And I should not see "Student 2"
