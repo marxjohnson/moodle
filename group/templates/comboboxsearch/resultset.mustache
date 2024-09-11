@@ -36,9 +36,18 @@
                 "link": "http://foo.bar/grade/report/grader/index.php?id=42&userid=3"
             }
         ],
+        "nonparticipationgroups": [
+            {
+                "id": 4
+                "name": "Baz Bar Foo",
+                "link": "http://foo.bar/grade/report/grader/index.php?id=43&userid=2"
+            }
+        ],
+        "npheader": "Non-participation",
         "instance": 25,
         "searchterm": "Foo",
-        "hasresults": true
+        "hasresults": true,
+        "hasnonparticipation": true
     }
 }}
 {{<core/local/comboboxsearch/resultset}}
@@ -47,5 +56,15 @@
         {{#groups}}
             {{>core_group/comboboxsearch/resultitem}}
         {{/groups}}
+        {{#hasnonparticipation}}
+            <li class="w-100 dropdown-item-text px-0 align-items-center">
+                <span class="d-block w-100 px-2 text-truncate">
+                    {{#str}} nonparticipation, group {{/str}}
+                </span>
+            </li>
+            {{#nonparticipationgroups}}
+                {{>core_group/comboboxsearch/resultitem}}
+            {{/nonparticipationgroups}}
+        {{/hasnonparticipation}}
     {{/results}}
 {{/core/local/comboboxsearch/resultset}}
