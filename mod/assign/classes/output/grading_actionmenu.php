@@ -108,7 +108,7 @@ class grading_actionmenu implements templatable, renderable {
 
         if (groups_get_activity_groupmode($cm, $course)) {
             $data['groupselector'] = $actionbarrenderer->render(
-                new \core_course\output\actionbar\group_selector(null, $PAGE->context));
+                new \core_course\output\actionbar\group_selector(null, $PAGE->context, participationonly: false));
         }
 
         if ($extrafiltersdropdown = $this->get_extra_filters_dropdown()) {
