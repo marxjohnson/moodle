@@ -34,12 +34,17 @@ class group_selector extends comboboxsearch {
     private stdClass $context;
 
     /**
+     * @var bool $participationonly Only show participation groups?
+     */
+    protected bool $participationonly;
+
+    /**
      * The class constructor.
      *
      * @param null|stdClass $course This parameter has been deprecated since Moodle 4.5 and should not be used anymore.
      * @param stdClass $context The context object.
      */
-    public function __construct(?stdClass $course, stdClass $context) {
+    public function __construct(?stdClass $course, stdClass $context, bool $participationonly = true) {
         if ($course !== null) {
             debugging(
                 'The course argument has been deprecated. Please remove it from your group_selector class instances.',
@@ -47,6 +52,7 @@ class group_selector extends comboboxsearch {
             );
         }
         $this->context = $context;
+        $this->participationonly = $participationonly;
         parent::__construct(false, $this->get_button_content(), $this->get_dropdown_content(), 'group-search',
             'groupsearchwidget', 'groupsearchdropdown overflow-auto', null, true, $this->get_label(), 'group',
             $this->get_active_group());
@@ -118,22 +124,20 @@ class group_selector extends comboboxsearch {
         if ($this->context->contextlevel === CONTEXT_MODULE) {
             $cm = get_coursemodule_from_id(false, $this->context->instanceid);
             $groupingid = $cm->groupingid;
-            $participationonly = true;
         } else {
             $cm = null;
             $groupingid = $course->defaultgroupingid;
-            $participationonly = false;
         }
 
         $allowedgroups = groups_get_all_groups(
             courseid: $course->id,
             userid: $userid,
             groupingid: $groupingid,
-            participationonly: $participationonly
+            participationonly: $this->participationonly,
         );
 
         if ($cm) {
-            return groups_get_activity_group($cm, true, $allowedgroups);
+            return groups_get_activity_group($cm, true, $allowedgroups, $this->participationonly);
         }
         return groups_get_course_group($course, true, $allowedgroups);
     }
