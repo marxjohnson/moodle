@@ -115,14 +115,52 @@ export default class GroupSearch extends search_combobox {
      */
     async renderDropdown() {
         const {html, js} = await renderForPromise('core_group/comboboxsearch/resultset', {
-            groups: this.getMatchedResults(),
-            hasresults: this.getMatchedResults().length > 0,
+            groups: this.getParticipationResults(),
+            nonparticipationgroups: this.getNonParticipationResults(),
+            hasresults: this.getParticipationResults().length > 0,
+            hasnonparticipation: this.getNonParticipationResults().length > 0,
             instance: this.instance,
             searchterm: this.getSearchTerm(),
         });
         replaceNodeContents(this.selectors.placeholder, html, js);
         // Remove aria-activedescendant when the available options change.
         this.searchInput.removeAttribute('aria-activedescendant');
+    }
+
+    /**
+     * Given a filter has been run across the dataset, store the matched results where participation === true.
+     *
+     * @param {Array} result
+     */
+    setParticipationResults(result) {
+        this.participationResults = result;
+    }
+
+    /**
+     * Return the results of the filter upon the dataset where participation === true.
+     *
+     * @returns {Array}
+     */
+    getParticipationResults() {
+        return this.participationResults;
+    }
+
+    /**
+     * Given a filter has been run across the dataset, store the matched results where participation === false.
+     *
+     * @param {Array} result
+     */
+    setNonParticipationResults(result) {
+        this.nonParticipationResults = result;
+    }
+
+    /**
+     * Return the results of the filter upon the dataset where participation === false.
+     *
+     * @returns {Array}
+     */
+    getNonParticipationResults() {
+        return this.nonParticipationResults;
     }
 
     /**
@@ -169,8 +207,17 @@ export default class GroupSearch extends search_combobox {
      * Given we have a subset of the dataset, set the field that we matched upon to inform the end user.
      */
     filterMatchDataset() {
-        this.setMatchedResults(
-            this.getMatchedResults().map((group) => {
+        this.setParticipationResults(
+            this.getMatchedResults().filter(group => group.participation).map((group) => {
+                return {
+                    id: group.id,
+                    name: group.name,
+                    groupimageurl: group.groupimageurl,
+                };
+            })
+        );
+        this.setNonParticipationResults(
+            this.getMatchedResults().filter(group => !group.participation).map((group) => {
                 return {
                     id: group.id,
                     name: group.name,
