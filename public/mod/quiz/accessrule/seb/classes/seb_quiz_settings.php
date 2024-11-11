@@ -34,6 +34,7 @@ use core\persistent;
 use lang_string;
 use moodle_exception;
 use moodle_url;
+use mod_quiz\local\override_manager;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -203,14 +204,52 @@ class seb_quiz_settings extends persistent {
      * This method gets data from cache before doing any DB calls.
      *
      * @param int $quizid Quiz id.
-     * @return false|\quizaccess_seb\seb_quiz_settings
+     * @return false|seb_quiz_settings
      */
     public static function get_by_quiz_id(int $quizid) {
-        if ($data = self::get_quiz_settings_cache()->get($quizid)) {
+        if ($data = self::get_quiz_settings_cache()->get(self::get_cache_key($quizid))) {
             return new static(0, $data);
         }
 
-        return self::get_record(['quizid' => $quizid]);
+        return self::get_settings(['quizid' => $quizid]) ?: false;
+    }
+
+    /**
+     * Return an instance by quiz id and apply an override if available. Similar to self::get_records.
+     *
+     * @param array $filters conditions used to query seb_quiz_settings.
+     * @return ?seb_quiz_settings
+     */
+    public static function get_settings(array $filters = []) {
+        $sebquizsetting = self::get_record($filters) ?: null;
+
+        if ($sebquizsetting || $filters['quizid']) {
+            $quizid = $filters['quizid'] ?? $sebquizsetting->get('quizid');
+
+            // Overwrite settings if available.
+            if ($override = override_manager::get_quiz_override($quizid)) {
+                // Create blank seb_quiz_settings instance if none exists.
+                if (!$sebquizsetting) {
+                    $record = (object)[
+                        'quizid' => $quizid,
+                        'cmid' => get_coursemodule_from_instance('quiz', $quizid)->id,
+                    ];
+                    $sebquizsetting = new self(0, $record);
+                }
+
+                // Overwrite settings if enabled.
+                if (isset($override->seb_enabled) && (bool) $override->seb_enabled) {
+                    $prefix = 'seb_';
+                    foreach (array_keys(self::properties_definition()) as $key) {
+                        if (isset($override->{$prefix . $key})) {
+                            $sebquizsetting->set($key, $override->{$prefix . $key});
+                        }
+                    }
+                }
+            }
+        }
+
+        return $sebquizsetting;
     }
 
     /**
@@ -220,7 +259,8 @@ class seb_quiz_settings extends persistent {
      * @return string|null
      */
     public static function get_config_by_quiz_id(int $quizid): ?string {
-        $config = self::get_config_cache()->get($quizid);
+        $cachekey = self::get_cache_key($quizid);
+        $config = self::get_config_cache()->get($cachekey);
 
         if ($config !== false) {
             return $config;
@@ -229,7 +269,7 @@ class seb_quiz_settings extends persistent {
         $config = null;
         if ($settings = self::get_by_quiz_id($quizid)) {
             $config = $settings->get_config();
-            self::get_config_cache()->set($quizid, $config);
+            self::get_config_cache()->set($cachekey, $config);
         }
 
         return $config;
@@ -242,7 +282,8 @@ class seb_quiz_settings extends persistent {
      * @return string|null
      */
     public static function get_config_key_by_quiz_id(int $quizid): ?string {
-        $configkey = self::get_config_key_cache()->get($quizid);
+        $cachekey = self::get_cache_key($quizid);
+        $configkey = self::get_config_key_cache()->get($cachekey);
 
         if ($configkey !== false) {
             return $configkey;
@@ -251,7 +292,7 @@ class seb_quiz_settings extends persistent {
         $configkey = null;
         if ($settings = self::get_by_quiz_id($quizid)) {
             $configkey = $settings->get_config_key();
-            self::get_config_key_cache()->set($quizid, $configkey);
+            self::get_config_key_cache()->set($cachekey, $configkey);
         }
 
         return $configkey;
@@ -304,19 +345,30 @@ class seb_quiz_settings extends persistent {
      * Helper method to execute common stuff after create and update.
      */
     private function after_save() {
-        self::get_quiz_settings_cache()->set($this->get('quizid'), $this->to_record());
-        self::get_config_cache()->set($this->get('quizid'), $this->config);
-        self::get_config_key_cache()->set($this->get('quizid'), $this->configkey);
+        $quizid = $this->get('quizid');
+        $cachekey = self::get_cache_key($quizid);
+        self::get_quiz_settings_cache()->set($cachekey, $this->to_record());
+        self::get_config_cache()->set($cachekey, $this->config);
+        self::get_config_key_cache()->set($cachekey, $this->configkey);
     }
 
     /**
      * Removes unnecessary stuff from db.
      */
     protected function before_delete() {
-        $key = $this->get('quizid');
-        self::get_quiz_settings_cache()->delete($key);
-        self::get_config_cache()->delete($key);
-        self::get_config_key_cache()->delete($key);
+        $cachekey = self::get_cache_key($this->get('quizid'));
+        self::delete_cache($cachekey);
+    }
+
+    /**
+     * Removes cached SEB data.
+     *
+     * @param string $cachekey The ID of of a quiz, or combined with the ID of an override e.g. '12' or '12-1'.
+     */
+    public static function delete_cache($cachekey): void {
+        self::get_quiz_settings_cache()->delete($cachekey);
+        self::get_config_cache()->delete($cachekey);
+        self::get_config_key_cache()->delete($cachekey);
     }
 
     /**
@@ -445,6 +497,19 @@ class seb_quiz_settings extends persistent {
         $this->process_configs();
 
         return $this->config;
+    }
+
+    /**
+     * Return key to config cache. Takes override into account.
+     *
+     * @param int $quizid Quiz id.
+     * @return string
+     */
+    protected static function get_cache_key($quizid) {
+        if ($override = override_manager::get_quiz_override($quizid)) {
+            return "$quizid-{$override->id}";
+        }
+        return $quizid;
     }
 
     /**

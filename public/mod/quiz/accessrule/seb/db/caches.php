@@ -28,19 +28,19 @@ defined('MOODLE_INTERNAL') || die();
 $definitions = [
     'quizsettings' => [
         'mode' => cache_store::MODE_APPLICATION,
-        'simplekeys' => true,
+        'simplekeys' => false,
         'simpledata' => true,
         'staticacceleration' => true,
     ],
     'config' => [
         'mode' => cache_store::MODE_APPLICATION,
-        'simplekeys' => true,
+        'simplekeys' => false,
         'simpledata' => true,
         'staticacceleration' => true,
     ],
     'configkey' => [
         'mode' => cache_store::MODE_APPLICATION,
-        'simplekeys' => true,
+        'simplekeys' => false,
         'simpledata' => true,
         'staticacceleration' => true,
     ],

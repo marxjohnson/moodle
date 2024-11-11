@@ -41,6 +41,11 @@ require_once($CFG->dirroot . '/mod/quiz/backup/moodle2/restore_mod_quiz_access_s
 class restore_quizaccess_seb_subplugin extends restore_mod_quiz_access_subplugin {
 
     /**
+     * @var array Override settings to restore.
+     */
+    protected array $overrides = [];
+
+    /**
      * Provides path structure required to restore data for seb quiz access plugin.
      *
      * @return array
@@ -55,6 +60,10 @@ class restore_quizaccess_seb_subplugin extends restore_mod_quiz_access_subplugin
         // Template settings.
         $path = $this->get_pathfor('/quizaccess_seb_quizsettings/quizaccess_seb_template');
         $paths[] = new restore_path_element('quizaccess_seb_template', $path);
+
+        // Overrides.
+        $path = $this->get_pathfor('/quizaccess_seb_override');
+        $paths[] = new restore_path_element('quizaccess_seb_override', $path);
 
         return $paths;
     }
@@ -128,5 +137,42 @@ class restore_quizaccess_seb_subplugin extends restore_mod_quiz_access_subplugin
         }
     }
 
-}
+    /**
+     * Process the restored data for the quizaccess_seb_override table.
+     *
+     * @param stdClass $data Data for quizaccess_seb_override retrieved from backup xml.
+     */
+    public function process_quizaccess_seb_override($data) {
+        global $DB, $USER;
 
+        // Process quizsettings.
+        $data = (object) $data;
+        unset($data->id);
+        $data->timecreated = $data->timemodified = time();
+        $data->usermodified = $USER->id;
+
+        // Do not use template if it is no longer enabled.
+        if (
+            $data->requiresafeexambrowser == settings_provider::USE_SEB_TEMPLATE &&
+            !$DB->record_exists(template::TABLE, ['id' => $data->templateid, 'enabled' => '1'])
+        ) {
+            $data->templateid = 0;
+            $data->requiresafeexambrowser = settings_provider::USE_SEB_NO;
+        }
+
+        // We wait until the quiz is complete before we restore as we need to get the new quiz_override IDs.
+        $this->overrides[] = $data;
+    }
+
+    /**
+     * Maps the new override IDs to the quizaccess_seb_override entries.
+     */
+    public function after_restore_quiz() {
+        global $DB;
+        foreach ($this->overrides as $data) {
+            $newoverrideid = $this->get_mappingid('quiz_override', $data->overrideid);
+            $data->overrideid = $newoverrideid;
+            $DB->insert_record('quizaccess_seb_override', $data);
+        }
+    }
+}

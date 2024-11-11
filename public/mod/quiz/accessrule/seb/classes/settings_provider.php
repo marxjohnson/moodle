@@ -188,16 +188,18 @@ class settings_provider {
      * @param \MoodleQuickForm $mform the wrapped MoodleQuickForm.
      */
     protected static function add_seb_usage_options(\mod_quiz_mod_form $quizform, \MoodleQuickForm $mform) {
+        $options = self::get_requiresafeexambrowser_options($quizform->get_context());
         $element = $mform->createElement(
             'select',
             'seb_requiresafeexambrowser',
             get_string('seb_requiresafeexambrowser', 'quizaccess_seb'),
-            self::get_requiresafeexambrowser_options($quizform->get_context())
+            self::get_requiresafeexambrowser_options($quizform->get_context()),
+            $options,
         );
 
         self::insert_element($quizform, $mform, $element);
         self::set_type($quizform, $mform, 'seb_requiresafeexambrowser', PARAM_INT);
-        self::set_default($quizform, $mform, 'seb_requiresafeexambrowser', self::USE_SEB_NO);
+        self::set_default($quizform, $mform, 'seb_requiresafeexambrowser', array_key_first($options));
         self::add_help_button($quizform, $mform, 'seb_requiresafeexambrowser');
 
         if (self::is_conflicting_permissions($quizform->get_context())) {
@@ -540,27 +542,22 @@ class settings_provider {
             return false;
         }
 
-        if (!self::can_use_seb_template($context) &&
-                $settings->get('requiresafeexambrowser') == self::USE_SEB_TEMPLATE) {
-            return true;
+        switch ($settings->get('requiresafeexambrowser')) {
+            case self::USE_SEB_TEMPLATE:
+                return !self::can_use_seb_template($context);
+            case self::USE_SEB_TEMPLATE:
+                return !self::can_use_seb_template($context);
+            case self::USE_SEB_CLIENT_CONFIG:
+                return !self::can_use_seb_client_config($context);
+            case self::USE_SEB_UPLOAD_CONFIG:
+                return !self::can_upload_seb_file($context);
+            case self::USE_SEB_CONFIG_MANUALLY:
+                return !self::can_configure_manually($context);
+            case self::USE_SEB_NO:
+                return !self::can_donotrequire($context);
+            default:
+                return false;
         }
-
-        if (!self::can_use_seb_client_config($context) &&
-                $settings->get('requiresafeexambrowser') == self::USE_SEB_CLIENT_CONFIG) {
-            return true;
-        }
-
-        if (!self::can_upload_seb_file($context) &&
-                $settings->get('requiresafeexambrowser') == self::USE_SEB_UPLOAD_CONFIG) {
-            return true;
-        }
-
-        if (!self::can_configure_manually($context) &&
-                $settings->get('requiresafeexambrowser') == self::USE_SEB_CONFIG_MANUALLY) {
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -570,7 +567,11 @@ class settings_provider {
      * @return array
      */
     public static function get_requiresafeexambrowser_options(\context $context): array {
-        $options[self::USE_SEB_NO] = get_string('no');
+        $options = [];
+
+        if (self::can_donotrequire($context) || self::is_conflicting_permissions($context)) {
+            $options[self::USE_SEB_NO] = get_string('no');
+        }
 
         if (self::can_configure_manually($context) || self::is_conflicting_permissions($context)) {
             $options[self::USE_SEB_CONFIG_MANUALLY] = get_string('seb_use_manually', 'quizaccess_seb');
@@ -597,7 +598,7 @@ class settings_provider {
      * Returns a list of templates.
      * @return array
      */
-    protected static function get_template_options($cmid): array {
+    public static function get_template_options($cmid): array {
         $templates = [];
         $templatetable = template::TABLE;
         $sebquizsettingstable = seb_quiz_settings::TABLE;
@@ -836,6 +837,26 @@ class settings_provider {
         }
 
         return false;
+    }
+
+    /**
+     * Check if the current user can set "Do not require SEB" setting.
+     *
+     * @param \context $context Context to check access in.
+     * @return bool
+     */
+    public static function can_donotrequire(\context $context): bool {
+        return has_capability('quizaccess/seb:manage_seb_donotrequiresafeexambrowser', $context);
+    }
+
+    /**
+     * Check if the current user can set "Do not require SEB" setting in the override menu.
+     *
+     * @param \context $context Context to check access in.
+     * @return bool
+     */
+    public static function can_override_donotrequire(\context $context): bool {
+        return has_capability('quizaccess/seb:manage_seb_donotrequiresafeexambrowser_override', $context);
     }
 
     /**

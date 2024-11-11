@@ -1,0 +1,6 @@
+issueNumber: MDL-80945
+notes:
+  quizaccess_seb:
+    - message: >
+        `quizaccess_seb` is now included in the quiz override settings.
+      type: improved

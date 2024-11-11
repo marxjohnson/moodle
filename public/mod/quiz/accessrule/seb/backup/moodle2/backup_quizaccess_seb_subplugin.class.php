@@ -71,10 +71,45 @@ class backup_quizaccess_seb_subplugin extends backup_mod_quiz_access_subplugin {
         // Save the settings.
         $subpluginquizsettings = new backup_nested_element('quizaccess_seb_quizsettings', null, $settingskeys);
 
+        // Save the overrides.
+        $overridekeys = [
+            'id',
+            'overrideid',
+            'templateid',
+            'enabled',
+            'requiresafeexambrowser',
+            'showsebtaskbar',
+            'showwificontrol',
+            'showreloadbutton',
+            'showtime',
+            'showkeyboardlayout',
+            'allowuserquitseb',
+            'quitpassword',
+            'linkquitseb',
+            'userconfirmquit',
+            'enableaudiocontrol',
+            'muteonstartup',
+            'allowcapturecamera',
+            'allowcapturemicrophone',
+            'allowspellchecking',
+            'allowreloadinexam',
+            'activateurlfiltering',
+            'filterembeddedcontent',
+            'expressionsallowed',
+            'regexallowed',
+            'expressionsblocked',
+            'regexblocked',
+            'allowedbrowserexamkeys',
+            'showsebdownloadlink',
+            'timecreated',
+        ];
+        $subpluginoverrides = new backup_nested_element('quizaccess_seb_override', null, $overridekeys);
+
         // Connect XML elements into the tree.
         $subplugin->add_child($subpluginwrapper);
         $subpluginwrapper->add_child($subpluginquizsettings);
         $subpluginquizsettings->add_child($subplugintemplatesettings);
+        $subpluginwrapper->add_child($subpluginoverrides);
 
         // Set source to populate the settings data by referencing the ID of quiz being backed up.
         $subpluginquizsettings->set_source_table(quizaccess_seb\seb_quiz_settings::TABLE, ['quizid' => $quizid]);
@@ -83,6 +118,15 @@ class backup_quizaccess_seb_subplugin extends backup_mod_quiz_access_subplugin {
 
         $params = ['id' => '../templateid'];
         $subplugintemplatesettings->set_source_table(\quizaccess_seb\template::TABLE, $params);
+
+        // Set source to populate the override data by referencing the ID of quiz being backed up.
+        $sql = "SELECT qso.*
+                  FROM {quizaccess_seb_override} qso
+                  JOIN {quiz_overrides} qo
+                    ON qo.id = qso.overrideid
+                       AND qo.quiz = ?";
+        $params = [$quizid];
+        $subpluginoverrides->set_source_sql($sql, $params);
 
         return $subplugin;
     }

@@ -72,5 +72,57 @@ function xmldb_quizaccess_seb_upgrade($oldversion) {
     // Automatically generated Moodle v5.1.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2025111800) {
+        // Define table quizaccess_seb_override to be created.
+        $table = new xmldb_table('quizaccess_seb_override');
+
+        // Adding fields to table quizaccess_seb_override.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('overrideid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('templateid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('enabled', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('requiresafeexambrowser', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('showsebtaskbar', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('showwificontrol', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('showreloadbutton', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('showtime', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('showkeyboardlayout', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('allowuserquitseb', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('quitpassword', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('linkquitseb', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('userconfirmquit', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('enableaudiocontrol', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('muteonstartup', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('allowcapturecamera', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('allowcapturemicrophone', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('allowspellchecking', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('allowreloadinexam', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('activateurlfiltering', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('filterembeddedcontent', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('expressionsallowed', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('regexallowed', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('expressionsblocked', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('regexblocked', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('allowedbrowserexamkeys', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('showsebdownloadlink', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
+        $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table quizaccess_seb_override.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('overrideid', XMLDB_KEY_FOREIGN, ['overrideid'], 'quiz_overrides', ['id']);
+        $table->add_key('templateid', XMLDB_KEY_FOREIGN, ['templateid'], 'quizaccess_seb_template', ['id']);
+        $table->add_key('usermodified', XMLDB_KEY_FOREIGN, ['usermodified'], 'user', ['id']);
+
+        // Conditionally launch create table for quizaccess_seb_override.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Main savepoint reached.
+        upgrade_plugin_savepoint(true, 2025111800, 'quizaccess', 'seb');
+    }
+
     return true;
 }

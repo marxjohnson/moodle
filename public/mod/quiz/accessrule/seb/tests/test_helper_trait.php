@@ -25,6 +25,7 @@
 
 use mod_quiz\local\access_rule_base;
 use mod_quiz\quiz_attempt;
+use mod_quiz\quiz_settings;
 use quizaccess_seb\seb_access_manager;
 use quizaccess_seb\settings_provider;
 
@@ -313,6 +314,55 @@ trait quizaccess_seb_test_helper_trait {
             'regexblocked' => '',
             'showsebdownloadlink' => '1',
         ], $settings);
+    }
+
+    /**
+     * Create initial SEB settings data for quiz_override db table.
+     *
+     * @param bool|\stdClass $user User object used to for override to target.
+     * @param bool|Array $settings Override settings with this array.
+     * @return string
+     */
+    protected function save_override($user = false, $settings = false) {
+        $user = $user ?: $this->user;
+
+        $initialsettings = [
+            'seb_enabled' => '1',
+            'seb_requiresafeexambrowser' => '1',
+            'seb_showsebtaskbar' => '1',
+            'seb_showwificontrol' => '0',
+            'seb_showreloadbutton' => '1',
+            'seb_showtime' => '0',
+            'seb_showkeyboardlayout' => '1',
+            'seb_allowuserquitseb' => '1',
+            'seb_quitpassword' => 'test',
+            'seb_linkquitseb' => '',
+            'seb_userconfirmquit' => '1',
+            'seb_enableaudiocontrol' => '1',
+            'seb_muteonstartup' => '0',
+            'seb_allowcapturecamera' => '1',
+            'seb_allowcapturemicrophone' => '1',
+            'seb_allowspellchecking' => '0',
+            'seb_allowreloadinexam' => '1',
+            'seb_activateurlfiltering' => '1',
+            'seb_filterembeddedcontent' => '0',
+            'seb_expressionsallowed' => 'test.com',
+            'seb_regexallowed' => '',
+            'seb_expressionsblocked' => '',
+            'seb_regexblocked' => '',
+            'seb_showsebdownloadlink' => '1',
+        ];
+
+        if (is_array($settings)) {
+            $initialsettings = array_merge($initialsettings, $settings);
+        }
+
+        $quizobj = quiz_settings::create($this->quiz->id);
+        $manager = $quizobj->get_override_manager();
+        return $manager->save_override([
+            'userid' => $user->id,
+            ...$initialsettings,
+        ]);
     }
 
 }
