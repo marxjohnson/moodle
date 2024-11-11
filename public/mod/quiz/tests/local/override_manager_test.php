@@ -1124,6 +1124,75 @@ final class override_manager_test extends \advanced_testcase {
     }
 
     /**
+     * Test getting quiz override when logged in as different users.
+     */
+    public function test_get_quiz_override(): void {
+        $this->setAdminUser();
+        $this->resetAfterTest();
+        [$quizobj, $course] = $this->create_quiz_and_course();
+        $quizid = $quizobj->get_quizid();
+
+        // No override created yet, should be null.
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid());
+        $this->assertNull($quizoverride);
+
+        // Non-existent quiz, return null.
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid() + 1);
+        $this->assertNull($quizoverride);
+
+        // Create a user and a group override.
+        $testpass = 'test';
+
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id);
+        $userdata = [
+            'quiz' => $quizid,
+            'userid' => $user->id,
+            'password' => $testpass,
+        ];
+
+        $groupid = groups_create_group((object) ['courseid' => $course->id, 'name' => 'test']);
+        $groupuser = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($groupuser->id, $course->id);
+        $groupdata = [
+            'quiz' => $quizid,
+            'groupid' => $groupid,
+            'password' => $testpass,
+        ];
+        groups_add_member($groupid, $groupuser);
+
+        // Test overrides are null for user and group member.
+        $this->setUser($user);
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid());
+        $this->assertNull($quizoverride);
+
+        $this->setUser($groupuser);
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid());
+        $this->assertNull($quizoverride);
+
+        // Create user and group overrides, test overrides now exist and have correct values.
+        $manager = $quizobj->get_override_manager();
+        $manager->save_override($groupdata);
+        $useroverrideid = $manager->save_override($userdata);
+
+        // Individual user override.
+        $this->setUser($user);
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid());
+
+        $this->assertEquals($user->id, $quizoverride->userid);
+        $this->assertEquals($testpass, $quizoverride->password);
+        $this->assertNull($quizoverride->groupid);
+
+        // Group user override.
+        $this->setUser($groupuser);
+        $quizoverride = override_manager::get_quiz_override($quizobj->get_quizid());
+
+        $this->assertEquals($groupid, $quizoverride->groupid);
+        $this->assertEquals($testpass, $quizoverride->password);
+        $this->assertNull($quizoverride->userid);
+    }
+
+    /**
      * Tests deleting by id but providing an invalid id
      */
     public function test_delete_by_id_invalid_id(): void {

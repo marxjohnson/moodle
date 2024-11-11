@@ -23,6 +23,7 @@
  */
 
 use mod_quiz\quiz_settings;
+use mod_quiz\access_manager;
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot.'/mod/quiz/lib.php');
@@ -92,22 +93,29 @@ $overrides = [];
 $colclasses = [];
 $headers = [];
 
+[$overrideselects, $overridejoins, $overrideparams] = access_manager::get_override_settings_sql('o');
+
 // Fetch all overrides.
 if ($groupmode) {
     $headers[] = get_string('group');
     // To filter the result by the list of groups that the current user has access to.
     if ($groups) {
+        $selects = 'o.*, g.name';
+        if (!empty($overrideselects)) {
+            $selects .= ', ' . $overrideselects;
+        }
         $params = ['quizid' => $quiz->id];
         list($insql, $inparams) = $DB->get_in_or_equal(array_keys($groups), SQL_PARAMS_NAMED);
-        $params += $inparams;
 
-        $sql = "SELECT o.*, g.name
+        $sql = "SELECT {$selects}
                   FROM {quiz_overrides} o
                   JOIN {groups} g ON o.groupid = g.id
-                 WHERE o.quiz = :quizid AND g.id $insql
+                       {$overridejoins}
+                 WHERE o.quiz = :quizid
+                       AND g.id $insql
               ORDER BY g.name";
 
-        $overrides = $DB->get_records_sql($sql, $params);
+        $overrides = $DB->get_records_sql($sql, array_merge($overrideparams, $params, $inparams));
     }
 
 } else {
@@ -141,16 +149,17 @@ if ($groupmode) {
         $groupswhere = ' AND 1 = 2';
     }
 
-    $overrides = $DB->get_records_sql("
-            SELECT o.*, {$userfieldssql->selects}
+    $sql = "SELECT o.*, {$overrideselects}, {$userfieldssql->selects}
               FROM {quiz_overrides} o
-              JOIN {user} u ON o.userid = u.id
-                  {$userfieldssql->joins}
-              $groupsjoin
+              JOIN {user} u ON u.id = o.userid
+                   {$userfieldssql->joins}
+                   {$overridejoins}
+                   {$groupsjoin}
              WHERE o.quiz = :quizid
-               $groupswhere
-             ORDER BY $sort
-            ", array_merge($params, $userfieldssql->params));
+                   {$groupswhere}
+          ORDER BY $sort";
+    $params = array_merge($params, $userfieldssql->params, $overrideparams);
+    $overrides = $DB->get_records_sql($sql, $params);
 }
 
 // Initialise table.
@@ -228,6 +237,9 @@ foreach ($overrides as $override) {
         $values[] = $override->password !== '' ?
                 get_string('enabled', 'quiz') : get_string('none', 'quiz');
     }
+
+    // Access rule override table field.
+    [$fields, $values] = access_manager::add_override_table_fields($override, $fields, $values, $context);
 
     // Prepare the information about who this override applies to.
     $extranamebit = $active ? '' : '*';

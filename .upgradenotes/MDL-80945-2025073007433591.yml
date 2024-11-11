@@ -1,0 +1,13 @@
+issueNumber: MDL-80945
+notes:
+  mod_quiz:
+    - message: >
+        A new base class `access_override_rule_base` has been added to `mod_quiz`
+        giving `quizaccess` subplugins the ability to be included in the override
+        settings.
+
+        `quizaccess` subplugins can implement this functionality by extending the
+        base class, name it `override_rule` and implement the base functions.
+
+        See https://moodledev.io/docs/apis/plugintypes/quizaccess for details.
+      type: improved
