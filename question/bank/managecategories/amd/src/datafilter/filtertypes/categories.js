@@ -31,9 +31,9 @@ export default class extends GenericFilter {
         includeSubcategories: 'input[name=category-subcategories]',
     };
 
-    constructor(filterType, rootNode, initialValues, filterOptions = {includeSubcategories: false}) {
+    constructor(filterType, rootNode, initialValues, filterOptions = {includesubcategories: false}) {
         super(filterType, rootNode, initialValues);
-        this.addSubcategoryCheckbox(filterOptions.includeSubcategories);
+        this.addSubcategoryCheckbox(filterOptions.includesubcategories);
     }
 
     async addSubcategoryCheckbox(checked = false) {
