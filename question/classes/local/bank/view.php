@@ -160,6 +160,11 @@ class view {
     protected $sqlparams;
 
     /**
+     * @var array conditions for which $sqlparams are applied.
+     */
+    protected $conditions;
+
+    /**
      * @var ?array Stores all the average statistics that this question bank view needs.
      *
      * This field gets initialised in {@see display_question_list()}. It is a two dimensional
@@ -717,7 +722,9 @@ class view {
         $fields = $this->get_required_fields();
         $joins = $this->get_required_joins();
         if (!empty($viewcomponents)) {
+            $sqlparams = $this->sqlparams;
             foreach ($viewcomponents as $viewcomponent) {
+                $viewcomponent->set_filter_conditions($this->conditions, $sqlparams);
                 $extrajoins = $viewcomponent->get_extra_joins();
                 foreach ($extrajoins as $prefix => $join) {
                     if (isset($joins[$prefix]) && $joins[$prefix] != $join) {
@@ -726,6 +733,7 @@ class view {
                     $joins[$prefix] = $join;
                 }
                 $fields = array_merge($fields, $viewcomponent->get_required_fields());
+                $this->sqlparams = array_merge($viewcomponent->get_extra_parameters(), $this->sqlparams);
             }
         }
         return [array_unique($fields), $joins];
@@ -736,6 +744,17 @@ class view {
      * \core_question\bank\search\condition filters.
      */
     protected function build_query(): void {
+        // Build filter conditions.
+        $this->sqlparams = [];
+        $this->conditions = [];
+        foreach ($this->searchconditions as $searchcondition) {
+            if ($searchcondition->where()) {
+                $this->conditions[] = '((' . $searchcondition->where() . '))';
+            }
+            if ($searchcondition->params()) {
+                $this->sqlparams = array_merge($this->sqlparams, $searchcondition->params());
+            }
+        }
         // Get the required tables and fields.
         [$fields, $joins] = $this->get_component_requirements(array_merge($this->requiredcolumns, $this->questionactions));
 
@@ -752,16 +771,6 @@ class view {
                                           JOIN {question_bank_entries} be
                                             ON be.id = v.questionbankentryid
                                          WHERE be.id = qbe.id)';
-        $this->sqlparams = [];
-        $conditions = [];
-        foreach ($this->searchconditions as $searchcondition) {
-            if ($searchcondition->where()) {
-                $conditions[] = '((' . $searchcondition->where() .'))';
-            }
-            if ($searchcondition->params()) {
-                $this->sqlparams = array_merge($this->sqlparams, $searchcondition->params());
-            }
-        }
         // Get higher level filter condition.
         $jointype = isset($this->pagevars['jointype']) ? (int)$this->pagevars['jointype'] : condition::JOINTYPE_DEFAULT;
         $nonecondition = ($jointype === datafilter::JOINTYPE_NONE) ? ' NOT ' : '';
@@ -769,9 +778,9 @@ class view {
         // Build the SQL.
         $sql = ' FROM {question} q ' . implode(' ', $joins);
         $sql .= ' WHERE q.parent = 0 AND ' . $latestversion;
-        if (!empty($conditions)) {
+        if (!empty($this->conditions)) {
             $sql .= ' AND ' . $nonecondition . ' ( ';
-            $sql .= implode($separator, $conditions);
+            $sql .= implode($separator, $this->conditions);
             $sql .= ' ) ';
         }
         $this->countsql = 'SELECT count(1)' . $sql;

@@ -38,11 +38,10 @@ class helper {
 
         $sql = 'SELECT COUNT(*) FROM (' . self::question_usage_sql($specificversion) . ') quizid';
 
-        $params = [$question->id, $question->questionbankentryid, 'mod_quiz', 'slot'];
+        $params = [$question->id, $question->questionbankentryid];
         if ($specificversion) {
             $params[] = $question->id;
         }
-
         return $DB->count_records_sql($sql, $params);
     }
 
@@ -53,9 +52,9 @@ class helper {
      * @return string
      */
     public static function question_usage_sql(bool $specificversion = false): string {
-        $sqlset = "(". self::get_question_attempt_usage_sql($specificversion) .")".
-            "UNION".
-            "(". self::get_question_bank_usage_sql($specificversion) .")";
+        $sqlset = "(". self::get_question_attempt_usage_sql($specificversion) . ")
+            UNION
+            (". self::get_question_bank_usage_sql($specificversion) . ")";
         return $sqlset;
     }
 
@@ -102,25 +101,39 @@ class helper {
      * the component and finally the question area.
      *
      * @param bool $specificversion Count usages just for this version of the question?
+     * @param bool $specificquestion Add parameters to return usages for a specific question if true.
+     *      Include an ID for the question if false. This allows the SQL to function as a subquery to be joined on that ID.
      * @return string
      */
-    public static function get_question_bank_usage_sql(bool $specificversion = false): string {
+    public static function get_question_bank_usage_sql(bool $specificversion = false, bool $specificquestion = true): string {
+        $selectquestionid = '';
+        if (!$specificquestion) {
+            $idfield = $specificversion ? 'qv.questionid' : 'qv.questionbankentryid';
+            $selectquestionid = ", {$idfield} AS questionid";
+        }
         $sql = "SELECT qz.id as quizid,
                        qz.name as modulename,
                        qz.course as courseid
+                       {$selectquestionid}
                   FROM {quiz_slots} slot
                   JOIN {quiz} qz ON qz.id = slot.quizid
                   JOIN {question_references} qr ON qr.itemid = slot.id
                   JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
                   JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
-                 WHERE qv.questionbankentryid = ?
-                   AND qr.component = ?
-                   AND qr.questionarea = ?";
+                  JOIN {question} q ON q.id = qv.questionid
+                 WHERE qr.component = 'mod_quiz'
+                   AND qr.questionarea = 'slot' ";
+        if ($specificquestion) {
+            $sql .= "AND qv.questionbankentryid = ?";
+        }
 
         if ($specificversion) {
             // Only get results where the reference matches the specific question ID that was requested,
             // or the question ID that's requested is the latest version, and the reference is set to null (always latest version).
-            $sql .= " AND qv.questionid = ?
+            if ($specificquestion) {
+                $sql .= "AND qv.questionid = ?";
+            }
+            $sql .= "
                       AND (
                           qv.version = qr.version
                           OR (
@@ -144,27 +157,40 @@ class helper {
      * parameter, the question id.
      *
      * @param bool $specificversion Count usages just for this version of the question?
+     * @param bool $specificquestion Add parameters to return usages for a specific question if true.
+     *     Include an ID for the question if false. This allows the SQL to function as a subquery to be joined on that ID.
      * @return string
      */
-    public static function get_question_attempt_usage_sql(bool $specificversion = false): string {
+    public static function get_question_attempt_usage_sql(bool $specificversion = false, bool $specificquestion = true): string {
+        $selectquestionid = '';
+        if (!$specificquestion) {
+            $idfield = $specificversion ? 'q.id' : 'qv.questionbankentryid';
+            $selectquestionid = ", {$idfield} AS questionid";
+        }
         $sql = "SELECT qz.id as quizid,
                        qz.name as modulename,
                        qz.course as courseid
+                       {$selectquestionid}
                   FROM {quiz} qz
                   JOIN {quiz_attempts} qa ON qa.quiz = qz.id
                   JOIN {question_usages} qu ON qu.id = qa.uniqueid
-                  JOIN {question_attempts} qatt ON qatt.questionusageid = qu.id";
+                  JOIN {question_attempts} qatt ON qatt.questionusageid = qu.id
+                  JOIN {question_versions} qv ON qv.questionid = qatt.questionid
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                  JOIN {question} q ON q.id = qatt.questionid";
         if ($specificversion) {
             $sql .= "
-                  JOIN {question} q ON q.id = qatt.questionid
-                 WHERE qa.preview = 0
-                   AND q.id = ?";
+                 WHERE qa.preview = 0";
+            if ($specificquestion) {
+                $sql .= " AND q.id = ?";
+            }
         } else {
             $sql .= "
-                  JOIN {question_versions} qv ON qv.questionid = qatt.questionid
                   JOIN {question_versions} qv2 ON qv.questionbankentryid = qv2.questionbankentryid
-                 WHERE qa.preview = 0
-                   AND qv2.questionid = ?";
+                 WHERE qa.preview = 0";
+            if ($specificquestion) {
+                $sql .= " AND qv2.questionid = ?";
+            }
         }
         return $sql;
     }

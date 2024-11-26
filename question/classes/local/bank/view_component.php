@@ -32,7 +32,18 @@ abstract class view_component {
     protected $qbank;
 
     /**
+     * @var array The conditions to apply to any subqueries.
+     */
+    protected $filterconditions = [];
+
+    /**
+     * @var array The parameters required for the conditions.
+     */
+    protected $filterparameters = [];
+
+    /**
      * Constructor.
+     *
      * @param view $qbank the question bank view we are helping to render.
      */
     public function __construct(view $qbank) {
@@ -97,6 +108,27 @@ abstract class view_component {
      * @return string[] fields required.
      */
     public function get_required_fields(): array {
+        return [];
+    }
+
+    /**
+     * Set filter conditions.
+     *
+     * @param array $filterconditions The conditions to apply to any subqueries.
+     * @param array $filterparams The parameters required for the conditions.
+     * @return void
+     */
+    public function set_filter_conditions(array $filterconditions, array $filterparams): void {
+        $this->filterconditions = $filterconditions;
+        $this->filterparameters = $filterparams;
+    }
+
+    /**
+     * Return additional query parameters.
+     *
+     * @return array
+     */
+    public function get_extra_parameters(): array {
         return [];
     }
 }
