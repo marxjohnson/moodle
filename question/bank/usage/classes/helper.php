@@ -201,15 +201,22 @@ class helper {
      *
      * @return string
      */
-    public static function get_question_last_used_sql(): string {
-        $sql = "SELECT MAX(qa.timemodified) as lastused
+    public static function get_question_last_used_sql(array $filterconditions): string {
+        $conditionsql = '';
+        foreach ($filterconditions as $condition) {
+            $conditionsql .= " AND {$condition}";
+        }
+        $sql = "SELECT MAX(qa.timemodified) as lastused, q.id as questionid
                   FROM {quiz} qz
                   JOIN {quiz_attempts} qa ON qa.quiz = qz.id
                   JOIN {question_usages} qu ON qu.id = qa.uniqueid
                   JOIN {question_attempts} qatt ON qatt.questionusageid = qu.id
                   JOIN {question} q ON q.id = qatt.questionid
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
                  WHERE qa.preview = 0
-                   AND q.id = ?";
+                       {$conditionsql}
+              GROUP BY q.id";
         return $sql;
     }
 

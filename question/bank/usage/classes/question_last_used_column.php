@@ -17,6 +17,7 @@
 namespace qbank_usage;
 
 use core_question\local\bank\column_base;
+use core_sms\gateway_test;
 
 /**
  * Question bank column for the question last used.
@@ -41,18 +42,50 @@ class question_last_used_column extends column_base {
     }
 
     protected function display_content($question, $rowclasses): void {
-        global $DB, $PAGE;
+        global $PAGE;
         $displaydata = [];
-        $questionusage = $DB->get_record_sql(helper::get_question_last_used_sql(), [$question->id]);
+        $lastused = $question->lastused;
         $displaydata['lastused'] = get_string('notused', 'qbank_usage');
-        if (!empty($questionusage->lastused)) {
-            $displaydata['lastused'] = userdate($questionusage->lastused);
+        if (!empty($lastused)) {
+            $displaydata['lastused'] = userdate($lastused);
         }
         echo $PAGE->get_renderer('qbank_usage')->render_last_used_column($displaydata);
+    }
+
+    /**
+     * Join on a subquery getting the max question attempt timemodified for each question.
+     *
+     * @return string[]
+     */
+    public function get_extra_joins(): array {
+        $subquery = helper::get_question_last_used_sql($this->filterconditions);
+        return [
+            'lastusages' => "LEFT JOIN ({$subquery}) lastusages ON lastusages.questionid = q.id",
+        ];
+    }
+
+    public function get_required_fields(): array {
+        return [
+            'lastused' => 'COALESCE(lastusages.lastused, 0) AS lastused',
+        ];
     }
 
     public function get_extra_classes(): array {
         return ['pe-3'];
     }
 
+    public function set_filter_conditions(array $filterconditions, array $filterparams): void {
+        foreach ($filterparams as $name => $value) {
+            $usedname = $name . 'lastused';
+            $this->filterparameters[$usedname] = $value;
+            foreach ($filterconditions as $key => $filtercondition) {
+                $filterconditions[$key] = str_replace($name, $usedname, $filtercondition);
+            }
+        }
+        $this->filterconditions = $filterconditions;
+    }
+
+    public function get_extra_parameters(): array {
+        return array_merge($this->filterparameters);
+    }
 }
