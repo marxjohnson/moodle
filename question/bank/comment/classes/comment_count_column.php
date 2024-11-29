@@ -83,15 +83,7 @@ class comment_count_column extends column_base {
      * @param string $rowclasses Classes that can be added.
      */
     protected function display_content($question, $rowclasses): void {
-        global $DB;
         $syscontext = \context_system::instance();
-        $args = [
-            'component' => 'qbank_comment',
-            'commentarea' => 'question',
-            'itemid' => $question->id,
-            'contextid' => $syscontext->id,
-        ];
-        $commentcount = $DB->count_records('comments', $args);
         $attributes = [];
         if (question_has_capability_on($question, 'comment')) {
             $target = 'questioncommentpreview_' . $question->id;
@@ -103,7 +95,35 @@ class comment_count_column extends column_base {
                 'data-contextid' => $syscontext->id,
             ];
         }
-        echo \html_writer::tag('a', $commentcount, $attributes);
+        echo \html_writer::tag('a', $question->commentcount, $attributes);
+    }
+
+    public function get_extra_joins(): array {
+        $syscontext = \context_system::instance();
+        $conditionsql = '';
+        foreach ($this->filterconditions as $filtercondition) {
+            $conditionsql .= ' AND ' . $filtercondition;
+        }
+        $subquery = "
+            SELECT COUNT('x') AS commentcount, itemid AS questionid
+            FROM {comments} c
+                 JOIN {question} q ON q.id = c.itemid
+                 JOIN {question_versions} qv ON qv.questionid = q.id
+                 JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+            WHERE c.component = 'qbank_comment'
+                  AND commentarea = 'question'
+                  AND contextid = {$syscontext->id}
+                  {$conditionsql}
+            GROUP BY c.itemid
+        ";
+
+        return [
+            'comments' => "LEFT JOIN ({$subquery}) comments ON comments.questionid = q.id"
+        ];
+    }
+
+    public function get_required_fields(): array {
+        return ['COALESCE(comments.commentcount, 0) AS commentcount'];
     }
 
     public function get_extra_classes(): array {
@@ -112,5 +132,20 @@ class comment_count_column extends column_base {
 
     public function get_default_width(): int {
         return 150;
+    }
+
+    public function set_filter_conditions(array $filterconditions, array $filterparams): void {
+        foreach ($filterparams as $name => $value) {
+            $commentname = $name . 'comment';
+            $this->filterparameters[$commentname] = $value;
+            foreach ($filterconditions as $key => $filtercondition) {
+                $filterconditions[$key] = str_replace($name, $commentname, $filtercondition);
+            }
+        }
+        $this->filterconditions = $filterconditions;
+    }
+
+    public function get_extra_parameters(): array {
+        return $this->filterparameters;
     }
 }
