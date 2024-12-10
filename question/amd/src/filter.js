@@ -111,7 +111,6 @@ export const init = (
                 if (!isNaN(viewData.jointype)) {
                     filterdata.jointype = viewData.jointype;
                 }
-                updateUrlParams(filterdata);
             }
         }
         // Load questions for first page.
@@ -121,6 +120,7 @@ export const init = (
         Fragment.loadFragment(component, callback, bankContextId, viewData)
             // Render questions for first page and pagination.
             .then((questionhtml, jsfooter) => {
+                updateUrlParams(filterdata);
                 const questionscontainer = document.querySelector(SELECTORS.QUESTION_CONTAINER_ID);
                 if (questionhtml === undefined) {
                     questionhtml = '';
@@ -135,7 +135,12 @@ export const init = (
                 }
                 return {questionhtml, jsfooter};
             })
-            .catch(Notification.exception);
+            .catch((e) => {
+                pendingPromise.resolve();
+                return Notification.alert(e.errorcode, e.message);
+            }).then((alert) => {
+                return alert.show();
+            });
     };
 
     // Init core filter processor with apply callback.
