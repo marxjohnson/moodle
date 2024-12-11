@@ -78,6 +78,9 @@ class behat_core_question_generator extends behat_generator_base {
         $question = $DB->get_record('question', ['id' => $data['id']], '*', MUST_EXIST);
         $overrides = [];
         foreach ($data as $key => $value) {
+            if (in_array($key, ['modifiedby', 'createdby'])) {
+                $value = $DB->get_field('user', 'id', ['username' => $value]);
+            }
             $overrides[$key] = $value;
         }
 
