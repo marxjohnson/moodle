@@ -43,6 +43,15 @@ class question_name_condition extends \core_question\local\bank\condition {
     }
 
     /**
+     * Return the query field to filter on.
+     *
+     * @return string
+     */
+    protected static function get_filter_field(): string {
+        return 'q.name';
+    }
+
+    /**
      * Return an SQL condition and parameters for filtering on q.name.
      *
      * This will search for the terms provided anywhere in the name.
@@ -57,8 +66,14 @@ class question_name_condition extends \core_question\local\bank\condition {
         $params = [];
         $notlike = $filter['jointype'] === datafilter::JOINTYPE_NONE;
         foreach ($filter['values'] as $key => $value) {
-            $params["questionname{$key}"] = "%{$value}%";
-            $conditions[] = $DB->sql_like('q.name', ":questionname{$key}", casesensitive: false, notlike: $notlike);
+            $paramprefix = static::get_condition_key();
+            $params["{$paramprefix}{$key}"] = "%$value%";
+            $conditions[] = $DB->sql_like(
+                static::get_filter_field(),
+                ":{$paramprefix}{$key}",
+                casesensitive: false,
+                notlike: $notlike
+            );
         }
         $delimiter = $filter['jointype'] === datafilter::JOINTYPE_ANY ? ' OR ' : ' AND ';
         return [
