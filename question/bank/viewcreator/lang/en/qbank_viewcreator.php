@@ -23,8 +23,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['creatorname'] = 'Creator name';
 $string['modifiedby'] = 'Modified by';
 $string['timemodified'] = 'Time modified';
+$string['modifiername'] = 'Modifier name';
 $string['pluginname'] = 'View creator';
 $string['privacy:metadata'] = 'The View creator question bank plugin does not store any personal data.';
 $string['version'] = 'Version {$a}';
