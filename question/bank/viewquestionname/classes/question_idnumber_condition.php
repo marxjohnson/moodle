@@ -16,30 +16,27 @@
 
 namespace qbank_viewquestionname;
 
-use core_question\local\bank\plugin_features_base;
-use core_question\local\bank\view;
-
 /**
- * Plugin entrypoint for columns.
+ * Filter condition for filtering on the question idnumber
  *
- * @package    qbank_viewquestionname
- * @copyright  2021 Catalyst IT Australia Pty Ltd
- * @author     Safat Shahin <safatshahin@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   qbank_viewquestionname
+ * @copyright 2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
+ * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class plugin_feature extends plugin_features_base {
+class question_idnumber_condition extends question_name_condition {
     #[\Override]
-    public function get_question_columns($qbank): array {
-        return [
-            new question_name_idnumber_tags_column($qbank)
-        ];
+    public function get_title() {
+        return get_string('questionidnumbercondition', 'qbank_viewquestionname');
     }
 
     #[\Override]
-    public function get_question_filters(?view $qbank = null): array {
-        return [
-            new question_name_condition($qbank),
-            new question_idnumber_condition($qbank),
-        ];
+    public static function get_condition_key() {
+        return 'questionidnumber';
+    }
+
+    #[\Override]
+    protected static function get_filter_field(): string {
+        return 'qbe.idnumber';
     }
 }
