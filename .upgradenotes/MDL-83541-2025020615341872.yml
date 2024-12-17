@@ -1,0 +1,30 @@
+issueNumber: MDL-83541
+notes:
+  core_question:
+    - message: >
+        Duplication or multiple restores or questions has been modified to avoid
+        errors where a question with the same stamp already exists in the target
+        category.
+
+
+        To achieve this all data for the question is hashed, excluding any ID
+        fields.
+
+
+        If a qtype plugin calls any `$this->add_question_*()` methods its
+        `restore_qtype_*_plugin::define_question_plugin_structure()` method, the
+        ID fields used in these records will be excluded automatically.
+
+
+        If a qtype plugin defines its own tables with ID fields, it must define
+        `restore_qtype_*_plugin::define_excluded_fields()` to return an array of
+        those field names. This should be all that is required for the majority
+        of plugins. See `qtype_truefalse` for an example.
+
+
+        If the data structure for a qtype returned by calling
+        `get_question_options()` contains data other than ID fields that are not
+        contained in the backup structure or vice-versa, it will need to
+        override `restore_qtype_*_plugin::reduce_question_data()` to remove the
+        inconsistent data. See `qtype_multianswer` as an example.
+      type: fixed

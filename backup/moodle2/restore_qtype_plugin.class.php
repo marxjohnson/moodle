@@ -48,6 +48,11 @@ abstract class restore_qtype_plugin extends restore_plugin {
     private $questionanswercacheid = null;
 
     /**
+     * @var array List of fields to exclude form hashing during restore.
+     */
+    protected array $excludedhashfields = [];
+
+    /**
      * Add to $paths the restore_path_elements needed
      * to handle question_answers for a given question
      * Used by various qtypes (calculated, essay, multianswer,
@@ -62,6 +67,7 @@ abstract class restore_qtype_plugin extends restore_plugin {
         $elename = 'question_answer';
         $elepath = $this->get_pathfor('/answers/answer'); // we used get_recommended_name() so this works
         $paths[] = new restore_path_element($elename, $elepath);
+        $this->exclude_hash_fields(['question']);
     }
 
     /**
@@ -78,6 +84,7 @@ abstract class restore_qtype_plugin extends restore_plugin {
         $elename = 'question_numerical_unit';
         $elepath = $this->get_pathfor('/numerical_units/numerical_unit'); // we used get_recommended_name() so this works
         $paths[] = new restore_path_element($elename, $elepath);
+        $this->exclude_hash_fields(['question']);
     }
 
     /**
@@ -94,6 +101,7 @@ abstract class restore_qtype_plugin extends restore_plugin {
         $elename = 'question_numerical_option';
         $elepath = $this->get_pathfor('/numerical_options/numerical_option'); // we used get_recommended_name() so this works
         $paths[] = new restore_path_element($elename, $elepath);
+        $this->exclude_hash_fields(['question']);
     }
 
     /**
@@ -114,6 +122,19 @@ abstract class restore_qtype_plugin extends restore_plugin {
         $elename = 'question_dataset_item';
         $elepath = $this->get_pathfor('/dataset_definitions/dataset_definition/dataset_items/dataset_item');
         $paths[] = new restore_path_element($elename, $elepath);
+        $this->exclude_hash_fields([
+            'question',
+            'datasetdefinition',
+            'definition',
+            'category',
+            'type',
+            'status', // The following fields aren't included in the backup or DB structure, but are parsed from the options field.
+            'distribution',
+            'minimum',
+            'maximum',
+            'decimals',
+            'number_of_items', // This field is set dynamically from the count of items in the dataset, it is not backed up.
+        ]);
     }
 
     /**
@@ -394,5 +415,101 @@ abstract class restore_qtype_plugin extends restore_plugin {
         $contents[] = new restore_decode_content('question_hints', ['hint'], 'question_hint');
 
         return $contents;
+    }
+
+    /**
+     * Return a default list of fields that all question types should exclude from hashing.
+     *
+     * All qtypes will need to exclude 'id' (used by question and other tables), 'questionid' (used by hints),
+     * 'createdby' and 'modifiedby' (since they won't map between sites).
+     *
+     * @return string[]
+     */
+    final public static function get_default_excluded_fields(): array {
+        return ['id', 'questionid', 'createdby', 'modifiedby', 'questioncategoryid'];
+    }
+
+    /**
+     * Add fields to the list of fields excluded from hashing.
+     *
+     * This allows common methods to add fields to the exclusion list.
+     *
+     * @param array $fields
+     * @return void
+     */
+    final protected function exclude_hash_fields(array $fields): void {
+        $this->excludedhashfields = array_merge($this->excludedhashfields, $fields);
+    }
+
+    /**
+     * Return fields to be excluded from hashing during restores.
+     *
+     * @return array
+     */
+    final public function get_excluded_hash_fields(): array {
+        return array_unique(array_merge(
+            $this->get_default_excluded_fields(),
+            $this->excludedhashfields,
+            $this->define_excluded_fields(),
+        ));
+    }
+
+    /**
+     * Return a list of fields specific to this plugin that should be excluded from hashing during restores.
+     *
+     * Fields that should be excluded from common elements such as answers or numerical units that are used by the plugin will
+     * be excluded automatically. This method just needs to define any specific to this plugin, such as foreign keys used in the
+     * plugin's tables.
+     *
+     * @return array
+     */
+    protected function define_excluded_fields(): array {
+        return [];
+    }
+
+    /**
+     * Reduce all the data for a question (either from the backup or database) to a 1-dimensional array for hashing.
+     *
+     * Whether given a backup structure or a question object with the question type's options, the reduced structure should
+     * contain the data from the same fields, so that if the question in the backup is the same as the question in the database,
+     * the hashes of this data will be identical.
+     *
+     * For plugins, it should be sufficient to override {@see define_excluded_fields()} with an array of any ID fields specific to
+     * the plugin type. Overriding this method is only necessary if the plugin's get_question_options() method adds additional
+     * data to the question that is not included in the backup.
+     *
+     * @param array $questiondata The question data as mutli-dimensional array, either the question record passed through
+     *     {@see get_question_options()}, or the chunk of backup data from
+     *     {@see restore_questions_parser_processor::dispatch_chunk()}.
+     * @param array $excludefields Names of fields to exclude from the reduced array.
+     * @return array
+     */
+    public static function reduce_question_data(array $questiondata, array $excludefields): array {
+        // The text content of a question answer is called "answertext" in backups, but "answer" in the database.
+        // Since the data structure may contain other fields called "answer" which are IDs we want to exclude,
+        // rename the "answer" fields from question_answer records to "answertext" for the purposes of hashing.
+        if (in_array('answer', $excludefields) && isset($questiondata['options']['answers'])) {
+            array_walk($questiondata['options']['answers'], function(&$answer) {
+                if (array_key_exists('answer', $answer)) {
+                    $answer['answertext'] = $answer['answer'];
+                    unset($answer['answer']);
+                }
+            });
+        }
+        // Remove category object added by get_question_options().
+        unset($questiondata['categoryobject']);
+
+        array_walk_recursive($questiondata, function($value, $key) use (&$hashdata, &$ids, $excludefields) {
+            if (!in_array($key, $excludefields)) {
+                // Normalise data types. Depending on where the data comes from, it may be a mixture of nulls, strings,
+                // ints and floats. Convert everything to a string, then all numbers to floats for accurate comparison.
+                $value = (string) $value;
+                if (is_numeric($value)) {
+                    $value = (float) ($value);
+                }
+                $hashdata[] = $value;
+            }
+        });
+        return $hashdata;
     }
 }
