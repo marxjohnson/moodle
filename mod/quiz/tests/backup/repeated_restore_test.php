@@ -270,6 +270,61 @@ final class repeated_restore_test extends advanced_testcase {
     }
 
     /**
+     * Restore a quiz with duplicate questions (same stamp and answers) into the same course.
+     */
+    public function test_restore_quiz_with_edited_questions(): void {
+        global $DB, $CFG, $USER;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Create a course and a user with editing teacher capabilities.
+        $generator = $this->getDataGenerator();
+        $course1 = $generator->create_course();
+        $teacher = $USER;
+        $generator->enrol_user($teacher->id, $course1->id, 'editingteacher');
+
+        $coursecontext = \context_course::instance($course1->id);
+        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
+
+        // Create a question category.
+        $cat = $questiongenerator->create_question_category(['contextid' => $coursecontext->id]);
+
+        // Create a quiz with 2 identical but separate questions.
+        $quiz1 = $this->create_test_quiz($course1);
+        $question1 = $questiongenerator->create_question('truefalse', 'true', ['category' => $cat->id]);
+        quiz_add_quiz_question($question1->id, $quiz1);
+        $question2 = $questiongenerator->create_question('truefalse', 'true', ['category' => $cat->id]);
+        // Edit question 2's text.
+        $DB->set_field('question', 'questiontext', random_string(), ['id' => $question2->id]);
+        quiz_add_quiz_question($question2->id, $quiz1);
+
+        // Update question2 to have the same stamp as question1.
+        $DB->set_field('question', 'stamp', $question1->stamp, ['id' => $question2->id]);
+
+        // Backup quiz.
+        $bc = new backup_controller(backup::TYPE_1ACTIVITY, $quiz1->cmid, backup::FORMAT_MOODLE,
+            backup::INTERACTIVE_NO, backup::MODE_IMPORT, $teacher->id);
+        $backupid = $bc->get_backupid();
+        $bc->execute_plan();
+        $bc->destroy();
+
+        // Restore the backup into the same course.
+        $rc = new restore_controller($backupid, $course1->id, backup::INTERACTIVE_NO, backup::MODE_IMPORT,
+            $teacher->id, backup::TARGET_CURRENT_ADDING);
+        $rc->execute_precheck();
+        $rc->execute_plan();
+        $rc->destroy();
+
+        // The quiz should contain both questions, as they have different text.
+        $modules = get_fast_modinfo($course1->id)->get_instances_of('quiz');
+        $this->assertCount(2, $modules);
+        $quiz2 = end($modules);
+        $quiz2structure = \mod_quiz\question\bank\qbank_helper::get_question_structure($quiz2->instance, $quiz2->context);
+        $this->assertEquals($quiz2structure[1]->questionid, $question1->id);
+        $this->assertEquals($quiz2structure[2]->questionid, $question2->id);
+    }
+
+    /**
      * Restore a course to another course having questions with the same stamp in a site context category.
      */
     public function test_restore_course_with_same_stamp_questions(): void {

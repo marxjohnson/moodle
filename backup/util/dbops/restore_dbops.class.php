@@ -672,7 +672,8 @@ abstract class restore_dbops {
 
                     // Collect all the questions for this category into memory so we only talk to the DB once.
                     $keycolumn = $DB->sql_concat_join("' '", ['q.id', 'qa.id']);
-                    $recordset = $DB->get_recordset_sql("SELECT $keycolumn, q.stamp, qv.version, q.id AS question, qa.answer
+                    $recordset = $DB->get_recordset_sql("SELECT $keycolumn, q.stamp, qv.version, q.id AS question, qa.answer,
+                                                                q.name, q.questiontext, q.generalfeedback, q.defaultmark, q.penalty
                                                            FROM {question} q
                                                            JOIN {question_versions} qv ON qv.questionid = q.id
                                                            JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
@@ -684,10 +685,19 @@ abstract class restore_dbops {
                     $answeraggregate = [];
                     foreach ($recordset as $rec) {
                         if (!isset($answeraggregate[$rec->question])) {
+                            $questionhash = sha1(
+                                $rec->name . '-' .
+                                $rec->questiontext . '-' .
+                                $rec->generalfeedback . '-' .
+                                $rec->defaultmark . '-' .
+                                $rec->penalty . '-' .
+                                $rec->stamp
+                            );
                             $answeraggregate[$rec->question] = (object)[
                                 'stamp' => $rec->stamp,
                                 'version' => $rec->version,
                                 'question' => $rec->question,
+                                'questionhash' => $questionhash,
                                 'answers' => [],
                             ];
                         }
@@ -702,11 +712,11 @@ abstract class restore_dbops {
                     foreach ($answeraggregate as $rec) {
                         sort($rec->answers);
                         $answershash = sha1(implode($rec->answers));
-                        $questioncache["$rec->stamp $rec->version $answershash"] = $rec->question;
+                        $questioncache["{$rec->questionhash}-{$answershash}"] = $rec->question;
                     }
 
                     foreach ($questions as $question) {
-                        $cachekey = "$question->stamp $question->version $question->answerhash";
+                        $cachekey = "{$question->questionhash}-{$question->answerhash}";
                         if (isset($questioncache[$cachekey])) {
                             $matchqid = $questioncache[$cachekey];
                         } else {

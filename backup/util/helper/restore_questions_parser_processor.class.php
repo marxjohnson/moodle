@@ -112,6 +112,14 @@ class restore_questions_parser_processor extends grouped_parser_processor {
             $itemid   = $info->id;
             $parentitemid = $this->lastcatid;
             $this->lastquestionid = $itemid;
+            $info->questionhash = sha1(
+                $info->name . '-' .
+                $info->questiontext . '-' .
+                $info->generalfeedback . '-' .
+                $info->defaultmark . '-' .
+                $info->penalty . '-' .
+                $info->stamp
+            );
 
         // Not question_category nor question, impossible. Throw exception.
         } else {
