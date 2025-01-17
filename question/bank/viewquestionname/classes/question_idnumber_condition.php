@@ -16,6 +16,9 @@
 
 namespace qbank_viewquestionname;
 
+use core\output\datafilter;
+use core_question\local\bank\condition;
+
 /**
  * Filter condition for filtering on the question idnumber
  *
@@ -24,7 +27,7 @@ namespace qbank_viewquestionname;
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class question_idnumber_condition extends question_name_condition {
+class question_idnumber_condition extends condition {
     #[\Override]
     public function get_title() {
         return get_string('questionidnumbercondition', 'qbank_viewquestionname');
@@ -36,7 +39,32 @@ class question_idnumber_condition extends question_name_condition {
     }
 
     #[\Override]
-    protected static function get_filter_field(): string {
-        return 'qbe.idnumber';
+    public function get_filter_class() {
+        return 'core/datafilter/filtertypes/keyword';
+    }
+
+    /**
+     * Return an SQL condition and parameters for filtering on q.idnumber.
+     *
+     * This will search for the terms provided anywhere in the name.
+     *
+     * @param array $filter
+     * @return array
+     */
+    public static function build_query_from_filter(array $filter): array {
+        global $DB;
+
+        $conditions = [];
+        $params = [];
+        $notlike = $filter['jointype'] === datafilter::JOINTYPE_NONE;
+        foreach ($filter['values'] as $key => $value) {
+            $params["idnumber{$key}"] = "%{$value}%";
+            $conditions[] = $DB->sql_like('qbe.idnumber', ":idnumber{$key}", casesensitive: false, notlike: $notlike);
+        }
+        $delimiter = $filter['jointype'] === datafilter::JOINTYPE_ANY ? ' OR ' : ' AND ';
+        return [
+            implode($delimiter, $conditions),
+            $params,
+        ];
     }
 }
