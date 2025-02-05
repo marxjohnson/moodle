@@ -199,4 +199,16 @@ class restore_qtype_multianswer_plugin extends restore_qtype_plugin {
         return implode(',', $resultarr);
     }
 
+    #[\Override]
+    public function define_excluded_fields(): array {
+        return ['sequence'];
+    }
+
+    #[\Override]
+    public static function reduce_question_data(array $questiondata, array $excludedfields): array {
+        if (isset($questiondata['options']['questions'])) {
+            unset($questiondata['options']['questions']);
+        }
+        return parent::reduce_question_data($questiondata, $excludedfields);
+    }
 }

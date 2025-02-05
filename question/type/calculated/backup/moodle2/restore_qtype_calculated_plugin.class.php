@@ -113,4 +113,22 @@ class restore_qtype_calculated_plugin extends restore_qtype_plugin {
             $newitemid = $DB->insert_record('question_calculated_options', $data);
         }
     }
+
+    #[\Override]
+    protected function define_excluded_fields(): array {
+        return [
+            'answer',
+            'synchronize', // These option fields are present in the database, but are only used by calculatedmulti.
+            'single',
+            'shuffleanswers',
+            'correctfeedback',
+            'correctfeedbackformat',
+            'partiallycorrectfeedback',
+            'partiallycorrectfeedbackformat',
+            'incorrectfeedback',
+            'incorrectfeedbackformat',
+            'answernumbering',
+            'shownumcorrect',
+        ];
+    }
 }
