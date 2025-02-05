@@ -106,7 +106,10 @@ final class question_type_test extends \advanced_testcase {
         $this->assertEquals($question->createdby, $questiondata->modifiedby);
         $this->assertEquals('', $questiondata->idnumber);
         $this->assertEquals($category->contextid, $questiondata->contextid);
-        $this->assertEquals([], $questiondata->hints);
+        $this->assertCount(1, $questiondata->hints);
+        $hint = array_pop($questiondata->hints);
+        $this->assertEquals('Add', $hint->hint);
+        $this->assertEquals(FORMAT_HTML, $hint->hintformat);
 
         // Options.
         $this->assertEquals($questiondata->id, $questiondata->options->question);
