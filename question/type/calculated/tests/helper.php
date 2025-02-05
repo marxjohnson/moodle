@@ -187,6 +187,13 @@ class qtype_calculated_test_helper extends question_test_helper {
 
         $fromform->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
 
+        $fromform->hint = [
+            [
+                'text' => 'Add',
+                'format' => FORMAT_HTML,
+            ],
+        ];
+
         return $fromform;
     }
 

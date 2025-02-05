@@ -80,4 +80,9 @@ class restore_qtype_numerical_plugin extends restore_qtype_plugin {
             $newitemid = $DB->insert_record('question_numerical', $data);
         }
     }
+
+    #[\Override]
+    public function define_excluded_fields(): array {
+        return ['answer'];
+    }
 }
