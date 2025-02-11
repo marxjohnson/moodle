@@ -20,6 +20,8 @@ use context_course;
 use context_coursecat;
 use context_module;
 use context_system;
+use core\task\manager;
+use mod_qbank\task\transfer_questions;
 use stdClass;
 use core_question\local\bank\question_version_status;
 
@@ -164,7 +166,7 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $coursecatcat = $this->create_question_category('Course Cat Parent Cat', $this->coursecatcontext->id);
 
         // Add a question to the category just made.
-        $question3 = $questiongenerator->create_question('shortanswer', null, ['category' => $coursecatcat->id]);
+        $question3 = $questiongenerator->create_question('essay', 'files', ['category' => $coursecatcat->id]);
 
         // Add a quiz to the course category and put those questions into it.
         $course = self::getDataGenerator()->create_course(['category' => $coursecategory->id]);
@@ -316,6 +318,11 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $this->assertCount(1, $questions);
         $question = reset($questions);
         $this->assertEquals($parentcat->id, $question->categoryid);
+        // Make sure there are files in the expected fileareas for this question.
+        $fs = get_file_storage();
+        $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'question', 'questiontext', $question->id, '/', '1.png'));
+        $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'question', 'generalfeedback', $question->id, '/', '2.png'));
+        $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'qtype_essay', 'graderinfo', $question->id, '/', '3.png'));
 
         // Make sure we have 4 question categories at course level (including 'top') with some questions in them.
         $allcoursecats = $DB->get_records('question_categories', ['contextid' => $this->coursecontext->id], 'id ASC');
@@ -472,6 +479,7 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $grandparentcat = reset($courseqcats);
         $parentcat = next($courseqcats);
         $childcat = next($courseqcats);
+
         $this->assertEquals($topcat->id, $grandparentcat->parent);
         $this->assertEquals($grandparentcat->id, $parentcat->parent);
         $this->assertEquals($parentcat->id, $childcat->parent);
@@ -524,5 +532,141 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $this->assertEmpty($this->get_question_data([$usedunusedcats['top']->id]));
         $this->assertCount(2, $this->get_question_data([$usedunusedcats['Used Question Cat']->id]));
         $this->assertCount(2, $this->get_question_data([$usedunusedcats['Unused Question Cat']->id]));
+    }
+
+    public function test_transfer_questions() {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setup_pre_install_data();
+
+        $task = new \mod_qbank\task\transfer_question_categories();
+        $task->execute();
+
+        // Assert that files are still in their original context.
+        $courses = $DB->get_records('course', ['category' => $this->coursecatcontext->instanceid], 'id ASC');
+        $newcourse = end($courses);
+        $coursemodinfo = get_fast_modinfo($newcourse);
+        $coursecatqbanks = $coursemodinfo->get_instances_of('qbank');
+        $coursecatqbank = reset($coursecatqbanks);
+        $coursecatqcats = $DB->get_records('question_categories', ['contextid' => $coursecatqbank->context->id], 'parent ASC');
+        $parentcat = end($coursecatqcats);
+        $questions = get_questions_category($parentcat, true);
+        $question = reset($questions);
+        $fs = get_file_storage();
+        $this->assertTrue($fs->file_exists(
+            $this->coursecatcontext->id,
+            'question',
+            'questiontext',
+            $question->id,
+            '/',
+            '1.png'
+        ));
+        $this->assertTrue($fs->file_exists(
+            $this->coursecatcontext->id,
+            'question',
+            'generalfeedback',
+            $question->id,
+            '/',
+            '2.png'
+        ));
+        $this->assertTrue($fs->file_exists(
+            $this->coursecatcontext->id,
+            'qtype_essay',
+            'graderinfo',
+            $question->id,
+            '/',
+            '3.png'
+        ));
+        $this->assertFalse($fs->file_exists(
+            $coursecatqbank->context->id,
+            'question',
+            'questiontext',
+            $question->id,
+            '/',
+            '1.png'
+        ));
+        $this->assertFalse($fs->file_exists(
+            $coursecatqbank->context->id,
+            'question',
+            'generalfeedback',
+            $question->id,
+            '/',
+            '2.png'
+        ));
+        $this->assertFalse($fs->file_exists(
+            $coursecatqbank->context->id,
+            'qtype_essay',
+            'graderinfo',
+            $question->id,
+            '/',
+            '3.png'
+        ));
+
+        $questiontasks = manager::get_adhoc_tasks(transfer_questions::class);
+
+        // We should have a transfer_questions task for each category that was moved.
+        // 2 site categories,
+        // 1 coursecat category,
+        // 3 regular course categories,
+        // 2 used/unused course categories.
+        $this->assertCount(8, $questiontasks);
+
+        $this->expectOutputRegex('~Moving files and tags~');
+        // Delete one of the categories before running the tasks, to ensure missing categories are handled gracefully.
+        $unusedcat = $DB->get_record('question_categories', ['name' => 'Unused Question Cat']);
+        question_category_delete_safe($unusedcat);
+        $this->expectOutputRegex("~Could not find a category record for id {$unusedcat->id}. Terminating task.~");
+
+        $this->runAdhocTasks();
+
+        // The files have now been moved to the new context.
+        $this->assertFalse($fs->file_exists(
+            $this->coursecatcontext->id,
+            'question',
+            'questiontext',
+            $question->id,
+            '/',
+            '1.png'
+        ));
+        $this->assertFalse($fs->file_exists(
+            $this->coursecatcontext->id,
+            'question',
+            'generalfeedback',
+            $question->id,
+            '/',
+            '2.png'
+        ));
+        $this->assertFalse($fs->file_exists(
+            $this->coursecatcontext->id,
+            'qtype_essay',
+            'graderinfo',
+            $question->id,
+            '/',
+            '3.png'
+        ));
+        $this->assertTrue($fs->file_exists(
+            $coursecatqbank->context->id,
+            'question',
+            'questiontext',
+            $question->id,
+            '/',
+            '1.png'
+        ));
+        $this->assertTrue($fs->file_exists(
+            $coursecatqbank->context->id,
+            'question',
+            'generalfeedback',
+            $question->id,
+            '/',
+            '2.png'
+        ));
+        $this->assertTrue($fs->file_exists(
+            $coursecatqbank->context->id,
+            'qtype_essay',
+            'graderinfo',
+            $question->id,
+            '/',
+            '3.png'
+        ));
     }
 }
