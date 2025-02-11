@@ -21,6 +21,7 @@ use core\context;
 use core\task\adhoc_task;
 use core\task\manager;
 use core_course_category;
+use core_plugin_manager;
 use core_question\local\bank\question_bank_helper;
 use stdClass;
 
@@ -164,9 +165,61 @@ class transfer_question_categories extends adhoc_task {
      * @return void
      */
     protected function move_question_category(stdClass $oldtopcategory, \context $newcontext): void {
-        global $DB;
+        global $DB, $CFG;
 
         $newtopcategory = question_get_top_category($newcontext->id, true);
+
+        $componentfileareas = [
+            'question_questiontext',
+            'question_generalfeedback',
+            'question_answertext',
+            'question_answerfeedback',
+            'question_hint',
+            'question_correctfeedback',
+            'question_partiallycorrectfeedback',
+            'question_incorrectfeedback',
+        ];
+        $qtypes = core_plugin_manager::instance()->get_installed_plugins('qtype');
+        foreach ($qtypes as $qtype) {
+            $filename = "{$CFG->dirroot}/question/type/{$qtype->name}/backup/moodle2/backup_qtype_{$qtype->name}_plugin.class.php";
+            if (!file_exists($filename)) {
+                continue;
+            }
+            $backupclass = 'backup_qtype_' . $qtype->name . '_plugin';
+            if (!class_exists($backupclass)) {
+                continue;
+            }
+            $qtypefileareas = array_keys($backupclass::get_qtype_fileareas());
+            foreach ($qtypefileareas as $qtypefilearea) {
+                $componentfileareas[] = "{$qtype->component}_{$qtypefilearea}";
+            }
+        }
+
+        $concatsql = $DB->sql_concat('component', "'_'", 'filearea');
+        [$insql, $inparams] = $DB->get_in_or_equal($componentfileareas, SQL_PARAMS_NAMED);
+        $where = "
+            contextid = :contextid
+            AND $concatsql $insql
+        ";
+        $params = array_merge(['contextid' => $oldtopcategory->contextid], $inparams);
+        $questionfiles = $DB->get_recordset_select('files', $where, $params);
+        $fs = get_file_storage();
+        foreach ($questionfiles as $questionfile) {
+            $pathnamehash = $fs->get_pathname_hash(
+                $newcontext->id,
+                $questionfile->component,
+                $questionfile->filearea,
+                $questionfile->itemid,
+                $questionfile->filepath,
+                $questionfile->filename
+            );
+            $DB->update_record(
+                'files',
+                ['id' => $questionfile->id, 'contextid' => $newcontext->id, 'pathnamehash' => $pathnamehash],
+                true,
+            );
+        }
+        $questionfiles->close();
 
         // This function moves subcategories, so we have to start at the top.
         question_move_category_to_context($oldtopcategory->id, $oldtopcategory->contextid, $newcontext->id);
