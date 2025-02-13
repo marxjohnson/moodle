@@ -133,7 +133,7 @@ class qtype_calculated_test_helper extends question_test_helper {
         $fromform->defaultmark = 1.0;
         $fromform->generalfeedback = 'Generalfeedback: {={a} + {b}} is the right answer.';
 
-        $fromform->unitrole = '3';
+        $fromform->unitrole = '0';
         $fromform->unitpenalty = 0.1;
         $fromform->unitgradingtypes = '1';
         $fromform->unitsleft = '0';
@@ -192,6 +192,13 @@ class qtype_calculated_test_helper extends question_test_helper {
                 'text' => 'Add',
                 'format' => FORMAT_HTML,
             ],
+        ];
+
+        $fromform->unit = [
+            'x'
+        ];
+        $fromform->multiplier = [
+            '1.0'
         ];
 
         return $fromform;

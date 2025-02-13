@@ -71,7 +71,7 @@ class restore_qtype_calculatedmulti_plugin extends restore_qtype_calculated_plug
     }
 
     #[\Override]
-    protected function define_excluded_fields(): array {
-        return ['answer'];
+    protected function define_excluded_identity_hash_fields(): array {
+        return [];
     }
 }
