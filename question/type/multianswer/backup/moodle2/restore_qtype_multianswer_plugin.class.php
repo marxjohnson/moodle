@@ -200,15 +200,18 @@ class restore_qtype_multianswer_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public function define_excluded_fields(): array {
-        return ['sequence'];
+    public function define_excluded_identity_hash_fields(): array {
+        return [
+            '/options/sequence',
+            '/options/question',
+        ];
     }
 
     #[\Override]
-    public static function reduce_question_data(array $questiondata, array $excludedfields): array {
-        if (isset($questiondata['options']['questions'])) {
-            unset($questiondata['options']['questions']);
+    public static function remove_excluded_question_data(stdClass $questiondata, array $excludefields = []): stdClass {
+        if (isset($questiondata->options->questions)) {
+            unset($questiondata->options->questions);
         }
-        return parent::reduce_question_data($questiondata, $excludedfields);
+        return parent::remove_excluded_question_data($questiondata, $excludefields);
     }
 }

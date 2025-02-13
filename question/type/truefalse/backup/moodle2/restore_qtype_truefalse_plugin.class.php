@@ -95,7 +95,10 @@ class restore_qtype_truefalse_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public function define_excluded_fields(): array {
-        return ['trueanswer', 'falseanswer'];
+    public function define_excluded_identity_hash_fields(): array {
+        return [
+            '/options/trueanswer',
+            '/options/falseanswer',
+        ];
     }
 }

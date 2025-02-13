@@ -115,20 +115,44 @@ class restore_qtype_calculated_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    protected function define_excluded_fields(): array {
+    public static function convert_backup_to_questiondata(array $tags): \stdClass {
+        $questiondata = parent::convert_backup_to_questiondata($tags);
+        $qtype = $questiondata->qtype;
+        foreach ($tags["plugin_qtype_{$qtype}_question"]['calculated_records']['calculated_record'] as $record) {
+            foreach($questiondata->options->answers as &$answer) {
+                if ($answer->id == $record['answer']) {
+                    $answer->tolerance = $record['tolerance'];
+                    $answer->tolerancetype = $record['tolerancetype'];
+                    $answer->correctanswerlength = $record['correctanswerlength'];
+                    $answer->correctanswerformat = $record['correctanswerformat'];
+                    continue 2;
+                }
+            }
+        }
+        if (isset($tags["plugin_qtype_{$qtype}_question"]['calculated_options'])) {
+            $questiondata->options = (object) array_merge(
+                (array) $questiondata->options,
+                $tags["plugin_qtype_{$qtype}_question"]['calculated_options']['calculated_option'][0],
+            );
+        }
+        return $questiondata;
+    }
+
+    #[\Override]
+    protected function define_excluded_identity_hash_fields(): array {
         return [
-            'answer',
-            'synchronize', // These option fields are present in the database, but are only used by calculatedmulti.
-            'single',
-            'shuffleanswers',
-            'correctfeedback',
-            'correctfeedbackformat',
-            'partiallycorrectfeedback',
-            'partiallycorrectfeedbackformat',
-            'incorrectfeedback',
-            'incorrectfeedbackformat',
-            'answernumbering',
-            'shownumcorrect',
+            // These option fields are present in the database, but are only used by calculatedmulti.
+            '/options/synchronize',
+            '/options/single',
+            '/options/shuffleanswers',
+            '/options/correctfeedback',
+            '/options/correctfeedbackformat',
+            '/options/partiallycorrectfeedback',
+            '/options/partiallycorrectfeedbackformat',
+            '/options/incorrectfeedback',
+            '/options/incorrectfeedbackformat',
+            '/options/answernumbering',
+            '/options/shownumcorrect',
         ];
     }
 }
