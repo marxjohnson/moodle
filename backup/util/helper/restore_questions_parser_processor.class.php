@@ -168,7 +168,7 @@ class restore_questions_parser_processor extends grouped_parser_processor {
     }
 
     /**
-     * Given a data structure containing the data for a question, reduce it to a single hashable string.
+     * Given a data structure containing the data for a question, reduce it to a flat array and return a sha1 hash of the data.
      *
      * @param array $questiondata An array containing all the data for a question, including hints and qtype plugin data.
      * @param ?backup_xml_transformer $transformer If provided, run the backup transformer process on all text fields. This ensures
