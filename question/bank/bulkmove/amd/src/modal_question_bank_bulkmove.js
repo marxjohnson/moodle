@@ -115,7 +115,7 @@ export default class ModalQuestionBankBulkmove extends Modal {
      * @param {integer} currentCategoryId
      */
     async display(currentBankContextId, currentCategoryId) {
-        const displayPending = new Pending();
+        const displayPending = new Pending('qbank_bulkmove/bulk_move_modal');
         this.bodyPromise = await Fragment.loadFragment(
             'qbank_bulkmove',
             'bulk_move',
