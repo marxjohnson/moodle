@@ -5493,6 +5493,9 @@ class restore_move_module_questions_categories extends restore_execution_step {
                             'question',
                             $originalquestion->id,
                         );
+                        if (!$backupids) {
+                            continue; // This question was not included in the backup.
+                        }
                         $DB->set_field_select(
                             'question_references',
                             'questionbankentryid',
