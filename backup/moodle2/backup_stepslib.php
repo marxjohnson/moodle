@@ -27,6 +27,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_question\local\bank\random_question_loader;
+
 /**
  * Create the temp dir where backup/restore will happen and create temp ids table.
  */
@@ -238,6 +240,8 @@ trait backup_question_reference_data_trait {
             'questionarea' => backup_helper::is_sqlparam($questionarea),
             'itemid' => backup::VAR_PARENTID
         ]);
+
+        $reference->annotate_ids('question_bank_entry', 'questionbankentryid');
     }
 }
 
@@ -270,6 +274,56 @@ trait backup_question_set_reference_trait {
             'questionarea' => backup_helper::is_sqlparam($questionarea),
             'itemid' => backup::VAR_PARENTID
         ]);
+    }
+
+    /**
+     * Find all questions that match set reference conditions used by the activity, and record the question bank entry IDs.
+     *
+     * @param int $contextid The context ID of the activity being backed up
+     * @param string $component The component of the activity
+     * @param string $questionarea The question area for finding set references
+     * @param string $backupid The backup ID to annotate question bank entries against
+     */
+    protected function annotate_set_reference_bank_entries(
+        int $contextid,
+        string $component,
+        string $questionarea,
+        string $backupid,
+    ): void {
+        global $DB;
+        $setreferenceconditions = $DB->get_fieldset(
+            'question_set_references',
+            'filtercondition',
+            [
+                'usingcontextid' => $contextid,
+                'component' => $component,
+                'questionarea' => $questionarea,
+            ],
+        );
+        if (empty($setreferenceconditions)) {
+            return;
+        }
+        $setreferencequestionids = [];
+        $randomloader = new random_question_loader(new qubaid_list([]), []);
+
+        foreach ($setreferenceconditions as $setreferencecondition) {
+            $conditions = json_decode($setreferencecondition, true);
+            $setreferencequestionids += array_keys($randomloader->get_filtered_questions($conditions['filter'], 0));
+        }
+        if (empty($setreferencequestionids)) {
+            return;
+        }
+        [$insql, $inparams] = $DB->get_in_or_equal($setreferencequestionids);
+        $qbeids = $DB->get_fieldset_select(
+            'question_versions',
+            'questionbankentryid',
+            "questionid {$insql}",
+            $inparams,
+        );
+
+        foreach ($qbeids as $qbeid) {
+            backup_structure_dbops::insert_backup_ids_record($backupid, 'question_bank_entry', $qbeid);
+        }
     }
 }
 
@@ -2645,7 +2699,35 @@ class backup_questions_structure_step extends backup_structure_step {
              WHERE bi.backupid = ?
                AND bi.itemname = 'question_categoryfinal'", [backup::VAR_BACKUPID]);
 
-        $questionbankentry->set_source_table('question_bank_entries', ['questioncategoryid' => backup::VAR_PARENTID]);
+        // Add all question bank entries from "complete" categories, plus annotated question bank entires
+        // from "partial" categories.
+        $questionbankentry->set_source_sql(
+            "
+                SELECT qbe.*
+                 FROM {question_bank_entries} qbe
+                 JOIN {backup_ids_temp} bi ON bi.itemid = qbe.questioncategoryid
+                WHERE bi.itemid = ?
+                      AND bi.backupid = ?
+                      AND bi.itemname = 'question_category_complete'
+                UNION
+                SELECT qbe.*
+                 FROM {question_bank_entries} qbe
+                 JOIN {backup_ids_temp} bicat ON bicat.itemid = qbe.questioncategoryid
+                 JOIN {backup_ids_temp} biq ON biq.itemid = qbe.id
+                WHERE bicat.itemid = ?
+                      AND bicat.backupid = ?
+                      AND bicat.itemname = 'question_category_partial'
+                      AND biq.backupid = ?
+                      AND biq.itemname = 'question_bank_entry'
+            ",
+            [
+                backup::VAR_PARENTID,
+                backup::VAR_BACKUPID,
+                backup::VAR_PARENTID,
+                backup::VAR_BACKUPID,
+                backup::VAR_BACKUPID,
+            ],
+        );
 
         $questionverion->set_source_table('question_versions', ['questionbankentryid' => backup::VAR_PARENTID]);
 
