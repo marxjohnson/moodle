@@ -685,18 +685,14 @@ abstract class restore_dbops {
                     // Compute a hash of question and answer fields to differentiate between identical stamp-version questions.
                     $questioncache = [];
                     foreach ($recordset as $question) {
-                        $qtypeclass = 'qtype_' . $question->qtype;
-                        $typepath = "{$CFG->dirroot}/question/type/{$question->qtype}/questiontype.php";
-                        if (!file_exists($typepath)) {
-                            // The question type is not present, skip the question.
-                            continue;
-                        }
-                        require_once($typepath);
-                        $qtype = new $qtypeclass();
                         $question->export_process = true; // Include all question options required for export.
                         get_question_options($question);
                         unset($question->export_process);
-                        $cachekey = restore_questions_parser_processor::generate_question_hash((array) $question, $transformer);
+                        // Remove some additional properties from get_question_options() that isn't included in backups
+                        // before we produce the identity hash.
+                        unset($question->categoryobject);
+                        unset($question->questioncategoryid);
+                        $cachekey = restore_questions_parser_processor::generate_question_identity_hash($question, $transformer);
                         $questioncache[$cachekey] = $question->id;
                     }
                     $recordset->close();

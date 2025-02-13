@@ -112,8 +112,14 @@ class restore_questions_parser_processor extends grouped_parser_processor {
             $itemname = 'question';
             $itemid   = $info->id;
             $parentitemid = $this->lastcatid;
+            $restore = $this->get_qtype_restore($data['tags']['qtype']);
+            if ($restore) {
+                $questiondata = $restore->convert_backup_to_questiondata($data['tags']);
+            } else {
+                $questiondata = restore_qtype_plugin::convert_backup_to_questiondata($data['tags']);
+            }
             // Store a hash of question fields for comparison with existing questions.
-            $info->questionhash = $this->generate_question_hash($data['tags']);
+            $info->questionhash = $this->generate_question_identity_hash($questiondata);
 
         // Not question_category nor question, impossible. Throw exception.
         } else {
@@ -170,28 +176,40 @@ class restore_questions_parser_processor extends grouped_parser_processor {
     /**
      * Given a data structure containing the data for a question, reduce it to a flat array and return a sha1 hash of the data.
      *
-     * @param array $questiondata An array containing all the data for a question, including hints and qtype plugin data.
+     * @param stdClass $questiondata An array containing all the data for a question, including hints and qtype plugin data.
      * @param ?backup_xml_transformer $transformer If provided, run the backup transformer process on all text fields. This ensures
      *     that values from the database are compared like-for-like with encoded values from the backup.
      * @return string A sha1 hash of all question data, normalised and concatenated together.
      */
-    public static function generate_question_hash(array $questiondata, ?backup_xml_transformer $transformer = null): string {
-        // The $questiondata must be passed as an array, but it may contain nested objects. Convert it to a multi-dimensional
-        // array so that we can use array_walk_recursive.
-        $questiondata = json_decode(json_encode($questiondata), true);
-        // Ask the qtype plugin for a list of fields that contain IDs, so they can be excluded from the hash.
-        $restore = self::get_qtype_restore($questiondata['qtype']);
+    public static function generate_question_identity_hash(
+        stdClass $questiondata,
+        ?backup_xml_transformer $transformer = null,
+    ): string {
+        $questiondata = clone($questiondata);
+        $restore = self::get_qtype_restore($questiondata->qtype);
         if ($restore) {
             $restore->define_plugin_structure(new restore_path_element('question', self::CATEGORY_PATH . self::QUESTION_SUBPATH));
             // Combine default exclusions with those specified by the plugin.
-            $hashdata = $restore->reduce_question_data($questiondata, $restore->get_excluded_hash_fields());
+            $questiondata = $restore->remove_excluded_question_data($questiondata, $restore->get_excluded_identity_hash_fields());
         } else {
             // The qtype has no restore class, use the default reduction method.
-            $hashdata = restore_qtype_plugin::reduce_question_data(
-                $questiondata,
-                restore_qtype_plugin::get_default_excluded_fields(),
-            );
+            $questiondata = restore_qtype_plugin::remove_excluded_question_data($questiondata);
         }
+
+        // Convert questiondata to a flat array of values.
+        $hashdata = [];
+        // Convert the object to a multi-dimensional array for compatibility with array_walk_recursive.
+        $questiondata = json_decode(json_encode($questiondata), true);
+        array_walk_recursive($questiondata, function($value) use (&$hashdata) {
+            // Normalise data types. Depending on where the data comes from, it may be a mixture of nulls, strings,
+            // ints and floats. Convert everything to strings, then all numbers to floats to ensure we are doing
+            // like-for-like comparisons without losing accuracy.
+            $value = (string) $value;
+            if (is_numeric($value)) {
+                $value = (float) ($value);
+            }
+            $hashdata[] = $value;
+        });
 
         sort($hashdata, SORT_STRING);
         $hashstring = implode(self::HASHDATA_SEPARATOR, $hashdata);
