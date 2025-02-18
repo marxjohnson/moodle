@@ -118,7 +118,7 @@ final class question_type_test extends \advanced_testcase {
         $actualquestiondata = end($actualquestionsdata);
 
         foreach ($questiondata as $property => $value) {
-            if (!in_array($property, array('id', 'timemodified', 'timecreated', 'options', 'hints'))) {
+            if (!in_array($property, ['id', 'timemodified', 'timecreated', 'options', 'hints'])) {
                 $this->assertEquals($value, $actualquestiondata->$property);
             }
         }
