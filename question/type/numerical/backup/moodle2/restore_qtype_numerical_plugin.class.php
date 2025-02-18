@@ -82,10 +82,10 @@ class restore_qtype_numerical_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public static function convert_backup_to_questiondata(array $tags): \stdClass {
-        $questiondata = parent::convert_backup_to_questiondata($tags);
-        foreach ($tags['plugin_qtype_numerical_question']['numerical_records']['numerical_record'] as $record) {
-            foreach($questiondata->options->answers as &$answer) {
+    public static function convert_backup_to_questiondata(array $backupdata): \stdClass {
+        $questiondata = parent::convert_backup_to_questiondata($backupdata);
+        foreach ($backupdata['plugin_qtype_numerical_question']['numerical_records']['numerical_record'] as $record) {
+            foreach ($questiondata->options->answers as &$answer) {
                 if ($answer->id == $record['answer']) {
                     $answer->tolerance = $record['tolerance'];
                     continue 2;

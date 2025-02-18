@@ -115,11 +115,11 @@ class restore_qtype_calculated_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public static function convert_backup_to_questiondata(array $tags): \stdClass {
-        $questiondata = parent::convert_backup_to_questiondata($tags);
+    public static function convert_backup_to_questiondata(array $backupdata): \stdClass {
+        $questiondata = parent::convert_backup_to_questiondata($backupdata);
         $qtype = $questiondata->qtype;
-        foreach ($tags["plugin_qtype_{$qtype}_question"]['calculated_records']['calculated_record'] as $record) {
-            foreach($questiondata->options->answers as &$answer) {
+        foreach ($backupdata["plugin_qtype_{$qtype}_question"]['calculated_records']['calculated_record'] as $record) {
+            foreach ($questiondata->options->answers as &$answer) {
                 if ($answer->id == $record['answer']) {
                     $answer->tolerance = $record['tolerance'];
                     $answer->tolerancetype = $record['tolerancetype'];
@@ -129,10 +129,10 @@ class restore_qtype_calculated_plugin extends restore_qtype_plugin {
                 }
             }
         }
-        if (isset($tags["plugin_qtype_{$qtype}_question"]['calculated_options'])) {
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"]['calculated_options'])) {
             $questiondata->options = (object) array_merge(
                 (array) $questiondata->options,
-                $tags["plugin_qtype_{$qtype}_question"]['calculated_options']['calculated_option'][0],
+                $backupdata["plugin_qtype_{$qtype}_question"]['calculated_options']['calculated_option'][0],
             );
         }
         return $questiondata;
