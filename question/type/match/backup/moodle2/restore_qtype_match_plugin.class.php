@@ -248,12 +248,12 @@ class restore_qtype_match_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public static function convert_backup_to_questiondata(array $tags): \stdClass {
-        $questiondata = parent::convert_backup_to_questiondata($tags);
-        $questiondata->options = (object) $tags["plugin_qtype_match_question"]['matchoptions'][0];
+    public static function convert_backup_to_questiondata(array $backupdata): \stdClass {
+        $questiondata = parent::convert_backup_to_questiondata($backupdata);
+        $questiondata->options = (object) $backupdata["plugin_qtype_match_question"]['matchoptions'][0];
         $questiondata->options->subquestions = array_map(
             fn($match) => (object) $match,
-            $tags["plugin_qtype_match_question"]['matches']['match'],
+            $backupdata["plugin_qtype_match_question"]['matches']['match'],
         );
         return $questiondata;
     }

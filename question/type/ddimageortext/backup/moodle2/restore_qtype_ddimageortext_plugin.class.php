@@ -168,15 +168,15 @@ class restore_qtype_ddimageortext_plugin extends restore_qtype_plugin {
     }
 
     #[\Override]
-    public static function convert_backup_to_questiondata(array $tags): \stdClass {
-        $questiondata = parent::convert_backup_to_questiondata($tags);
+    public static function convert_backup_to_questiondata(array $backupdata): \stdClass {
+        $questiondata = parent::convert_backup_to_questiondata($backupdata);
         $questiondata->options->drags = array_map(
             fn($drag) => (object) $drag,
-            $tags['plugin_qtype_ddimageortext_question']['drags']['drag'],
+            $backupdata['plugin_qtype_ddimageortext_question']['drags']['drag'],
         );
         $questiondata->options->drops = array_map(
             fn($drop) => (object) $drop,
-            $tags['plugin_qtype_ddimageortext_question']['drops']['drop'],
+            $backupdata['plugin_qtype_ddimageortext_question']['drops']['drop'],
         );
         return $questiondata;
     }
