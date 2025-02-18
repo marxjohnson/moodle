@@ -482,38 +482,38 @@ abstract class restore_qtype_plugin extends restore_plugin {
      * plus elements added by ::define_question_plugin_structure() named for the qtype. The question type will need to extend
      * this function if ::define_question_plugin_structure() adds any other elements to the backup.
      *
-     * @param array $tags The array of tags from the backup.
+     * @param array $backupdata The hierarchical array of tags from the backup.
      * @return \stdClass The questiondata object.
      */
-    public static function convert_backup_to_questiondata(array $tags): \stdClass {
-        $questiondata = (object) array_filter($tags, fn($tag) => !is_array($tag)); // Create an object from the top-level fields.
+    public static function convert_backup_to_questiondata(array $backupdata): \stdClass {
+        $questiondata = (object) array_filter($backupdata, fn($tag) => !is_array($tag)); // Create an object from the top-level fields.
         $qtype = $questiondata->qtype;
         $questiondata->options = new stdClass();
-        if (isset($tags["plugin_qtype_{$qtype}_question"][$qtype])) {
-            $questiondata->options = (object) $tags["plugin_qtype_{$qtype}_question"][$qtype][0];
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"][$qtype])) {
+            $questiondata->options = (object) $backupdata["plugin_qtype_{$qtype}_question"][$qtype][0];
         }
-        if (isset($tags["plugin_qtype_{$qtype}_question"]['answers'])) {
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"]['answers'])) {
             $questiondata->options->answers = array_map(
                 fn($answer) => (object) $answer,
-                $tags["plugin_qtype_{$qtype}_question"]['answers']['answer'],
+                $backupdata["plugin_qtype_{$qtype}_question"]['answers']['answer'],
             );
         }
-        if (isset($tags["plugin_qtype_{$qtype}_question"]['numerical_options'])) {
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"]['numerical_options'])) {
             $questiondata->options = (object) array_merge(
                 (array) $questiondata->options,
-                $tags["plugin_qtype_{$qtype}_question"]['numerical_options']['numerical_option'][0],
+                $backupdata["plugin_qtype_{$qtype}_question"]['numerical_options']['numerical_option'][0],
             );
         }
-        if (isset($tags["plugin_qtype_{$qtype}_question"]['numerical_units'])) {
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"]['numerical_units'])) {
             $questiondata->options->units = array_map(
                 fn($unit) => (object) $unit,
-                $tags["plugin_qtype_{$qtype}_question"]['numerical_units']['numerical_unit'],
+                $backupdata["plugin_qtype_{$qtype}_question"]['numerical_units']['numerical_unit'],
             );
         }
-        if (isset($tags["plugin_qtype_{$qtype}_question"]['dataset_definitions'])) {
+        if (isset($backupdata["plugin_qtype_{$qtype}_question"]['dataset_definitions'])) {
             $questiondata->options->datasets = array_map(
                 fn($dataset) => (object) $dataset,
-                $tags["plugin_qtype_{$qtype}_question"]['dataset_definitions']['dataset_definition'],
+                $backupdata["plugin_qtype_{$qtype}_question"]['dataset_definitions']['dataset_definition'],
             );
         }
         if (isset($questiondata->options->datasets)) {
@@ -527,10 +527,10 @@ abstract class restore_qtype_plugin extends restore_plugin {
                 }
             }
         }
-        if (isset($tags['question_hints'])) {
+        if (isset($backupdata['question_hints'])) {
             $questiondata->hints = array_map(
                 fn($hint) => (object) $hint,
-                $tags['question_hints']['question_hint'],
+                $backupdata['question_hints']['question_hint'],
             );
         }
 
