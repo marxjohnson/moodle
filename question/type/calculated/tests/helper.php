@@ -195,10 +195,10 @@ class qtype_calculated_test_helper extends question_test_helper {
         ];
 
         $fromform->unit = [
-            'x'
+            'x',
         ];
         $fromform->multiplier = [
-            '1.0'
+            '1.0',
         ];
 
         return $fromform;
