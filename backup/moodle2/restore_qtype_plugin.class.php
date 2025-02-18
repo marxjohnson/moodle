@@ -586,22 +586,20 @@ abstract class restore_qtype_plugin extends restore_plugin {
      * @return void
      */
     private static function unset_excluded_fields(stdClass|array $data, array $pathparts): void {
-        while (!empty($pathparts)) {
-            $element = array_shift($pathparts);
-            if (!isset($data->{$element})) {
-                // This element is not present in the data structure, nothing to unset.
-                return;
+        $element = array_shift($pathparts);
+        if (!isset($data->{$element})) {
+            // This element is not present in the data structure, nothing to unset.
+            return;
+        }
+        if (is_object($data->{$element})) {
+            self::unset_excluded_fields($data->{$element}, $pathparts);
+        } else if (is_array($data->{$element})) {
+            foreach ($data->{$element} as $item) {
+                self::unset_excluded_fields($item, $pathparts);
             }
-            if (is_object($data->{$element})) {
-                $data = $data->{$element};
-            } else if (is_array($data->{$element})) {
-                foreach ($data->{$element} as $item) {
-                    self::unset_excluded_fields($item, $pathparts);
-                }
-            } else if (empty($pathparts)) {
-                // This is the last element of the path and it's a scalar value, unset it.
-                unset($data->{$element});
-            }
+        } else if (empty($pathparts)) {
+            // This is the last element of the path and it's a scalar value, unset it.
+            unset($data->{$element});
         }
     }
 }
