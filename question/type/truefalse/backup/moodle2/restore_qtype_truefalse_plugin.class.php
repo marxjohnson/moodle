@@ -99,6 +99,7 @@ class restore_qtype_truefalse_plugin extends restore_qtype_plugin {
         return [
             '/options/trueanswer',
             '/options/falseanswer',
+            '/options/question',
         ];
     }
 }
