@@ -20,7 +20,7 @@ namespace qbank_viewcreator;
  * Filter condition for filtering on modifier name
  *
  * @package   qbank_viewcreator
- * @copyright 2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
+ * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

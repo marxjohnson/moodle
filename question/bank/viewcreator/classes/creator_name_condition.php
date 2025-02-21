@@ -18,13 +18,12 @@ namespace qbank_viewcreator;
 
 use core\output\datafilter;
 use core_question\local\bank\condition;
-use tool_brickfield\local\areas\core_course\fullname;
 
 /**
  * Filter condition for filtering on creator name
  *
  * @package   qbank_viewcreator
- * @copyright 2024 onwards Catalyst IT EU {@link https://catalyst-eu.net}
+ * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -53,14 +52,7 @@ class creator_name_condition extends condition {
         return 'uc';
     }
 
-    /**
-     * Return an SQL condition and parameters for filtering on name fields.
-     *
-     * This will search for the terms provided anywhere in the name.
-     *
-     * @param array $filter
-     * @return array
-     */
+    #[\Override]
     public static function build_query_from_filter(array $filter): array {
         global $DB;
 
