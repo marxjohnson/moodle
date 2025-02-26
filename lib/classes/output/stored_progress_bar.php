@@ -48,8 +48,8 @@ class stored_progress_bar extends progress_bar {
      * then polls for updates asynchronously, rather than waiting for synchronous updates in later output.
      *
      * @param string $idnumber
-     * @param int $width
-     * @param bool $autostart
+     * @param int $width The suggested width.
+     * @param bool $autostart Whether to start the progress bar right away.
      */
     public function __construct(string $idnumber, int $width = 0, bool $autostart = true) {
 
