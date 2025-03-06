@@ -20,36 +20,25 @@ use core\output\datafilter;
 use core_question\local\bank\condition;
 
 /**
- * Filter condition for filtering on creator name
+ * Abstract class for conditions filtering by user.
  *
  * @package   qbank_viewcreator
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class creator_name_condition extends condition {
-    #[\Override]
-    public function get_title() {
-        return get_string('creatorname', 'qbank_viewcreator');
-    }
+abstract class user_condition extends condition {
 
-    #[\Override]
-    public static function get_condition_key() {
-        return 'creatorname';
-    }
+    /**
+     * Return the alias for the instance of the user table to filter on.
+     *
+     * @return string
+     */
+    abstract protected static function get_table_alias(): string;
 
     #[\Override]
     public function get_filter_class() {
         return 'core/datafilter/filtertypes/keyword';
-    }
-
-    /**
-     * Return the alias for the table containing the name fields.
-     *
-     * @return string
-     */
-    protected static function get_table_alias(): string {
-        return 'uc';
     }
 
     #[\Override]
@@ -62,9 +51,10 @@ class creator_name_condition extends condition {
         $tablealias = static::get_table_alias();
         $allnames = array_map(fn($field) => "{$tablealias}.{$field}", \core_user\fields::get_name_fields());
         $allnames = $DB->sql_concat(...$allnames);
+        $conditionkey = static::get_condition_key();
         foreach ($filter['values'] as $key => $value) {
-            $params["creatorname{$key}"] = "%$value%";
-            $conditions[] = $DB->sql_like($allnames, ":creatorname{$key}", casesensitive: false, notlike: $notlike);
+            $params["{$conditionkey}{$key}"] = "%$value%";
+            $conditions[] = $DB->sql_like($allnames, ":{$conditionkey}{$key}", casesensitive: false, notlike: $notlike);
         }
         $delimiter = $filter['jointype'] === datafilter::JOINTYPE_ANY ? ' OR ' : ' AND ';
         return [

@@ -16,27 +16,30 @@
 
 namespace qbank_viewcreator;
 
+use core\output\datafilter;
+use core_question\local\bank\condition;
+
 /**
- * Filter condition for filtering on modifier name
+ * Filter condition for filtering on creator name
  *
  * @package   qbank_viewcreator
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class modifier_name_condition extends creator_name_condition {
+class createdby_condition extends user_condition {
     #[\Override]
     public function get_title() {
-        return get_string('modifiername', 'qbank_viewcreator');
+        return get_string('createdby', 'question');
     }
 
     #[\Override]
     public static function get_condition_key() {
-        return 'modifiername';
+        return 'createdby';
     }
 
     #[\Override]
     protected static function get_table_alias(): string {
-        return 'um';
+        return 'uc';
     }
 }

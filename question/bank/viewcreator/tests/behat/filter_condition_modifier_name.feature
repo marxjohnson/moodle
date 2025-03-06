@@ -30,30 +30,30 @@ Feature: Filter questions by modifier name
       | truefalse | Test questions   | Second question |
       | truefalse | Test questions   | Third question  |
     And the following "core_question > updated questions" exist:
-      | questioncategory | question        | name            | modifiedby |
-      | Test questions   | First question  | First question  | aa         |
-      | Test questions   | Second question | Second question | bb         |
-      | Test questions   | Third question  | Third question  | cc         |
+      | questioncategory | question        | name            | modifiedbyuser |
+      | Test questions   | First question  | First question  | aa             |
+      | Test questions   | Second question | Second question | bb             |
+      | Test questions   | Third question  | Third question  | cc             |
     And I am on the "Qbank 1" "core_question > question bank" page logged in as "admin"
     And I should see "First question"
     And I should see "Second question"
     And I should see "Third question"
 
   Scenario: Filter by a single word
-    When I apply question bank filter "Modifier name" with value "Aaron"
+    When I apply question bank filter "Modified by" with value "Aaron"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
 
   Scenario: Filter by any word
-    When I apply question bank filter "Modifier name" with value "Aaron, Clare"
+    When I apply question bank filter "Modified by" with value "Aaron, Clare"
     Then I should see "First question"
     And I should not see "Second question"
     And I should see "Third question"
 
   Scenario: Filter by all words
-    When I add question bank filter "Modifier name"
-    And I set the field "Modifier name" to "son, Aar"
+    When I add question bank filter "Modified by"
+    And I set the field "Modified by" to "son, Aar"
     And I set the field "Match" in the "Filter 3" "fieldset" to "All"
     And I press "Apply filters"
     Then I should see "First question"
@@ -61,26 +61,26 @@ Feature: Filter questions by modifier name
     And I should not see "Third question"
 
   Scenario: Filter by additional name fields
-    When I apply question bank filter "Modifier name" with value "Aron"
+    When I apply question bank filter "Modified by" with value "Aron"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Modifier name" with value "sun"
+    When I apply question bank filter "Modified by" with value "sun"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Modifier name" with value "drew"
+    When I apply question bank filter "Modified by" with value "drew"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Modifier name" with value "Andy"
+    When I apply question bank filter "Modified by" with value "Andy"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
 
   Scenario: Exclude names by filter
-    When I add question bank filter "Modifier name"
-    And I set the field "Modifier name" to "Aron, Clare"
+    When I add question bank filter "Modified by"
+    And I set the field "Modified by" to "Aron, Clare"
     And I set the field "Match" in the "Filter 3" "fieldset" to "None"
     And I press "Apply filters"
     Then I should not see "First question"

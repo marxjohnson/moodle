@@ -35,20 +35,20 @@ Feature: Filter questions by creator name
     And I should see "Third question"
 
   Scenario: Filter by a single word
-    When I apply question bank filter "Creator name" with value "Aaron"
+    When I apply question bank filter "Created by" with value "Aaron"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
 
   Scenario: Filter by any word
-    When I apply question bank filter "Creator name" with value "Aaron, Clare"
+    When I apply question bank filter "Created by" with value "Aaron, Clare"
     Then I should see "First question"
     And I should not see "Second question"
     And I should see "Third question"
 
   Scenario: Filter by all words
-    When I add question bank filter "Creator name"
-    And I set the field "Creator name" to "son, Aar"
+    When I add question bank filter "Created by"
+    And I set the field "Created by" to "son, Aar"
     And I set the field "Match" in the "Filter 3" "fieldset" to "All"
     And I press "Apply filters"
     Then I should see "First question"
@@ -56,26 +56,26 @@ Feature: Filter questions by creator name
     And I should not see "Third question"
 
   Scenario: Filter by additional name fields
-    When I apply question bank filter "Creator name" with value "Aron"
+    When I apply question bank filter "Created by" with value "Aron"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Creator name" with value "sun"
+    When I apply question bank filter "Created by" with value "sun"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Creator name" with value "drew"
+    When I apply question bank filter "Created by" with value "drew"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
-    When I apply question bank filter "Creator name" with value "Andy"
+    When I apply question bank filter "Created by" with value "Andy"
     Then I should see "First question"
     And I should not see "Second question"
     And I should not see "Third question"
 
   Scenario: Exclude names by filter
-    When I add question bank filter "Creator name"
-    And I set the field "Creator name" to "Aron, Clare"
+    When I add question bank filter "Created by"
+    And I set the field "Created by" to "Aron, Clare"
     And I set the field "Match" in the "Filter 3" "fieldset" to "None"
     And I press "Apply filters"
     Then I should not see "First question"
