@@ -154,6 +154,86 @@ final class repeated_restore_test extends advanced_testcase {
     }
 
     /**
+     * Restore a copy of a quiz to the same course, using questions that include line breaks in the text.
+     */
+    public function test_restore_question_with_linebreaks(): void {
+        global $USER;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Step 1: Create two courses and a user with editing teacher capabilities.
+        $generator = $this->getDataGenerator();
+        $course1 = $generator->create_course();
+        $course2 = $generator->create_course();
+        $teacher = $USER;
+        $generator->enrol_user($teacher->id, $course1->id, 'editingteacher');
+        $generator->enrol_user($teacher->id, $course2->id, 'editingteacher');
+
+        // Create a quiz with questions in the first course.
+        $quiz = $this->create_test_quiz($course1);
+        $qbank = $generator->get_plugin_generator('mod_qbank')->create_instance(['course' => $course1->id]);
+        $context = \context_module::instance($qbank->cmid);
+        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
+
+        // Create a question category.
+        $cat = $questiongenerator->create_question_category(['contextid' => $context->id]);
+
+        // Create questions and add to the quiz.
+        $q1 = $questiongenerator->create_question('truefalse', null, [
+            'category' => $cat->id,
+            'questiontext' => ['text' => "<p>Question</p>\r\n<p>One</p>", 'format' => FORMAT_MOODLE]
+        ]);
+        $q2 = $questiongenerator->create_question('truefalse', null, [
+            'category' => $cat->id,
+            'questiontext' => ['text' => "<p>Question</p>\n<p>Two</p>", 'format' => FORMAT_MOODLE]
+        ]);
+        // Add question to quiz.
+        quiz_add_quiz_question($q1->id, $quiz);
+        quiz_add_quiz_question($q2->id, $quiz);
+
+        // Capture original question IDs for verification after import.
+        $modules1 = get_fast_modinfo($course1->id)->get_instances_of('quiz');
+        $module1 = reset($modules1);
+        $originalslots = \mod_quiz\question\bank\qbank_helper::get_question_structure(
+            $module1->instance, $module1->context);
+
+        $originalquestionids = [];
+        foreach ($originalslots as $slot) {
+            array_push($originalquestionids, intval($slot->questionid));
+        }
+
+        $this->assertCount(2, get_questions_category($cat, false));
+
+        // Step 2: Backup the quiz
+        $bc = new backup_controller(backup::TYPE_1ACTIVITY, $quiz->cmid, backup::FORMAT_MOODLE,
+            backup::INTERACTIVE_NO, backup::MODE_IMPORT, $teacher->id);
+        $backupid = $bc->get_backupid();
+        $bc->execute_plan();
+        $bc->destroy();
+
+        // Step 3: Import the backup into the same course.
+        $rc = new restore_controller($backupid, $course1->id, backup::INTERACTIVE_NO, backup::MODE_IMPORT,
+            $teacher->id, backup::TARGET_CURRENT_ADDING);
+        $rc->execute_precheck();
+        $rc->execute_plan();
+        $rc->destroy();
+
+        // Verify the question ids from the new quiz match the first.
+        $modules2 = get_fast_modinfo($course1->id)->get_instances_of('quiz');
+        $this->assertCount(2, $modules2);
+        $module2 = end($modules2);
+        $copyslots = \mod_quiz\question\bank\qbank_helper::get_question_structure(
+            $module2->instance, $module2->context);
+
+        foreach ($copyslots as $slot) {
+            $this->assertContains(intval($slot->questionid), $originalquestionids);
+        }
+
+        // The category should still only contain 2 question, neither question should be duplicated.
+        $this->assertCount(2, get_questions_category($cat, false));
+    }
+
+    /**
      * Return a list of qtypes with valid generators in their helper class.
      *
      * This will check all installed qtypes for a test helper class, then find a defined test question which has a corresponding
