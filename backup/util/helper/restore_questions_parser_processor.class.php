@@ -207,6 +207,9 @@ class restore_questions_parser_processor extends grouped_parser_processor {
             $value = (string) $value;
             if (is_numeric($value)) {
                 $value = (float) ($value);
+            } else if (str_contains($value, "\r\n")) {
+                // Normalise line breaks.
+                $value = str_replace("\r\n", "\n", $value);
             }
             $hashdata[] = $value;
         });
