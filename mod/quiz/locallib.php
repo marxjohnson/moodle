@@ -2002,7 +2002,7 @@ function quiz_validate_new_attempt(quiz_settings $quizobj, access_manager $acces
         $lastattempt
         && in_array($lastattempt->state, [quiz_attempt::NOT_STARTED, quiz_attempt::IN_PROGRESS, quiz_attempt::OVERDUE])
     ) {
-        // If an in-progress attempt exists, check password then redirect to it.
+        // If an in-progress or not-started attempt exists, check password then redirect to it.
         $currentattemptid = $lastattempt->id;
 
         $messages = $accessmanager->prevent_access();

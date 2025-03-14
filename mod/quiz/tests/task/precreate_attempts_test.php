@@ -45,50 +45,10 @@ final class precreate_attempts_test extends \advanced_testcase {
         return [
             [
                 'period' => 0,
-                'enabled' => 0,
-                'locked' => '',
-                'output' => 'Pre-creation of quiz attempts is disabled. Nothing to do.',
-            ],
-            [
-                'period' => 0,
-                'enabled' => 0,
-                'locked' => 1,
-                'output' => 'Pre-creation of quiz attempts is disabled. Nothing to do.',
-            ],
-            [
-                'period' => 0,
-                'enabled' => 1,
-                'locked' => '',
-                'output' => 'Pre-creation of quiz attempts is disabled. Nothing to do.',
-            ],
-            [
-                'period' => 0,
-                'enabled' => 1,
-                'locked' => 1,
                 'output' => 'Pre-creation of quiz attempts is disabled. Nothing to do.',
             ],
             [
                 'period' => 1,
-                'enabled' => 0,
-                'locked' => '',
-                'output' => 'Found 0 quizzes to create attempts for.',
-            ],
-            [
-                'period' => 1,
-                'enabled' => 0,
-                'locked' => 1,
-                'output' => 'Pre-creation of quiz attempts is disabled. Nothing to do.',
-            ],
-            [
-                'period' => 1,
-                'enabled' => 1,
-                'locked' => '',
-                'output' => 'Found 0 quizzes to create attempts for.',
-            ],
-            [
-                'period' => 1,
-                'enabled' => 1,
-                'locked' => 1,
                 'output' => 'Found 0 quizzes to create attempts for.',
             ],
         ];
@@ -106,11 +66,9 @@ final class precreate_attempts_test extends \advanced_testcase {
      * @return void
      * @dataProvider precreate_settings_provider
      */
-    public function test_execute_disabled(int $period, int $enabled, int|string $locked, string $output): void {
+    public function test_execute_disabled(int $period, string $output): void {
         $this->resetAfterTest();
         set_config('precreateperiod', $period, 'quiz');
-        set_config('precreateattempts', $enabled, 'quiz');
-        set_config('precreateattempts_locked', $locked, 'quiz');
 
         $task = new precreate_attempts();
         ob_start();
@@ -143,7 +101,6 @@ final class precreate_attempts_test extends \advanced_testcase {
 
         set_config('precreateperiod', 12 * HOURSECS, 'quiz');
         set_config('precreateattempts', 1, 'quiz');
-        set_config('precreateattempts_locked', 1, 'quiz');
         $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
         // Generate a quiz with timeopen 1 day in the future.
         $quizinfuture = $quizgenerator->create_instance([
@@ -335,7 +292,6 @@ final class precreate_attempts_test extends \advanced_testcase {
      */
     public function test_execute_maxruntime(): void {
         $this->resetAfterTest();
-        set_config('precreateperiod_locked', '', 'quiz');
 
         // Generate a course.
         $course = $this->getDataGenerator()->create_course();
@@ -346,7 +302,6 @@ final class precreate_attempts_test extends \advanced_testcase {
 
         set_config('precreateperiod', 12 * HOURSECS, 'quiz');
         set_config('precreateattempts', 1, 'quiz');
-        set_config('precreateattempts_locked', 1, 'quiz');
         $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
         // Generate 3 quizzes within the pre-creation window.
         $timenow = time();
@@ -411,11 +366,11 @@ final class precreate_attempts_test extends \advanced_testcase {
     }
 
     /**
-     * Pre-creation is opt in based on quiz setting when the config setting is unlocked.
+     * Pre-creation is opt in based on quiz setting.
      *
      * @return void
      */
-    public function test_execute_unlocked(): void {
+    public function test_execute_optin(): void {
         $this->resetAfterTest();
 
         // Generate a course.
@@ -429,10 +384,9 @@ final class precreate_attempts_test extends \advanced_testcase {
         $this->getDataGenerator()->enrol_user($student2->id, $course->id, 'student');
         $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
 
-        // Precreation is disabled by default but unlocked.
+        // Precreation is disabled by default.
         set_config('precreateperiod', 12 * HOURSECS, 'quiz');
         set_config('precreateattempts', 0, 'quiz');
-        set_config('precreateattempts_locked', '', 'quiz');
         $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
         // Generate a quiz with timeopen 11 hours in the future, and precreateattempts set to 1.
         $quizprecreate = $quizgenerator->create_instance([

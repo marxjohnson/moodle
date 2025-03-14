@@ -42,7 +42,7 @@ class precreate_attempts extends scheduled_task {
 
     #[\Override]
     public function get_name(): string {
-        return get_string('precreateperiod', 'mod_quiz');
+        return get_string('precreatetask', 'mod_quiz');
     }
 
     /**
@@ -64,39 +64,31 @@ class precreate_attempts extends scheduled_task {
     public function execute(): void {
         global $DB;
         $starttime = time();
-        $precreateenabled = (bool)get_config('quiz', 'precreateattempts');
-        $precreatelocked = (bool)get_config('quiz', 'precreateattempts_locked');
         $precreateperiod = (int)get_config('quiz', 'precreateperiod');
-        if ($precreateperiod === 0 || (!$precreateenabled && $precreatelocked)) {
+        $precreatedefault  = (int)get_config('quiz', 'precreateattempts');
+        if ($precreateperiod === 0) {
             mtrace('Pre-creation of quiz attempts is disabled. Nothing to do.');
             return;
-        }
-        $precreateattempts = '';
-        $params = [];
-        if (!$precreatelocked) {
-            // If precreation is not locked, filter quizzes based on the precreateattempt setting.
-            $precreateattempts = "
-                AND (
-                    q.precreateattempts = 1
-                    OR (
-                        q.precreateattempts IS NULL AND :precreateenabled = 1
-                    )
-                )
-            ";
-            $params['precreateenabled'] = (int)$precreateenabled;
         }
         $sql = "
             SELECT DISTINCT q.id, q.name, q.course, q.timeopen
               FROM {quiz} q
-                   JOIN {quiz_slots} qs ON q.id = qs.quizid
-                   LEFT JOIN {quiz_attempts} qa ON q.id = qa.quiz
+              JOIN {quiz_slots} qs ON q.id = qs.quizid
+         LEFT JOIN {quiz_attempts} qa ON q.id = qa.quiz
              WHERE qa.id IS NULL
-                   AND q.timeopen > :now1
-                   AND q.timeopen - {$precreateperiod} < :now2
-                   {$precreateattempts}
+                   AND q.timeopen > :now
+                   AND q.timeopen < :threshold
+                   AND (
+                       q.precreateattempts = :precreateattempts
+                       OR (1 = :precreatedefault AND q.precreateattempts IS NULL)
+                   )
           ORDER BY q.timeopen ASC";
-        $params['now1'] = $starttime;
-        $params['now2'] = $starttime;
+        $params = [
+            'now' => $starttime,
+            'threshold' => $starttime + $precreateperiod,
+            'precreateattempts' => 1,
+            'precreatedefault' => $precreatedefault
+        ];
 
         $quizzes = $DB->get_records_sql($sql, $params);
         mtrace('Found ' . count($quizzes) . ' quizzes to create attempts for.');
@@ -114,7 +106,7 @@ class precreate_attempts extends scheduled_task {
                 $transaction->allow_commit();
             } catch (\Throwable $e) {
                 mtrace('Failed to create attempts for ' . $quiz->name);
-                $DB->rollback_delegated_transaction($transaction, $e);
+                $transaction->rollback($e);
             }
 
             if (microtime(true) - $starttime > $this->maxruntime) {
@@ -134,11 +126,16 @@ class precreate_attempts extends scheduled_task {
      * @return int The number of attempts created.
      */
     public static function precreate_attempts_for_quiz(int $quizid, int $courseid): int {
+        global $DB;
         $coursecontext = \context_course::instance($courseid);
         $users = get_enrolled_users($coursecontext, 'mod/quiz:attempt');
         $attemptcount = 0;
         $timenow = time();
         foreach ($users as $user) {
+            if ($DB->record_exists('quiz_attempts', ['userid' => $user->id, 'quiz' => $quizid])) {
+                // Last-minute safety check in case the quiz opened and the user started an attempt since the task started.
+                continue;
+            }
             $quizobj = quiz_settings::create($quizid, $user->id);
             $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
             $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);

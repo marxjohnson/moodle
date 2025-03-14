@@ -1067,11 +1067,6 @@ function quiz_process_options($quiz) {
             $quiz->completionminattempts = 0;
         }
     }
-
-    if (get_config('quiz', 'precreateattempts_locked')) {
-        // Set precreateattempts null so we pick up the site-wide default.
-        $quiz->precreateattempts = null;
-    }
 }
 
 /**

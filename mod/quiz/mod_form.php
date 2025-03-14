@@ -30,7 +30,6 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
 use mod_quiz\access_manager;
 use mod_quiz\question\display_options;
-use mod_quiz\task\precreate_attempts;
 
 /**
  * Settings form for the quiz module.
@@ -120,25 +119,11 @@ class mod_quiz_mod_form extends moodleform_mod {
         // This is only shown if "Pre-create period" as been set at site level, and the quiz open time is enabled.
         $precreateperiod = get_config('quiz', 'precreateperiod');
         if (!empty($precreateperiod)) {
-            $periodstring = sprintf(get_string('dateintervalhrfull', 'langconfig'), $precreateperiod / HOURSECS);
-            $yesoption = get_string('precreateyes', 'quiz', $periodstring);
-            $precreatedefault = get_config('quiz', 'precreateattempts');
-            if (get_config('quiz', 'precreateattempts_locked')) {
-                // If the setting is locked, the quiz will always pick up the site-wide default setting.
-                $lockedoption = get_string(
-                    'precreateusedefault',
-                    'quiz',
-                    $precreatedefault ? $yesoption : get_string('no'),
-                );
-                $precreateoptions = [
-                    $precreatedefault => $lockedoption,
-                ];
-            } else {
-                $precreateoptions = [
-                    1 => $yesoption,
-                    0 => get_string('no'),
-                ];
-            }
+            $yesoption = get_string('precreateyes', 'quiz', $precreateperiod / HOURSECS);
+            $precreateoptions = [
+                1 => $yesoption,
+                0 => get_string('no'),
+            ];
             $mform->addElement(
                 'select',
                 'precreateattempts',
@@ -146,7 +131,6 @@ class mod_quiz_mod_form extends moodleform_mod {
                 $precreateoptions
             );
             $mform->hideIf('precreateattempts', 'timeopen[enabled]');
-            $mform->setAdvanced('precreateattempts');
             $mform->addHelpButton('precreateattempts', 'precreateattempts', 'quiz');
         }
 
@@ -533,14 +517,6 @@ class mod_quiz_mod_form extends moodleform_mod {
         } else {
             $completionminattemptsenabledel = 'completionminattemptsenabled' . $suffix;
             $toform[$completionminattemptsenabledel] = $toform[$completionminattemptsel] > 0;
-        }
-
-        // If precreateattempts is unlocked, but the current setting is null, set it to the current config value.
-        if (
-            (!isset($toform['precreateattempts']) || is_null($toform['precreateattempts']))
-            && empty(get_config('quiz', 'precreateattempts_locked'))
-        ) {
-            $toform['precreateattempts'] = get_config('quiz', 'precreateattempts');
         }
     }
 

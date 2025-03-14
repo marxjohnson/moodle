@@ -748,8 +748,9 @@ as overnight, you may which to set this to a longer period such as 12 hours and 
 hours.
 
 This setting is controlled at site-level, it cannot be overridden by individual quizzes.';
+$string['precreatetask'] = 'Pre-create attempts';
 $string['precreateusedefault'] = 'Use site-wide default ({$a})';
-$string['precreateyes'] = 'Yes, {$a} before quiz open time';
+$string['precreateyes'] = 'Yes, {$a} hours before quiz open time';
 $string['preprocesserror'] = 'Error occurred during pre-processing!';
 $string['preview'] = 'Preview';
 $string['previewquestion'] = 'Preview question';
