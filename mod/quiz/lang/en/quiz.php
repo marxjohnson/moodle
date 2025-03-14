@@ -1083,6 +1083,14 @@ $string['statefinisheddetails'] = 'Submitted {$a}';
 $string['stateinprogress'] = 'In progress';
 $string['statenotloaded'] = 'The state for question {$a} has not been loaded from the database';
 $string['statenotstarted'] = 'Not started';
+$string['stateoptions'] = 'Attempt state options';
+$string['stateoptions_help'] = '
+* Not started: The attempt was automatically created before the quiz opened. The student has not started the attempt yet.
+* In progress: The student has started the attempt. They still have time to submit it.
+* Overdue: The attempt has been open for longer than the allowed time limit. The student can still submit it within the grade period.
+* Submitted: The student has completed the attempt and submitted their responses. It is queued for automatic marking.
+* Finished: The attempt has been submitted and any automatic marking is complete.
+* Never submitted: The student started the attempt, but did not submit it within the time limit or grace period.';
 $string['stateoverdue'] = 'Overdue';
 $string['stateoverduedetails'] = 'Must be submitted by {$a}';
 $string['statesubmitted'] = 'Submitted';

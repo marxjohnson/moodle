@@ -81,6 +81,7 @@ abstract class attempts_report_options_form extends \moodleform {
         ];
         $mform->addGroup($stategroup, 'stateoptions',
                 get_string('reportattemptsthatare', 'quiz'), [' '], false);
+        $mform->addHelpButton('stateoptions', 'stateoptions', 'quiz');
         $mform->setDefault('statenotstarted', 1);
         $mform->setDefault('stateinprogress', 1);
         $mform->setDefault('stateoverdue',    1);
