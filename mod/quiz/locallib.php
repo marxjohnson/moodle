@@ -344,7 +344,7 @@ function quiz_start_attempt_built_on_last($quba, $attempt, $lastattempt) {
 }
 
 /**
- * The save started question usage and quiz attempt in db and log the started attempt.
+ * Create or update the quiz attempt record, and the question usage.
  *
  * @param quiz_settings $quizobj
  * @param question_usage_by_activity $quba
@@ -412,7 +412,7 @@ function quiz_attempt_save_started(
 }
 
 /**
- * The save started question usage and quiz attempt in db.
+ * Create the quiz attempt record, and the question usage.
  *
  * @param question_usage_by_activity $quba
  * @param stdClass $attempt

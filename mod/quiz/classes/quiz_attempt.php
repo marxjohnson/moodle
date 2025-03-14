@@ -1653,7 +1653,7 @@ class quiz_attempt {
         switch ($this->quizobj->get_quiz()->overduehandling) {
             case 'autosubmit':
                 $this->process_submit($timestamp, false, $studentisonline ? $timestamp : $timeclose, $studentisonline);
-                $this->process_grade_submission($timestamp);
+                $this->process_grade_submission($studentisonline ? $timestamp : $timeclose);
                 return;
 
             case 'graceperiod':
@@ -1810,14 +1810,14 @@ class quiz_attempt {
      * @param ?int $timefinish if set, use this as the finish time for the attempt.
      *      (otherwise use $timestamp as the finish time as well).
      * @param bool $studentisonline is the student currently interacting with Moodle?
-     * @deprecated since Moodle 4.5 MDL-68806 use process_submit() and process_grade_submission() instead
+     * @deprecated since Moodle 5.0 MDL-68806 use process_submit() and process_grade_submission() instead
      * @todo Final deprecation in Moodle 6.0 MDL-80956
      */
     public function process_finish($timestamp, $processsubmitted, $timefinish = null, $studentisonline = false) {
         debugging('quiz_attempt::process_finish is deprecated. Please use quiz_attempt::process_submit to store ' .
                 'answers and mark an attempt submitted, and quiz_attempt::process_grade_submission to do automatic grading.');
         $this->process_submit($timestamp, $processsubmitted, $timefinish, $studentisonline);
-        $this->process_grade_submission($timestamp);
+        $this->process_grade_submission($timefinish ?? $timestamp);
     }
 
     /**
@@ -2009,7 +2009,7 @@ class quiz_attempt {
         $timeclose = $this->get_access_manager($timestamp)->get_end_time($this->attempt);
         if ($timeclose && $timestamp > $timeclose) {
             $this->process_submit($timestamp, false, $timeclose);
-            $this->process_grade_submission($timestamp);
+            $this->process_grade_submission($timeclose);
         }
 
         $transaction->allow_commit();
@@ -2221,7 +2221,7 @@ class quiz_attempt {
                     $finishtime = $timeclose;
                 }
                 $this->process_submit($timenow, !$toolate, $finishtime, true);
-                $this->process_grade_submission($timenow);
+                $this->process_grade_submission($finishtime);
             }
 
         } catch (question_out_of_sequence_exception $e) {
