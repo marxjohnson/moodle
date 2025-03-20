@@ -22,6 +22,7 @@ use context_coursecat;
 use context_module;
 use context_system;
 use core\task\manager;
+use core_question\local\bank\question_bank_helper;
 use mod_qbank\task\transfer_questions;
 use stdClass;
 use core_question\local\bank\question_version_status;
@@ -702,6 +703,8 @@ final class transfer_question_categories_test extends \advanced_testcase {
             '3.png'
         ));
 
+        $this->assertFalse(question_bank_helper::has_bank_migration_task_completed_successfully());
+
         $questiontasks = manager::get_adhoc_tasks(transfer_questions::class);
 
         // We should have a transfer_questions task for each category that was moved.
@@ -768,5 +771,7 @@ final class transfer_question_categories_test extends \advanced_testcase {
             '/',
             '3.png'
         ));
+
+        $this->assertTrue(question_bank_helper::has_bank_migration_task_completed_successfully());
     }
 }
