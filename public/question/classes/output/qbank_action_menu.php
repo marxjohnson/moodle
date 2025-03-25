@@ -16,19 +16,18 @@
 
 namespace core_question\output;
 
+use core\output\select_menu;
 use core_question\local\bank\navigation_node_base;
 use core_question\local\bank\plugin_features_base;
 use moodle_url;
 use renderer_base;
 use templatable;
 use renderable;
-use url_select;
 
 /**
  * Rendered HTML elements for tertiary nav for Question bank.
  *
  * Provides a menu of links for question bank tertiary navigation, based on get_navigation_node() implemented by each plugin.
- * Optionally includes and additional action button to display alongside the menu.
  *
  * @package   core_question
  * @copyright 2021 Sujith Haridasan <sujith@moodle.com>
@@ -51,18 +50,6 @@ class qbank_action_menu implements templatable, renderable {
      */
     public function __construct(moodle_url $currenturl) {
         $this->currenturl = $currenturl;
-    }
-
-    /**
-     * Set the properties of an additional action button specific to the current page.
-     *
-     * @param moodle_url $url
-     * @param string $label
-     * @return void
-     */
-    public function set_action_button(moodle_url $url, string $label): void {
-        $this->actionurl = $url;
-        $this->actionlabel = $label;
     }
 
     /**
@@ -93,20 +80,19 @@ class qbank_action_menu implements templatable, renderable {
             $menu[$url->out(false)] = $navigationnode->get_navigation_title();
         }
 
-        $actionbutton = null;
-        if ($this->actionurl) {
-            $actionbutton = [
-                'url' => $this->actionurl->out(false),
-                'label' => $this->actionlabel,
-            ];
-        }
-
-        $urlselect = new url_select($menu, $this->currenturl->out(false), null, 'questionbankaction');
-        $urlselect->set_label(get_string('questionbanknavigation', 'question'), ['class' => 'accesshide']);
+        $selectmenu = new select_menu(
+            'questionbanknavigation',
+            $menu,
+            $this->currenturl->out(false)
+        );
+        $selectmenu->set_label(
+            get_string('questionbanknavigation', 'question'),
+            ['class' => 'visually-hidden']
+        );
 
         return [
-            'questionbankselect' => $urlselect->export_for_template($output),
-            'actionbutton' => $actionbutton
+            'navigation' => $selectmenu->export_for_template($output),
+            'headinglevel' => 2,
         ];
     }
 }
