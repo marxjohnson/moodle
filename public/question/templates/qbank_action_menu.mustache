@@ -27,7 +27,7 @@
 
     Example context (json):
     {
-        "questionbankselect": {
+        "navigation": {
             "action": "http://localhost/moodle/course/jumpto.php",
             "classes": "urlselect",
             "formid": "questionbankaction",
@@ -54,24 +54,15 @@
                     "value": "/question/bank/exportquestions/export.php?cmid=7"
                 }
             ]
-        },
-        "actionbutton": {
-            "url": "http://localhost/moodle/question/bank/managecategories/addcategory.php?cmid=71",
-            "label": "Add category"
         }
     }
 }}
-<div class="tertiary-navigation">
+<div class="tertiary-navigation" id="tertiary-navigation">
     <div class="d-flex">
-        {{#questionbankselect}}
+        {{#navigation}}
             <div class="navitem">
-                {{>core/url_select}}
+                {{>core/tertiary_navigation_selector}}
             </div>
-        {{/questionbankselect}}
-        {{#actionbutton}}
-            <div class="navitem">
-                <a class="btn btn-primary ms-2" href="{{url}}">{{label}}</a>
-            </div>
-        {{/actionbutton}}
+        {{/navigation}}
     </div>
 </div>
