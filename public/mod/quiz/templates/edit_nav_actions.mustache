@@ -35,7 +35,7 @@
         "action": "https://example.com/post",
         "formid": "url_select_form",
         "sesskey": "sesskey",
-        "navmenu": {
+        "navigation": {
             "options": [{
                     "name": "Questions",
                     "value": "/mod/quiz/edit.php?cmid=123"
@@ -50,10 +50,10 @@
 }}
 <div class="tertiary-navigation">
     <div class="d-flex">
-        {{#navmenu}}
+        {{#navigation}}
             <div class="navitem">
-                {{>core/url_select}}
+                {{>core/tertiary_navigation_selector}}
             </div>
-        {{/navmenu}}
+        {{/navigation}}
     </div>
 </div>

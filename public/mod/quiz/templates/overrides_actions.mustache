@@ -25,12 +25,12 @@
     * none
 
     Context variables required for this template:
-    * overridesnav - must alwasy be present.
+    * navigation - must always be present.
     * addoverridebutton - should only be present if the user has permission to add a new override.
 
     Example context (json):
     {
-        "overridesnav": {
+        "navigation": {
             "id": "url_select_test",
             "action": "https://example.com/post",
             "formid": "url_select_form",
@@ -71,11 +71,11 @@
 }}
 <div class="tertiary-navigation">
     <div class="d-flex">
-        {{#overridesnav}}
+        {{#navigation}}
             <div class="navitem">
-                {{>core/url_select}}
+                {{>core/tertiary_navigation_selector}}
             </div>
-        {{/overridesnav}}
+        {{/navigation}}
         {{#addoverridebutton}}
             <div class="navitem">
                 {{>core/single_button}}
