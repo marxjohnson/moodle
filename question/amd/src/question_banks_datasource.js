@@ -36,7 +36,7 @@ export default {
         }
 
         fetchMany([{
-            methodname: 'core_question_get_shared_banks',
+            methodname: 'core_question_search_shared_banks',
             args: {
                 contextid: contextId,
                 search: query,

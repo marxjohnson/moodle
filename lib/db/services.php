@@ -3294,9 +3294,9 @@ $functions = array(
         'type' => 'write',
         'ajax' => true,
     ],
-    'core_question_get_shared_banks' => [
-        'classname' => '\core_question\external\get_shared_banks',
-        'description' => 'Get a list of shared question banks.',
+    'core_question_search_shared_banks' => [
+        'classname' => '\core_question\external\search_shared_banks',
+        'description' => 'Get a list of shared question banks filtered by a search term.',
         'type' => 'read',
         'ajax' => true,
     ],

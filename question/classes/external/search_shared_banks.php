@@ -34,7 +34,7 @@ use core\context;
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class get_shared_banks extends external_api {
+class search_shared_banks extends external_api {
 
     /**
      * @var int The maximum number of banks to return.
