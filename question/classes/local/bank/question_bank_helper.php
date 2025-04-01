@@ -412,7 +412,7 @@ class question_bank_helper {
         $bank->modid = $cminfo->id;
         $bank->contextid = $cminfo->context->id;
         if (!isset($filteroptions['context'])) {
-            $filteroptions['context'] = $cminfo->context;
+            $filteroptions['context'] = context_course::instance($cminfo->get_course()->id);
         }
         $bank->coursenamebankname = format_string($cminfo->get_course()->shortname, true, $filteroptions) . " - {$bank->name}";
         $bank->cminfo = $cminfo;
