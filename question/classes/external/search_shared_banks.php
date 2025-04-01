@@ -112,7 +112,7 @@ class search_shared_banks extends external_api {
         return new external_single_structure([
             'sharedbanks' => new external_multiple_structure(
                 new external_single_structure([
-                    'value' => new external_value(PARAM_INT, 'ID of the shared bank.'),
+                    'value' => new external_value(PARAM_INT, 'Module ID of the shared bank.'),
                     'label' => new external_value(PARAM_TEXT, 'Formatted bank name'),
                 ]),
                 'List of shared banks',
