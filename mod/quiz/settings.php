@@ -124,7 +124,7 @@ if ($ADMIN->fulltree) {
     $setting = new admin_setting_configcheckbox(
         'quiz/precreateattempts',
         get_string('precreateattempts', 'quiz'),
-        get_string('precreateattempts_help', 'quiz'),
+        get_string('precreateattempts_desc', 'quiz'),
         0,
     );
     $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, true);
