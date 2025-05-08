@@ -90,25 +90,27 @@ Feature: Users can access the course activities overview page
 
   Scenario: Course overview shows the course present activity types
     Given the following "activities" exist:
-      | activity        | course | name        |
-      | book            | C1     | Activity 2  |
-      | choice          | C1     | Activity 3  |
-      | data            | C1     | Activity 4  |
-      | feedback        | C1     | Activity 5  |
-      | folder          | C1     | Activity 6  |
-      | forum           | C1     | Activity 7  |
-      | glossary        | C1     | Activity 8  |
-      | imscp           | C1     | Activity 10 |
-      | label           | C1     | Activity 11 |
-      | lesson          | C1     | Activity 12 |
-      | lti             | C1     | Activity 13 |
-      | page            | C1     | Activity 14 |
-      | quiz            | C1     | Activity 15 |
-      | resource        | C1     | Activity 16 |
-      | scorm           | C1     | Activity 17 |
-      | url             | C1     | Activity 18 |
-      | wiki            | C1     | Activity 19 |
-      | workshop        | C1     | Activity 20 |
+      | activity        | course | name        | intro |
+      | book            | C1     | Activity 2  |       |
+      | choice          | C1     | Activity 3  |       |
+      | data            | C1     | Activity 4  |       |
+      | feedback        | C1     | Activity 5  |       |
+      | folder          | C1     | Activity 6  |       |
+      | forum           | C1     | Activity 7  |       |
+      | glossary        | C1     | Activity 8  |       |
+      | imscp           | C1     | Activity 10 |       |
+      | label           | C1     | Activity 11 |       |
+      | lesson          | C1     | Activity 12 |       |
+      | lti             | C1     | Activity 13 |       |
+      | page            | C1     | Activity 14 |       |
+      | quiz            | C1     | Activity 15 |       |
+      | resource        | C1     | Activity 16 |       |
+      | scorm           | C1     | Activity 17 |       |
+      | url             | C1     | Activity 18 |       |
+      | wiki            | C1     | Activity 19 |       |
+      | workshop        | C1     | Activity 20 |       |
+      | qbank           | C1     | Activity 21 |       |
+      | label           | C1     | Activity 22 | label |
     Given I am on the "Course 1" "course > activities" page logged in as "teacher1"
     And I should see "Assignments" in the "assign_overview_collapsible" "region"
     And I should see "Choices" in the "choice_overview_collapsible" "region"
@@ -124,6 +126,9 @@ Feature: Users can access the course activities overview page
     And I should see "Workshops" in the "workshop_overview_collapsible" "region"
     # All resources are grouped.
     And I should see "Resources" in the "resource_overview_collapsible" "region"
+    # Qbanks and labels are not shown.
+    And I should not see "Labels" in the "course-overview-page" "region"
+    And I should not see "Question banks" in the "course-overview-page" "region"
 
   @javascript
   Scenario: The resources overview is loaded at the moment the section is expanded via Ajax

@@ -27,6 +27,7 @@ namespace core_courseformat\output\local\content\cm;
 use action_menu_link_secondary;
 use core\output\local\action_menu\subpanel as action_menu_subpanel;
 use cm_info;
+use course_modinfo;
 use core_courseformat\base as course_format;
 use core_courseformat\output\local\courseformat_named_templatable;
 use core\output\choicelist;
@@ -231,7 +232,8 @@ class visibility implements named_templatable, renderable {
         global $CFG;
 
         $choice = new choicelist();
-        if ($this->section->visible || $this->mod->has_view()) {
+        $modvisible = course_modinfo::is_mod_type_visible_on_course($this->mod->modname);
+        if (($this->section->visible || $this->mod->has_view()) && $modvisible) {
             $label = $this->section->visible ? 'show' : 'stealth';
             $choice->add_option(
                 'show',
@@ -245,7 +247,7 @@ class visibility implements named_templatable, renderable {
             $this->get_option_data('hide', 'cmHide', 'cm_hide')
         );
 
-        if ($CFG->allowstealth && $this->format->allow_stealth_module_visibility($this->mod, $this->section)) {
+        if ($CFG->allowstealth && $this->format->allow_stealth_module_visibility($this->mod, $this->section) && $modvisible) {
             $choice->add_option(
                 'stealth',
                 get_string('availability_stealth', 'core_courseformat'),

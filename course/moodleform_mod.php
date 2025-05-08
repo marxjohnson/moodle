@@ -210,6 +210,8 @@ abstract class moodleform_mod extends moodleform {
         $this->_features->advancedgrading   = plugin_supports('mod', $this->_modname, FEATURE_ADVANCED_GRADING, false);
         $this->_features->hasnoview         = plugin_supports('mod', $this->_modname, FEATURE_NO_VIEW_LINK, false);
         $this->_features->canrescale = (component_callback_exists('mod_' . $this->_modname, 'rescale_activity_grades') !== false);
+        $this->_features->candisplay = plugin_supports('mod', $this->_modname, FEATURE_CAN_DISPLAY, true);
+
     }
 
     /**
@@ -534,16 +536,29 @@ abstract class moodleform_mod extends moodleform {
         $allowstealth =
             !empty($CFG->allowstealth) &&
             $this->courseformat->allow_stealth_module_visibility($this->_cm, $section) &&
-            !$this->_features->hasnoview;
+            !$this->_features->hasnoview &&
+            $this->_features->candisplay;
         if ($allowstealth && $section->visible) {
             $modvisiblelabel = 'modvisiblewithstealth';
+        } else if (!$this->_features->candisplay) {
+            $modvisiblelabel = 'modhidden';
         } else if ($section->visible) {
             $modvisiblelabel = 'modvisible';
         } else {
             $modvisiblelabel = 'modvisiblehiddensection';
         }
-        $mform->addElement('modvisible', 'visible', get_string($modvisiblelabel), null,
-                array('allowstealth' => $allowstealth, 'sectionvisible' => $section->visible, 'cm' => $this->_cm));
+        $mform->addElement(
+            'modvisible',
+            'visible',
+            get_string($modvisiblelabel),
+            null,
+            [
+                'allowstealth' => $allowstealth,
+                'sectionvisible' => $section->visible,
+                'candisplay' => $this->_features->candisplay,
+                'cm' => $this->_cm,
+            ]
+        );
         $mform->addHelpButton('visible', $modvisiblelabel);
         if (!empty($this->_cm) && !has_capability('moodle/course:activityvisibility', $this->get_context())) {
             $mform->hardFreeze('visible');
