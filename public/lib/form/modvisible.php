@@ -85,17 +85,16 @@ class MoodleQuickForm_modvisible extends MoodleQuickForm_select{
             case 'createElement':
                 $options = is_array($arg[3]) ? $arg[3] : [];
                 $sectionvisible = array_key_exists('sectionvisible', $options) ? $options['sectionvisible'] : 1;
+                $candisplay = array_key_exists('candisplay', $options) ? $options['candisplay'] : 1;
                 $cm = !empty($options['cm']) ? cm_info::create($options['cm']) : null;
-                $choices = array();
-                if (!$sectionvisible) {
+                $choices = [self::HIDE => get_string('hidefromstudents')];
+                if ($candisplay && !$sectionvisible) {
                     // If section is not visible the activity is hidden by default but it can also be made available.
-                    $choices[self::HIDE] = get_string('hidefromstudents');
                     if (!$cm || $cm->has_view()) {
                         $choices[self::SHOW] = get_string('hideoncoursepage');
                     }
-                } else {
+                } else if ($candisplay) {
                     $choices[self::SHOW] = get_string('showoncoursepage');
-                    $choices[self::HIDE] = get_string('hidefromstudents');
                     if (!empty($options['allowstealth']) && (!$cm || $cm->has_view())) {
                         // If allowed in this course/section, add a third visibility option
                         // "Available but not displayed on course page".
