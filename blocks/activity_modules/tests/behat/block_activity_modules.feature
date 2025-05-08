@@ -16,6 +16,7 @@ Feature: Block activity modules
       | label      | Frontpage label name        | Frontpage label description        | Acceptance test site | label0      |
       | lti        | Frontpage lti name          | Frontpage lti description          | Acceptance test site | lti0        |
       | page       | Frontpage page name         | Frontpage page description         | Acceptance test site | page0       |
+      | qbank      | Frontpage qbank name        | Frontpage qbank description        | Acceptance test site | qbank0      |
       | quiz       | Frontpage quiz name         | Frontpage quiz description         | Acceptance test site | quiz0       |
       | resource   | Frontpage resource name     | Frontpage resource description     | Acceptance test site | resource0   |
       | imscp      | Frontpage imscp name        | Frontpage imscp description        | Acceptance test site | imscp0      |
@@ -74,6 +75,7 @@ Feature: Block activity modules
     And I should see "Frontpage imscp name"
     And I should see "Frontpage folder name"
     And I should see "Frontpage url name"
+    And I should not see "Frontpage qbank name"
 
   Scenario: Add activities block in a course
     Given the following "courses" exist:
@@ -94,6 +96,7 @@ Feature: Block activity modules
       | lesson     | Test lesson name       | Test lesson description       | C1     | lesson1     |
       | lti        | Test lti name          | Test lti description          | C1     | lti1        |
       | page       | Test page name         | Test page description         | C1     | page1       |
+      | qbank      | Test qbank name        | Test qbank description        | C1     | qbank1      |
       | quiz       | Test quiz name         | Test quiz description         | C1     | quiz1       |
       | resource   | Test resource name     | Test resource description     | C1     | resource1   |
       | scorm      | Test scorm name        | Test scorm description        | C1     | scorm1      |
@@ -147,3 +150,4 @@ Feature: Block activity modules
     And I should see "Test imscp name"
     And I should see "Test folder name"
     And I should see "Test url name"
+    And I should not see "Test qbank name"
