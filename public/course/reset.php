@@ -41,7 +41,7 @@ if (!$course = $DB->get_record('course', ['id' => $id])) {
 $PAGE->set_url('/course/reset.php', ['id' => $id]);
 $PAGE->set_pagelayout('standard');
 
-require_login($course);
+require_login($course, preventredirect: true); // This redirects here if a reset is in progress. Don't keep redirecting.
 require_capability('moodle/course:reset', context_course::instance($course->id));
 
 $strreset       = get_string('reset');
@@ -51,6 +51,8 @@ $strremove      = get_string('remove');
 $PAGE->set_title($course->fullname.': '.$strresetcourse);
 $PAGE->set_heading($course->fullname);
 $PAGE->set_secondary_active_tab('coursereuse');
+
+$taskcache = cache::make('core', 'course_reset_tasks');
 
 $mform = new course_reset_form();
 
@@ -69,35 +71,57 @@ if ($mform->is_cancelled()) {
         $mform = new course_reset_form();
 
     } else {
-        echo $OUTPUT->header();
-        \backup_helper::print_coursereuse_selector('reset');
-
         $data->reset_start_date_old = $course->startdate;
         $data->reset_end_date_old = $course->enddate;
-        $status = reset_course_userdata($data);
-
-        $data = [];
-        foreach ($status as $item) {
-            $line = [];
-            $line[] = $item['component'];
-            $line[] = $item['item'];
-            if ($item['error'] === false) {
-                $line[] = get_string('statusdone');
-            } else {
-                $line[] = html_writer::div(
-                    $OUTPUT->pix_icon('i/invalid', get_string('error')) . $item['error'],
-                );
-            }
-            $data[] = $line;
+        // If enabled, move the reset process to an adhoc task.
+        if (get_config('core', 'enableasyncresets')) {
+            $task = \core_course\task\reset_course::create($data);
+            $taskid = \core\task\manager::queue_adhoc_task($task, true);
+            $task->set_id($taskid);
+            $task->initialise_stored_progress();
+            $taskcache->set($course->id, $taskid);
+            redirect($PAGE->url);
         }
 
-        $table = new html_table();
-        $table->head  = [get_string('resetcomponent'), get_string('resettask'), get_string('resetstatus')];
-        $table->size  = ['20%', '40%', '40%'];
-        $table->align = ['left', 'left', 'left'];
-        $table->width = '80%';
-        $table->data  = $data;
-        echo html_writer::table($table);
+        echo $OUTPUT->header();
+        \backup_helper::print_coursereuse_selector('reset');
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            $status = reset_course_userdata($data);
+            $transaction->allow_commit();
+            $data = [];
+            foreach ($status as $item) {
+                $line = [];
+                $line[] = $item['component'];
+                $line[] = $item['item'];
+                if ($item['error'] === false) {
+                    $line[] = get_string('statusdone');
+                } else {
+                    $line[] = html_writer::div(
+                        $OUTPUT->pix_icon('i/invalid', get_string('error')) . $item['error'],
+                    );
+                }
+                $data[] = $line;
+            }
+
+            $table = new html_table();
+            $table->head = [get_string('resetcomponent'), get_string('resettask'), get_string('resetstatus')];
+            $table->size = ['20%', '40%', '40%'];
+            $table->align = ['left', 'left', 'left'];
+            $table->width = '80%';
+            $table->data = $data;
+            echo html_writer::table($table);
+        } catch (\core_course\exception\reset_timeout $e) {
+            try {
+                $transaction->rollback($e);
+            } catch (\Exception $e) {
+                // After we roll back, the original exception is re-thrown. There might be a different exception if it failed,
+                // so display whichever message we get.
+                echo $OUTPUT->render(
+                    new \core\output\notification($e->getMessage(), \core\output\notification::NOTIFY_ERROR, false),
+                );
+            }
+        }
 
         echo $OUTPUT->continue_button('view.php?id=' . $course->id);  // Back to course page.
         echo $OUTPUT->footer();
@@ -112,8 +136,21 @@ $PAGE->requires->js_call_amd('core_course/resetcourse', 'init');
 echo $OUTPUT->header();
 \backup_helper::print_coursereuse_selector('reset');
 
-echo $OUTPUT->box(get_string('resetinfo'));
-echo $OUTPUT->box(get_string('resetinfoselect'));
+$taskid = \core_course\task\reset_course::get_taskid_for_course($course->id);
+// If there is already a reset task queued for this course, display the indicator instead of the form.
+if ($taskid) {
+    $resettask = \core_course\task\reset_course::load($taskid);
+    $indicator = new \core\output\task_indicator(
+        $resettask,
+        heading: get_string('resetcourse'),
+        message: get_string('resetcoursetask', 'course'),
+        redirecturl: new moodle_url('/course/view.php', ['id' => $course->id]),
+    );
+    echo $OUTPUT->render($indicator);
+} else {
+    echo $OUTPUT->box(get_string('resetinfo'));
+    echo $OUTPUT->box(get_string('resetinfoselect'));
+    $mform->display();
+}
 
-$mform->display();
 echo $OUTPUT->footer();

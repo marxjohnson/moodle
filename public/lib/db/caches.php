@@ -655,4 +655,11 @@ $definitions = array(
         'simpledata' => true,
         'ttl' => 1800,
     ],
+
+    // Task IDs for course resets in progress.
+    'course_reset_tasks' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+    ],
 );

@@ -1862,7 +1862,9 @@ $string['resetcourse'] = 'Reset course';
 $string['resetcourseconfirm'] = 'Reset course?';
 $string['resetcoursewarning'] = 'Are you sure you want to reset the course \'{$a}\'?
 <br/><br/>
-This will delete the selected data and reset the course back to its original state. You can\'t undo this action.';
+This will delete the selected data and reset the course back to its original state. You can\'t undo this action.
+<br/><br/>
+The course will not be visible to students while it is being reset.';
 $string['resetinfo'] = 'This feature allows you to clear all user data and reset the course to its original state. Course activities and settings remain unchanged.';
 $string['resetinfoselect'] = 'Select the data you want to delete or reset from the categories below:';
 $string['resetnotimplemented'] = 'Reset not supported';

@@ -2641,6 +2641,17 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
         }
     }
 
+    // Check whether the course has a reset in progress. If so, redirect the user.
+    if (\core_course\task\reset_course::get_taskid_for_course($course->id)) {
+        if (has_capability('moodle/course:reset', $coursecontext)) {
+            if (!$preventredirect) { // Protect against looping on the reset page.
+                redirect(new \core\url('/course/reset.php', ['id' => $course->id]));
+            }
+        } else {
+            redirect(new \core\url('/'), get_string('resetcoursestudent', 'course'));
+        }
+    }
+
     // Check whether the activity has been scheduled for deletion. If so, then deny access, even for admins.
     if ($cm && $cm->deletioninprogress) {
         if ($preventredirect) {
@@ -5084,10 +5095,13 @@ function shift_course_mod_dates($modname, $fields, $timeshift, $courseid, $modid
  * This function will empty a course of user data.
  * It will retain the activities and the structure of the course.
  *
- * @param object $data an object containing all the settings including courseid (without magic quotes)
+ * @param object $data an object containing all the settings including courseid (without magic quotes).
+ * @param ?core\progress\base $progress Progress component, used for tracking process when called asynchronously.
+ * @param ?int $maxseconds If the reset process runs for longer than this many seconds, throw an exception. `null` means no limit.
+ * @throws \core_course\exception\reset_timeout If the process takes longer than $maxseconds.
  * @return array status array of array component, item, error
  */
-function reset_course_userdata($data) {
+function reset_course_userdata($data, ?core\progress\base $progress = null, ?int $maxseconds = 10) {
     global $CFG, $DB;
     require_once($CFG->libdir.'/gradelib.php');
     require_once($CFG->libdir.'/completionlib.php');
@@ -5117,11 +5131,38 @@ function reset_course_userdata($data) {
     // Result array: component, item, error.
     $status = array();
 
+    $timelimit = is_null($maxseconds) ? null : time() + $maxseconds;
+    $progress ??= new core\progress\none();
+    $progressitems = [
+        'startdate' => !empty($data->reset_start_date) && $data->timeshift,
+        'enddate' => !empty($data->reset_end_date) || ($data->timeshift > 0 && $data->reset_end_date_old),
+        'events' => !empty($data->reset_events),
+        'notes' => !empty($data->reset_notes),
+        'blogs' => !empty($data->delete_blog_associations),
+        'completion' => !empty($data->reset_completion),
+        'competencies' => !empty($data->reset_competency_ratings),
+        'roleoverrides' => !empty($data->reset_roles_overrides),
+        'roles' => !empty($data->reset_roles_local),
+        'users' => !empty($data->unenrol_users),
+        'groupmembers' => !empty($data->reset_groups_members),
+        'groups' => !empty($data->reset_groups_remove),
+        'groupingmembers' => !empty($data->reset_groupings_members),
+        'groupings' => !empty($data->reset_groupings_remove),
+        'mods' => true,
+        'gradebookitems' => !empty($data->reset_gradebook_items),
+        'gradebookgrades' => !empty($data->reset_gradebook_grades),
+        'comments' => !empty($data->reset_comments),
+    ];
+    $progressitems = array_filter($progressitems);
+    $progress->start_progress(get_string('resetcourse'), count($progressitems));
+
     // Start the resetting.
     $componentstr = get_string('general');
 
     // Move the course start time.
     if (!empty($data->reset_start_date) and $data->timeshift) {
+        $itemstr = get_string('date');
+        $progress->start_progress($itemstr);
         // Change course start data.
         $DB->set_field('course', 'startdate', $data->reset_start_date, array('id' => $data->courseid));
         // Update all course and group events - do not move activity events.
@@ -5156,67 +5197,101 @@ function reset_course_userdata($data) {
             \completion_criteria_date::update_date($data->courseid, $data->timeshift);
         }
 
-        $status[] = ['component' => $componentstr, 'item' => get_string('date'), 'error' => false];
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_end_date)) {
         // If the user set a end date value respect it.
         $DB->set_field('course', 'enddate', $data->reset_end_date, array('id' => $data->courseid));
+        $progress->increment_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     } else if ($data->timeshift > 0 && $data->reset_end_date_old) {
         // If there is a time shift apply it to the end date as well.
         $enddate = $data->reset_end_date_old + $data->timeshift;
         $DB->set_field('course', 'enddate', $enddate, array('id' => $data->courseid));
+        $progress->increment_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_events)) {
+        $itemstr = get_string('deleteevents', 'calendar');
+        $progress->start_progress($itemstr);
         $DB->delete_records('event', array('courseid' => $data->courseid));
-        $status[] = array('component' => $componentstr, 'item' => get_string('deleteevents', 'calendar'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_notes)) {
+        $itemstr = get_string('deletenotes', 'notes');
+        $progress->start_progress($itemstr);
         require_once($CFG->dirroot.'/notes/lib.php');
         note_delete_all($data->courseid);
-        $status[] = array('component' => $componentstr, 'item' => get_string('deletenotes', 'notes'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->delete_blog_associations)) {
+        $itemstr = get_string('deleteblogassociations', 'blog');
+        $progress->start_progress($itemstr);
         require_once($CFG->dirroot.'/blog/lib.php');
         blog_remove_associations_for_course($data->courseid);
-        $status[] = array('component' => $componentstr, 'item' => get_string('deleteblogassociations', 'blog'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_completion)) {
         // Delete course and activity completion information.
+        $itemstr = get_string('deletecompletiondata', 'completion');
+        $progress->start_progress($itemstr);
         $course = $DB->get_record('course', array('id' => $data->courseid));
         $cc = new completion_info($course);
         $cc->delete_all_completion_data();
-        $status[] = array('component' => $componentstr,
-                'item' => get_string('deletecompletiondata', 'completion'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_competency_ratings)) {
+        $itemstr = get_string('deletecompetencyratings', 'core_competency');
+        $progress->start_progress($itemstr);
         \core_competency\api::hook_course_reset_competency_ratings($data->courseid);
-        $status[] = array('component' => $componentstr,
-            'item' => get_string('deletecompetencyratings', 'core_competency'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     $componentstr = get_string('roles');
 
     if (!empty($data->reset_roles_overrides)) {
+        $itemstr = get_string('deletecourseoverrides', 'role');
         $children = $context->get_child_contexts();
+        $progress->start_progress($itemstr, count($children));
         foreach ($children as $child) {
             $child->delete_capabilities();
+            $progress->increment_progress();
         }
         $context->delete_capabilities();
-        $status[] = array('component' => $componentstr, 'item' => get_string('deletecourseoverrides', 'role'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     if (!empty($data->reset_roles_local)) {
+        $itemstr = get_string('deletelocalroles', 'role');
         $children = $context->get_child_contexts();
+        $progress->start_progress($itemstr, count($children));
         foreach ($children as $child) {
             role_unassign_all(array('contextid' => $child->id));
+            $progress->increment_progress();
         }
-        $status[] = array('component' => $componentstr, 'item' => get_string('deletelocalroles', 'role'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // First unenrol users - this cleans some of related user data too, such as forum subscriptions, tracking, etc.
@@ -5232,7 +5307,9 @@ function reset_course_userdata($data) {
         }
 
         $usersroles = enrol_get_course_users_roles($data->courseid);
+        $progress->start_progress(get_string('unenrol', 'enrol'), count($data->unenrol_users));
         foreach ($data->unenrol_users as $withroleid) {
+            $progress->start_progress(get_string('unenrolroleusers', 'enrol'));
             if ($withroleid) {
                 $sql = "SELECT ue.*
                           FROM {user_enrolments} ue
@@ -5273,47 +5350,70 @@ function reset_course_userdata($data) {
                     $plugin->unenrol_user($instance, $ue->userid);
                 }
                 $data->unenrolled[$ue->userid] = $ue->userid;
+                $progress->progress();
+                \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
             }
             $rs->close();
+            $progress->end_progress();
+            \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
         }
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
     if (!empty($data->unenrolled)) {
-        $status[] = array(
+        $status[] = [
             'component' => $componentstr,
             'item' => get_string('unenrol', 'enrol').' ('.count($data->unenrolled).')',
             'error' => false
-        );
+        ];
     }
 
     $componentstr = get_string('groups');
 
     // Remove all group members.
     if (!empty($data->reset_groups_members)) {
+        $itemstr = get_string('removegroupsmembers', 'group');
+        $progress->start_progress($itemstr);
         groups_delete_group_members($data->courseid);
-        $status[] = array('component' => $componentstr, 'item' => get_string('removegroupsmembers', 'group'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // Remove all groups.
     if (!empty($data->reset_groups_remove)) {
+        $itemstr = get_string('deleteallgroups', 'group');
+        $progress->start_progress($itemstr);
         groups_delete_groups($data->courseid, false);
-        $status[] = array('component' => $componentstr, 'item' => get_string('deleteallgroups', 'group'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // Remove all grouping members.
     if (!empty($data->reset_groupings_members)) {
+        $itemstr = get_string('removegroupingsmembers', 'group');
+        $progress->start_progress($itemstr);
         groups_delete_groupings_groups($data->courseid, false);
-        $status[] = array('component' => $componentstr, 'item' => get_string('removegroupingsmembers', 'group'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // Remove all groupings.
     if (!empty($data->reset_groupings_remove)) {
+        $itemstr = get_string('deleteallgroupings', 'group');
+        $progress->start_progress($itemstr);
         groups_delete_groupings($data->courseid, false);
-        $status[] = array('component' => $componentstr, 'item' => get_string('deleteallgroupings', 'group'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // Look in every instance of every module for data to delete.
     $unsupportedmods = array();
     if ($allmods = $DB->get_records('modules') ) {
+        $progress->start_progress(get_string('activities'), count($allmods));
         foreach ($allmods as $mod) {
             $modname = $mod->name;
             $modfile = $CFG->dirroot.'/mod/'. $modname.'/lib.php';
@@ -5338,11 +5438,15 @@ function reset_course_userdata($data) {
             }
             // Update calendar events for all modules.
             course_module_bulk_update_calendar_events($modname, $data->courseid);
+            $progress->increment_progress();
+            \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
         }
         // Purge the course cache after resetting course start date. MDL-76936
         if ($data->timeshift) {
             course_modinfo::purge_course_cache($data->courseid);
         }
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     // Mention unsupported mods.
@@ -5359,22 +5463,33 @@ function reset_course_userdata($data) {
     $componentstr = get_string('gradebook', 'grades');
     // Reset gradebook,.
     if (!empty($data->reset_gradebook_items)) {
+        $itemstr = get_string('removeallcourseitems', 'grades');
+        $progress->start_progress($itemstr);
         remove_course_grades($data->courseid, false);
         grade_grab_course_grades($data->courseid);
         grade_regrade_final_grades($data->courseid, async: true);
-        $status[] = array('component' => $componentstr, 'item' => get_string('removeallcourseitems', 'grades'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
 
     } else if (!empty($data->reset_gradebook_grades)) {
+        $itemstr = get_string('removeallcoursegrades', 'grades');
+        $progress->start_progress($itemstr);
         grade_course_reset($data->courseid);
-        $status[] = array('component' => $componentstr, 'item' => get_string('removeallcoursegrades', 'grades'), 'error' => false);
+        $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
+        $progress->end_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
     // Reset comments.
     if (!empty($data->reset_comments)) {
         \core_comment\manager::reset_course_page_comments($context);
+        $progress->increment_progress();
+        \core_course\exception\reset_timeout::check_reset_timeout($data->courseid, $timelimit);
     }
 
     $event = \core\event\course_reset_ended::create($eventparams);
     $event->trigger();
+    $progress->end_progress();
 
     return $status;
 }
