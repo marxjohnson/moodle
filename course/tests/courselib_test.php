@@ -32,6 +32,7 @@ use context_system;
 use context_coursecat;
 use core\event\section_viewed;
 use core_completion_external;
+use core_course\exception\reset_timeout;
 use core_external;
 use core_tag_index_builder;
 use core_tag_tag;
@@ -3868,6 +3869,61 @@ final class courselib_test extends advanced_testcase {
 
         $usersroles = enrol_get_course_users_roles($course->id);
         $this->assertEmpty($usersroles);
+    }
+
+    /**
+     * Test that the course reset throws an exception if it takes too long.
+     *
+     * @covers ::reset_course_userdata()
+     */
+    public function test_course_reset_timeout(): void {
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/notes/lib.php');
+
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+
+        // Create test course and user, enrol one in the other.
+        $course = $generator->create_course();
+        $user = $generator->create_user();
+        $roleid = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        $generator->enrol_user($user->id, $course->id, $roleid);
+
+        // Define a reset job.
+        $resetdata = new stdClass();
+        $resetdata->id = $course->id;
+        $resetdata->reset_start_date_old = $course->startdate;
+        $resetdata->reset_start_date = $course->startdate;
+        $resetdata->reset_end_date = $course->enddate;
+        $resetdata->reset_end_date_old = $course->enddate;
+        $resetdata->reset_notes = true;
+
+        // Create a note that will be deleted by the reset.
+        $note = (object) ['content' => 'Note 1', 'courseid' => $course->id];
+        note_save($note);
+
+        $this->assertTrue($DB->record_exists('post', ['module' => 'notes', 'courseid' => $course->id]));
+
+        // Call the reset once with a long timeout that won't be exceeded.
+        $timeout = new reset_timeout($course->shortname, time() + 10);
+        reset_course_userdata($resetdata, $timeout);
+
+        // Verify the course has been reset.
+        $this->assertFalse($DB->record_exists('post', ['module' => 'notes', 'courseid' => $course->id]));
+
+        $note = (object) ['content' => 'Note 2', 'courseid' => $course->id];
+        note_save($note);
+
+        $this->assertTrue($DB->record_exists('post', ['module' => 'notes', 'courseid' => $course->id]));
+
+        // Call the reset with a timeout that will be exceeded. Confirm an exception is thrown.
+        $timeout = new reset_timeout($course->shortname, time() - 1);
+        $this->expectExceptionObject($timeout);
+        reset_course_userdata($resetdata, $timeout);
+
+        // Verify the course has not been reset.
+        $this->assertTrue($DB->record_exists('post', ['module' => 'notes', 'courseid' => $course->id]));
     }
 
     public function test_course_check_module_updates_since(): void {
