@@ -73,3 +73,38 @@ Feature: Reset course
     And I should not see "Student 1"
     And I am on the "Test assignment name" "assign activity" page
     And I should see "0" in the "Submitted" "table_row"
+
+  @javascript
+  Scenario: Reset large courses asynchronously
+    Given "200" "users" exist with the following data:
+      | username  | studenta[count]             |
+      | firstname | Student                     |
+      | lastname  | [count]                     |
+      | email     | studenta[count]@example.com |
+    And "200" "course enrolments" exist with the following data:
+      | user   | studenta[count] |
+      | course | C1              |
+      | role   | student         |
+    And I am on the "Course 1" "reset" page logged in as "teacher1"
+    When I click on "Reset course" "button"
+    And I click on "Reset course" "button" in the "Reset course?" "dialogue"
+    # Check that you're on the Reset page with the indicator displayed
+    Then I should see "Reset course"
+    And I should not see "This feature allows you to clear all user data and reset the course to its original state"
+    And I should see "This course is being reset. You do not need to stay on this page."
+    And I reload the page
+    And I should not see "This feature allows you to clear all user data and reset the course to its original state"
+    And I should see "This course is being reset. You do not need to stay on this page."
+    And I run all adhoc tasks
+    And I wait until "Unenrol users" "text" exists
+    And I wait until "Unenrol users" "text" does not exist
+    And I wait until "Reset course" "text" does not exist
+    # Check the course has been reset.
+    And I navigate to course participants
+    And I should see "Teacher 1"
+    And I should not see "Student 1"
+    And I am on the "Test assignment name" "assign activity" page
+    And I should see "0" in the "Submitted" "table_row"
+    And I am on the "Course 1" "reset" page logged in as "teacher1"
+    And I should see "This feature allows you to clear all user data and reset the course to its original state"
+    And I should not see "This course is being reset. You do not need to stay on this page."
