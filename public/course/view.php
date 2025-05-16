@@ -371,6 +371,10 @@ if ($PAGE->user_is_editing()) {
         echo $OUTPUT->notification(get_string('pendingasyncedit', 'backup'), 'warning');
     }
 
+    if (\core_course\task\reset_course::get_taskid_for_course($course->id)) {
+        echo $OUTPUT->notification(get_string('resetinprogressedit', 'course'), 'warning');
+    }
+
     // Allow drag and drop in the course index.
     $containerattributes['data-courseindexdndallowed'] = 'true';
 }
