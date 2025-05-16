@@ -31,6 +31,7 @@ require_once('reset_form.php');
 require_once($CFG->dirroot . '/backup/util/interfaces/checksumable.class.php');
 require_once($CFG->dirroot . '/backup/backup.class.php');
 require_once($CFG->dirroot . '/backup/util/helper/backup_helper.class.php');
+require_once($CFG->dirroot . '/enrol/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 
@@ -69,11 +70,24 @@ if ($mform->is_cancelled()) {
         $mform = new course_reset_form();
 
     } else {
-        echo $OUTPUT->header();
-        \backup_helper::print_coursereuse_selector('reset');
-
         $data->reset_start_date_old = $course->startdate;
         $data->reset_end_date_old = $course->enddate;
+        $manager = new course_enrolment_manager($PAGE, $course);
+        $cminfo = get_fast_modinfo($course);
+        // For large courses, move the reset process to an adhoc task.
+        // This calculates a "weight" for the course based on the number of users and course modules. Course modules are more
+        // expensive to reset than users, so they are given more weight in the calculation. Any reset that would take more than
+        // a few seconds should be moved to an adhoc task.
+        if ($manager->get_total_users() * (count($cminfo->cms) * 10) > \core_course\task\reset_course::ADHOC_THRESHOLD) {
+            $task = \core_course\task\reset_course::create($data);
+            $taskid = \core\task\manager::queue_adhoc_task($task, true);
+            $task->set_id($taskid);
+            $task->initialise_stored_progress();
+            redirect($PAGE->url);
+        }
+
+        echo $OUTPUT->header();
+        \backup_helper::print_coursereuse_selector('reset');
         $status = reset_course_userdata($data);
 
         $data = [];
@@ -112,8 +126,21 @@ $PAGE->requires->js_call_amd('core_course/resetcourse', 'init');
 echo $OUTPUT->header();
 \backup_helper::print_coursereuse_selector('reset');
 
-echo $OUTPUT->box(get_string('resetinfo'));
-echo $OUTPUT->box(get_string('resetinfoselect'));
+$taskdata = \core_course\task\reset_course::get_data_by_courseid($course->id);
+// If there is already a reset task queued for this course, display the indicator instead of the form.
+if ($taskdata) {
+    $resettask = \core_course\task\reset_course::create($taskdata);
+    $indicator = new \core\output\task_indicator(
+        $resettask,
+        heading: get_string('resetcourse'),
+        message: get_string('resetcoursetask', 'course'),
+        redirecturl: new moodle_url('/course/view.php', ['id' => $course->id]),
+    );
+    echo $OUTPUT->render($indicator);
+} else {
+    echo $OUTPUT->box(get_string('resetinfo'));
+    echo $OUTPUT->box(get_string('resetinfoselect'));
+    $mform->display();
+}
 
-$mform->display();
 echo $OUTPUT->footer();

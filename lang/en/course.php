@@ -134,6 +134,7 @@ $string['privacy:metadata:completionsummary'] = 'The course contains completion 
 $string['privacy:metadata:favouritessummary'] = 'The course contains information relating to the course being starred by the user.';
 $string['recommend'] = 'Recommend';
 $string['recommendcheckbox'] = 'Recommend activity: {$a}';
+$string['resetcoursetask'] = 'This course is being reset. You do not need to stay on this page.';
 $string['relativedatessubmissionduedateafter'] = '{$a->datediffstr} after course start';
 $string['relativedatessubmissionduedatebefore'] = '{$a->datediffstr} before course start';
 $string['searchactivitiesbyname'] = 'Search for activities by name';
