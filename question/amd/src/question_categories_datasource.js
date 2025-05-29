@@ -14,9 +14,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Autocomplete data source for shared question banks.
+ * Autocomplete data source for question categories.
  *
- * @module     core_question/question_banks_datasource
+ * @module    core_question/question_categories_datasource
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -29,22 +29,22 @@ export default {
 
     transport: function(selector, query, callback) {
         const element = document.querySelector(selector);
-        const contextId = element.dataset.contextid;
-        let havingcap = ['use'];
-        if (element.dataset.havingcap) {
-            havingcap = JSON.parse(element.dataset.havingcap);
-        }
+        const cmid = element.dataset.cmid;
+        const filterContextId = element.dataset.filtercontextid;
 
-        if (!contextId) {
-            throw new Error('The attribute data-contextid is required on ' + selector);
+        if (!cmid) {
+            throw new Error('The attribute data-cmid is required on ' + selector);
+        }
+        if (!filterContextId) {
+            throw new Error('The attribute data-filtercontextid is required on ' + selector);
         }
 
         fetchMany([{
-            methodname: 'core_question_search_shared_banks',
+            methodname: 'core_question_search_question_categories',
             args: {
-                contextid: contextId,
+                cmid: cmid,
+                filtercontextid: filterContextId,
                 search: query,
-                havingcap: havingcap,
             },
         }])[0]
         .then(callback)
@@ -52,6 +52,7 @@ export default {
     },
 
     processResults: (selector, results) => {
-        return results.sharedbanks;
+        document.querySelector(selector).dataset.targetcontextid = results.contextid;
+        return results.categories;
     },
 };
