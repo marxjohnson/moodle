@@ -21,12 +21,7 @@
 
     Example context (json):
 {
-    "allsharedbanks": [
-        {
-            "name": "Quiz 1",
-            "contextid": 1,
-            "coursenamebankname": "c1 - Quiz 1"
-        },
+    "bank": [
         {
             "name": "Question bank 1",
             "modid": "2",
@@ -41,46 +36,24 @@
                     "enabled": "disabled"
                 }
             ]
-        },
-        {
-            "name": "Question bank 2",
-            "modid": "3",
-            "contextid": 33,
-            "coursenamebankname": "c2 - Question bank 2",
-            "cminfo": {},
-            "questioncategories": [
-                {
-                    "id": "23",
-                    "name": "Default for Question bank 2",
-                    "contextid": "23",
-                    "enabled": "disabled"
-                }
-            ]
         }
     ],
-    "allcategories": [
+    "categories": [
         {
             "id": "22",
-            "name": "Default for Question bank 1",
-            "contextid": "22"
+            "name": "Default for Question bank 1"
         },
         {
             "id": "23",
-            "name": "Default for Question bank 2",
-            "contextid": "23",
-            "enabled": "disabled"
+            "name": "Default for Question bank 2"
         },
         {
             "id": "24",
-            "name": "Default for Question bank 3",
-            "contextid": "24",
-            "enabled": "disabled"
+            "name": "Default for Question bank 3"
         },
         {
             "id": "25",
-            "name": "Default for Question bank 4",
-            "contextid": "25",
-            "enabled": "disabled"
+            "name": "Default for Question bank 4"
         }
     ],
     "save": {
@@ -111,24 +84,37 @@
         ],
         "actions": [],
         "hasactions": false
-    }
+    },
+    "contextid": 1000
 }
 }}
 
 <div class="search-banks">
     <h5>{{#str}}questionbank, question{{/str}}</h5>
-    <select class="form-select bulk-move d-none" id="searchbanks">
-        {{#allsharedbanks}}
-            <option value="{{contextid}}">{{{coursenamebankname}}}</option>
-        {{/allsharedbanks}}
+    <select
+        class="form-select bulk-move d-none"
+        id="searchbanks"
+        data-contextid="{{contextid}}"
+        data-havingcap='["add"]'
+        data-includecurrentcourse="1"
+    >
+        {{#bank}}
+            <option value="{{modid}}">{{{coursenamebankname}}}</option>
+        {{/bank}}
     </select>
 </div>
 <div class="search-categories mt-3">
     <h5>{{#str}}questioncategories, question{{/str}}</h5>
-    <select class="form-select bulk-move d-none" id="searchcategories">
-        {{#allcategories}}
-            <option value="{{id}}" data-bank-contextid="{{contextid}}" data-enabled="{{enabled}}">{{{name}}}</option>
-        {{/allcategories}}
+    <select
+        class="form-select bulk-move d-none"
+        id="searchcategories"
+        data-targetcontextid="{{contextid}}"
+        data-filtercontextid="{{contextid}}"
+        data-cmid="{{bank.modid}}"
+    >
+        {{#categories}}
+            <option value="{{id}}">{{{name}}}</option>
+        {{/categories}}
     </select>
     <div id="searchcatwarning" class="d-none">{{#str}}warning, qbank_bulkmove{{/str}}</div>
 </div>
