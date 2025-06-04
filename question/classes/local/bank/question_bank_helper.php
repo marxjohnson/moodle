@@ -605,6 +605,7 @@ class question_bank_helper {
         $data->name = $bankname;
         $data->type = in_array($type, self::SHARED_TYPES) ? $type : self::TYPE_STANDARD;
         $data->showdescription = $type === self::TYPE_STANDARD ? 0 : 1;
+        $data->skipdefaultcategory = $type === self::TYPE_SYSTEM;
 
         $mod = add_moduleinfo($data, $course);
 
