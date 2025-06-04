@@ -131,3 +131,20 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I click on "With selected" "button"
     Then I should see question bulk action "deleteselected"
     And I should not see question bulk action "move"
+
+  @javascript
+  Scenario: A new question bank is available in the move dialogue immediately
+    Given I am on the "C1" "Course" page logged in as "teacher1"
+    And the following "user preferences" exist:
+      | user     | preference | value    |
+      | teacher1 | htmleditor | textarea |
+    And I navigate to "Question banks" in current page administration
+    And I press "Add"
+    And I set the field "Question bank name" to "New question bank"
+    And I press "Save and return to question bank list"
+    And I am on the "Test quiz" "mod_quiz > question bank" page
+    And I click on "First question" "checkbox"
+    And I click on "With selected" "button"
+    And I click on "move" "button"
+    And I open the autocomplete suggestions list in the ".search-banks" "css_element"
+    Then "New question bank" "autocomplete_suggestions" should exist
