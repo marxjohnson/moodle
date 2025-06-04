@@ -57,6 +57,7 @@ Feature: Adding random questions to a quiz based on category and tags
     Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
     When I open the "last" add to quiz menu
     And I follow "a random question"
+    And I apply question bank filter "Category" with value "Questions Category 1"
     And I apply question bank filter "Tag" with value "foo"
     And I wait until the page is ready
     And I should see "question 1 name"
@@ -93,6 +94,7 @@ Feature: Adding random questions to a quiz based on category and tags
     Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
     And I open the "last" add to quiz menu
     And I follow "a random question"
+    And I apply question bank filter "Category" with value "Questions Category 1"
     And I apply question bank filter "Tag" with value "foo"
     And I select "1" from the "randomcount" singleselect
     And I press "Add random question"
@@ -107,6 +109,7 @@ Feature: Adding random questions to a quiz based on category and tags
     And I navigate to "Questions" in current page administration
     And I open the "Page 1" add to quiz menu
     And I follow "a random question"
+    And I apply question bank filter "Category" with value "Questions Category 1"
     And I set the field "Also show questions from subcategories" to "1"
     And I click on "Apply filters" "button"
     And I apply question bank filter "Tag" with value "foo"
@@ -176,6 +179,7 @@ Feature: Adding random questions to a quiz based on category and tags
     And I open the "last" add to quiz menu
     And I follow "a random question"
     And I should see "Current bank: Quiz 1"
+    And I apply question bank filter "Category" with value "Questions Category 1"
     And I should see "question 1 name"
     And I click on "Switch bank" "button"
     And I click on "Qbank 1" "link" in the "Select question bank" "dialogue"
@@ -183,6 +187,7 @@ Feature: Adding random questions to a quiz based on category and tags
     And I should see "Qbank question 1"
     And I should not see "question 1 name"
     When I apply question bank filter "Tag" with value "qbanktag"
+    And I apply question bank filter "Category" with value "Qbank questions"
     And I select "1" from the "randomcount" singleselect
     And I press "Add random question"
     Then I should see "Random (Qbank questions) based on filter condition with tags: qbanktag" on quiz page "1"
@@ -218,6 +223,7 @@ Feature: Adding random questions to a quiz based on category and tags
     Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
     And I open the "last" add to quiz menu
     And I follow "a random question"
+    And I apply question bank filter "Category" with value "Questions Category 1"
     And I apply question bank filter "Tag" with value "foo"
     And I select "1" from the "randomcount" singleselect
     And I press "Add random question"
