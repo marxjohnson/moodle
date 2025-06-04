@@ -86,6 +86,7 @@ Feature: Use the qbank plugin manager page for question history
   @javascript
   Scenario: Delete question from the history using Edit question menu
     Given I am on the "Test quiz" "mod_quiz > question bank" page logged in as "admin"
+    And I apply question bank filter "Category" with value "Test questions"
     And I choose "History" action for "First question" in the question bank
     When I choose "Delete" action for "First question" in the question bank
     And I press "Delete"

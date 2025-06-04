@@ -209,6 +209,7 @@ Feature: Regrading quiz attempts using the Grades report
     And I should see "Overall number of students achieving grade ranges"
     And "Student One" row "Regrade" column of "attempts" table should not contain "Needed"
     And I am on the "Quiz for testing regrading" "mod_quiz > question bank" page
+    And I apply question bank filter "Category" with value "Test questions"
     And I choose "Edit question" action for "TF" in the question bank
     And I set the field "Correct answer" to "False"
     And I press "id_submitbutton"
@@ -239,6 +240,7 @@ Feature: Regrading quiz attempts using the Grades report
     And I should see "(latest)" in the "TF" "list_item"
     # Create multiple question versions.
     And I am on the "Quiz for testing regrading" "mod_quiz > question bank" page
+    And I apply question bank filter "Category" with value "Test questions"
     And I choose "Edit question" action for "TF" in the question bank
     And I set the field "Correct answer" to "True"
     And I press "id_submitbutton"
@@ -277,6 +279,7 @@ Feature: Regrading quiz attempts using the Grades report
     And I click on "Yes" "button"
     # Create multiple question versions.
     And I am on the "Quiz for testing regrading" "mod_quiz > question bank" page
+    And I apply question bank filter "Category" with value "Test questions"
     And I choose "Delete" action for "SA" in the question bank
     And I press "Delete"
     And I am on the "Quiz for testing regrading" "mod_quiz > edit" page
