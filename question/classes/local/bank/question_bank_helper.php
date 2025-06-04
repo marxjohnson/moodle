@@ -311,14 +311,19 @@ class question_bank_helper {
         foreach ($rs as $cm) {
             // If capabilities have been supplied as a method argument then ensure the viewing user has at least one of those
             // capabilities on the module itself.
+            $context = \context_module::instance($cm->id);
             if (!empty($havingcap)) {
-                $context = \context_module::instance($cm->id);
                 if (!(new question_edit_contexts($context))->have_one_cap($havingcap)) {
                     continue;
                 }
             }
             // Populate the raw record.
             $banks[] = self::get_formatted_bank($cm, $currentbankid, filtercontext: $filtercontext);
+
+            if (!$getcategories) {
+                // If we weren't only getting banks with categories, make sure this bank has the default categories.
+                question_get_default_category($context->id, true);
+            }
         }
         $rs->close();
 
