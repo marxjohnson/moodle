@@ -30,9 +30,9 @@ export default {
     transport: function(selector, query, callback) {
         const element = document.querySelector(selector);
         const contextId = element.dataset.contextid;
-        let havingcap = ['use'];
+        let requiredcapabilities = ['use'];
         if (element.dataset.havingcap) {
-            havingcap = JSON.parse(element.dataset.havingcap);
+            requiredcapabilities = JSON.parse(element.dataset.requiredcapabilities);
         }
 
         if (!contextId) {
@@ -44,7 +44,7 @@ export default {
             args: {
                 contextid: contextId,
                 search: query,
-                havingcap: havingcap,
+                requiredcapabilities: requiredcapabilities,
             },
         }])[0]
         .then(callback)

@@ -3300,12 +3300,6 @@ $functions = array(
         'type' => 'read',
         'ajax' => true,
     ],
-    'core_question_search_question_categories' => [
-        'classname' => '\core_question\external\search_question_categories',
-        'description' => 'Get a list of question categories in a question bank, filtered by a search term.',
-        'type' => 'read',
-        'ajax' => true,
-    ],
     'core_message_set_unsent_message' => [
         'classname' => 'core_message\external\set_unsent_message',
         'description' => 'Store an unsent message string',

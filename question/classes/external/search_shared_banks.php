@@ -52,9 +52,12 @@ class search_shared_banks extends external_api {
             [
                 'contextid' => new external_value(PARAM_INT, 'The current context ID for applying text filters to bank names.'),
                 'search' => new external_value(PARAM_TEXT, 'Search terms by which to filter the shared banks.', default: ''),
-                'havingcap' => new external_multiple_structure(
+                'requiredcapabilities' => new external_multiple_structure(
                     new external_value(PARAM_TEXT, 'Capability'),
-                    'Array of question capabilities that the user must have at least one of in the context of matching banks.' .
+                    'Array of abbreviated "moodle/question:" capabilities that the user must have at least one of in the context ' .
+                        'of each matching question bank. Valid options are "add", "managecategory", "flag", "config", "edit", ' .
+                        '"view", "use", "move" or "tag". For "edit", "view", "use", "move" and "tag", the -all and -mine ' .
+                        "suffixed versions of the capabilty will both be checked.".
                     VALUE_DEFAULT,
                     ['use'],
                 ),
@@ -74,7 +77,7 @@ class search_shared_banks extends external_api {
      * @return array The expanded capabilities
      */
     protected static function expand_capabilities(array $abbreviations): array {
-        $capabilitieswithallandmine = ['edit', 'view', 'use', 'move', 'tag', 'comment'];
+        $capabilitieswithallandmine = ['edit', 'view', 'use', 'move', 'tag'];
         $prefix = 'moodle/question:';
         $suffixes = ['all', 'mine'];
         $capabilities = [];
@@ -103,30 +106,29 @@ class search_shared_banks extends external_api {
      *
      * @param int $contextid Context ID of the current activity
      * @param string $search String to filter results by question bank name
+     * @param array $requiredcapabilities List of abbreviated capabilities to check, {@see self::expand_capabilities()}
      * @return array
      */
     public static function execute(
         int $contextid,
         string $search = '',
-        array $havingcap = ['use'],
+        array $requiredcapabilities = ['use'],
     ): array {
         [
             'contextid' => $contextid,
             'search' => $search,
-            'havingcap' => $havingcap,
+            'requiredcapabilities' => $requiredcapabilities,
         ] = self::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
             'search' => $search,
-            'havingcap' => $havingcap,
+            'requiredcapabilities' => $requiredcapabilities,
         ]);
 
         $modulecontext = context::instance_by_id($contextid);
         self::validate_context($modulecontext);
 
-        $havingcap = self::expand_capabilities($havingcap);
-
         $sharedbanks = question_bank_helper::get_activity_instances_with_shareable_questions(
-            havingcap: $havingcap,
+            havingcap: self::expand_capabilities($requiredcapabilities),
             filtercontext: $modulecontext,
             search: $search,
             limit: self::MAX_RESULTS + 1, // Return up to 1 extra result, so we know there are more.
