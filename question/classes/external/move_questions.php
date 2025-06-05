@@ -116,7 +116,7 @@ class move_questions extends external_api {
             $returnurl->remove_params('category');
             // We can only highlight 1 question, so only highlight if we're moving a single question.
             $qids = explode(',', $questionids);
-            if (count($qids) == 1) {
+            if (count($qids) === 1) {
                 $returnurl->param('lastchanged', reset($qids));
             } else {
                 $returnurl->remove_params('lastchanged');
