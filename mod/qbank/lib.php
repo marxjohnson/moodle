@@ -136,7 +136,7 @@ function qbank_course_backend_generator_create_activity(
                 'name' => "Question bank course {$courseid} bank {$i}",
             ],
             [
-                'section' => $backend->get_target_section(),
+                'section' => 0,
             ],
         );
         question_get_default_category(\core\context\module::instance($qbank->cmid)->id, true);
