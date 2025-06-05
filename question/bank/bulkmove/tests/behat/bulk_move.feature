@@ -78,8 +78,8 @@ Feature: Use the qbank plugin manager page for bulkmove
     Then I should not see "C3 - Question bank 3" in the ".search-banks" "css_element"
     And I click on "C1 - Question bank 1" item in the autocomplete list
     Then I should not see "Test questions 1" in the ".search-categories .form-autocomplete-selection" "css_element"
+    And the field "selectcategory" matches value "Test questions 2 (1)"
     And I open the autocomplete suggestions list in the ".search-categories" "css_element"
-    And "Test questions 2" "autocomplete_suggestions" should exist
     And "Test questions 3" "autocomplete_suggestions" should not exist
     And "Test questions 4" "autocomplete_suggestions" should not exist
     And "Test questions 5" "autocomplete_suggestions" should exist
@@ -92,7 +92,7 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I click on "With selected" "button"
     And I click on "move" "button"
     And I open the autocomplete suggestions list in the ".search-categories" "css_element"
-    And I click on "Test questions 6" item in the autocomplete list
+    And I click on "Test questions 6 (1)" item in the autocomplete list
     And I click on "Move questions" "button"
     Then I should see "Are you sure you want to move these questions?"
     And I click on "Confirm" "button"
@@ -151,11 +151,10 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I click on "With selected" "button"
     And I click on "move" "button"
     And the field "searchbanks" matches value "C1 - Test quiz"
-    And the field "searchcategories" matches value "Test questions 1"
+    And the field "selectcategory" matches value "Test questions 1 (2)"
     And I open the autocomplete suggestions list in the ".search-banks" "css_element"
     And I click on "C1 - Question bank 1" item in the autocomplete list
-    And I open the autocomplete suggestions list in the ".search-categories" "css_element"
-    And I click on "Test questions 2" item in the autocomplete list
+    And the field "selectcategory" matches value "Test questions 2 (1)"
     And I click on "Move questions" "button"
     And I should see "Are you sure you want to move these questions?"
     When I click on "Confirm" "button"
@@ -165,6 +164,6 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I click on "With selected" "button"
     And I click on "move" "button"
     And the field "searchbanks" matches value "C1 - Question bank 1"
-    And the field "searchcategories" matches value "Test questions 2"
+    And the field "selectcategory" matches value "Test questions 2 (2)"
     # The moved question should be highlighted
     And the "class" attribute of "Seventh question" "table_row" should contain "highlight"
