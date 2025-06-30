@@ -31,7 +31,7 @@ export default {
         const element = document.querySelector(selector);
         const contextId = element.dataset.contextid;
         let requiredcapabilities = ['use'];
-        if (element.dataset.havingcap) {
+        if (element.dataset.requiredcapabilities) {
             requiredcapabilities = JSON.parse(element.dataset.requiredcapabilities);
         }
 
