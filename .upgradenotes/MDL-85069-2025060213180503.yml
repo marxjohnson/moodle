@@ -13,7 +13,7 @@ notes:
         (Question banks in this course), but not others (Recently viewed
         question banks).
 
-        This change has also adds a 'havingcap' parameter to the function,
-        which accepts an list of abbreviated capabilities for checking access
-        against question banks before they are returned.
+        This change has also adds a 'requiredcapabilties' parameter to the
+        function, which accepts an list of abbreviated capabilities for 
+        checking access against question banks before they are returned.
       type: changed
