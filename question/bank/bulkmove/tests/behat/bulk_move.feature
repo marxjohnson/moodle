@@ -136,7 +136,30 @@ Feature: Use the qbank plugin manager page for bulkmove
     And I should not see question bulk action "move"
 
   @javascript
-  Scenario: Questions can be moved to a different bank
+  Scenario: Questions can be moved to a different bank, if the user has the correct capability
+    Given the following "role" exists:
+      | name      | Question adder |
+      | shortname | adder          |
+    And the following "role capability" exists:
+      | role                | adder |
+      | moodle/question:add | allow |
+    And the following "course" exists:
+      | fullname  | Course 4 |
+      | shortname | C4       |
+      | category  | 0        |
+    And the following "course enrolment" exists:
+      | course | C4       |
+      | user   | teacher1 |
+      | role   | adder    |
+    And the following "activity" exists:
+      | activity | qbank           |
+      | course   | C4              |
+      | name     | Question bank 4 |
+      | idnumber | qbank4          |
+    And the following "question category" exists:
+      | contextlevel | Activity module  |
+      | reference    | qbank4           |
+      | name         | Test questions 7 |
     Given I am on the "Test quiz" "mod_quiz > question bank" page logged in as "teacher1"
     And I press "Create a new question ..."
     And I set the field "item_qtype_truefalse" to "1"
@@ -153,6 +176,10 @@ Feature: Use the qbank plugin manager page for bulkmove
     And the field "searchbanks" matches value "C1 - Test quiz"
     And the field "selectcategory" matches value "Test questions 1 (2)"
     And I open the autocomplete suggestions list in the ".search-banks" "css_element"
+    And I should see "C1 - Question bank 1" in the ".search-banks .form-autocomplete-suggestions" "css_element"
+    And I should see "C2 - Question bank 2" in the ".search-banks .form-autocomplete-suggestions" "css_element"
+    And I should see "C4 - Question bank 4" in the ".search-banks .form-autocomplete-suggestions" "css_element"
+    And I should not see "C3 - Question bank 3" in the ".search-banks .form-autocomplete-suggestions" "css_element"
     And I click on "C1 - Question bank 1" item in the autocomplete list
     And the field "selectcategory" matches value "Test questions 2 (1)"
     And I click on "Move questions" "button"
