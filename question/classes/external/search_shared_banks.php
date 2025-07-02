@@ -57,7 +57,7 @@ class search_shared_banks extends external_api {
                     'Array of abbreviated "moodle/question:" capabilities that the user must have at least one of in the context ' .
                         'of each matching question bank. Valid options are "add", "managecategory", "flag", "config", "edit", ' .
                         '"view", "use", "move" or "tag". For "edit", "view", "use", "move" and "tag", the -all and -mine ' .
-                        "suffixed versions of the capabilty will both be checked.".
+                        "suffixed versions of the capabilty will both be checked.",
                     VALUE_DEFAULT,
                     ['use'],
                 ),
