@@ -2600,19 +2600,17 @@ class backup_questions_structure_step extends backup_structure_step {
     #[\Override]
     public function execute() {
         global $DB;
-        // Create partial copies of the backup IDs table to work around MySQL's restriction on multiple temp table references
-        // in a single query.
-        $DB->execute("CREATE TEMPORARY TABLE {question_category_complete_temp} AS
+        backup_controller_dbops::create_question_category_temp_tables();
+        $DB->execute("INSERT INTO {question_category_complete_temp} (backupid, itemid)
             SELECT backupid, itemid
              FROM {backup_ids_temp}
             WHERE itemname = 'question_category_complete'");
-        $DB->execute("CREATE TEMPORARY TABLE {question_category_partial_temp} AS
+        $DB->execute("INSERT INTO {question_category_partial_temp} (backupid, itemid)
             SELECT backupid, itemid
              FROM {backup_ids_temp}
             WHERE itemname = 'question_category_partial'");
         $results = parent::execute();
-        $DB->execute("DROP TABLE {question_category_complete_temp}");
-        $DB->execute("DROP TABLE {question_category_partial_temp}");
+        backup_controller_dbops::drop_question_category_temp_tables();
         return $results;
     }
 
