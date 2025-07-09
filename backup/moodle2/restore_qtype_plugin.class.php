@@ -581,13 +581,13 @@ abstract class restore_qtype_plugin extends restore_plugin {
      * If any of the elements in the path is an array, this is called recursively on each element in the array to unset fields
      * in each child of the array.
      *
-     * @param stdClass|array $data The questiondata object, or a subsection of it.
+     * @param stdClass $data The questiondata object, or a subsection of it.
      * @param array $pathparts The remaining elements in the path to the excluded field.
      * @return void
      */
-    private static function unset_excluded_fields(stdClass|array $data, array $pathparts): void {
+    private static function unset_excluded_fields(stdClass $data, array $pathparts): void {
         $element = array_shift($pathparts);
-        if (!isset($data->{$element})) {
+        if (!property_exists($data, $element)) {
             // This element is not present in the data structure, nothing to unset.
             return;
         }
