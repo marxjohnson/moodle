@@ -17,6 +17,7 @@
 namespace core_question\output;
 
 use action_link;
+use core\output\pix_icon;
 use renderer_base;
 use core_courseformat\output\local\content\cm\controlmenu;
 use core_question\local\bank\question_bank_helper;
@@ -75,6 +76,7 @@ class question_bank_list implements \renderable, \templatable {
                 $instance->name,
             );
 
+
             $banks[] = [
                 'purpose' => plugin_supports('mod', $instance->cminfo->modname, FEATURE_MOD_PURPOSE),
                 'iconurl' => $instance->cminfo->get_icon_url(),
@@ -82,6 +84,7 @@ class question_bank_list implements \renderable, \templatable {
                 'description' => $instance->cminfo->get_formatted_content(),
                 'managequestions' => $managequestions->export_for_template($output),
                 'managebank' => $managebankexport,
+                'cmid' => $instance->modid,
             ];
         }
 
