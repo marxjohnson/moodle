@@ -213,6 +213,14 @@
                 {{#managequestions}}
                     {{> core/action_link}}
                 {{/managequestions}}
+                <div class="d-inline-block questioncount" data-cmid="{{cmid}}">
+                    <span class="loading d-none">
+                    {{#loadingicon}}
+                        {{> core/pix_icon}}
+                    {{/loadingicon}}
+                    </span>
+                    <span class="badge rounded-pill bg-primary d-none"></span>
+                </div>
                 <div class="manage-bank-actions d-inline-block">
                     {{#managebank}}
                         {{> core/action_menu}}
@@ -223,3 +231,9 @@
         </li>
     </ul>
 </div>
+
+{{#js}}
+    require(['core_question/questioncount'], function(questionCount) {
+        questionCount.fetchCount('{{cmid}}');
+    });
+{{/js}}
