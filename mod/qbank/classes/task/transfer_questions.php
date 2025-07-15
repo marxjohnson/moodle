@@ -55,10 +55,10 @@ class transfer_questions extends adhoc_task {
         $newcontext = context::instance_by_id($newcontextid);
 
         $sql = "SELECT q.id, q.qtype
-              FROM {question} q
-              JOIN {question_versions} qv ON qv.questionid = q.id
-              JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-             WHERE qbe.questioncategoryid = ?";
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE qbe.questioncategoryid = ?";
 
         $questions = $DB->get_records_sql($sql, [$data->categoryid]);
         $questioncount = count($questions);
