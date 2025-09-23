@@ -130,7 +130,7 @@ class get_groups_for_selector extends external_api {
                 ]);
             }
 
-            $mappedgroups = array_map(function ($group) use ($context, $allgroups, $OUTPUT) {
+            $mappedgroups = array_map(function ($group) use ($context, $OUTPUT) {
                 if ($group->id) { // Particular group. Get the group picture if it exists, otherwise return a generic image.
                     $picture = get_group_picture_url($group, $group->courseid, true) ??
                         moodle_url::make_pluginfile_url($context->get_course_context()->id, 'group', 'generated', $group->id,
