@@ -110,7 +110,6 @@ Feature: Users can access the course activities overview page
       | wiki            | C1     | Activity 19 |       |
       | workshop        | C1     | Activity 20 |       |
       | qbank           | C1     | Activity 21 |       |
-      | label           | C1     | Activity 22 | label |
     Given I am on the "Course 1" "course > activities" page logged in as "teacher1"
     And I should see "Assignments" in the "assign_overview_collapsible" "region"
     And I should see "Choices" in the "choice_overview_collapsible" "region"

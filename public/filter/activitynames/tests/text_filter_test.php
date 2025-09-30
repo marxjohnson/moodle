@@ -47,7 +47,7 @@ final class text_filter_test extends \advanced_testcase {
             ['course' => $course->id, 'name' => 'Label 1', 'intro' => 'Label 1']
         );
         $this->getDataGenerator()->create_module(
-            'label',
+            'qbank',
             ['course' => $course->id, 'name' => 'Question bank 1']
         );
 

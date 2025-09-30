@@ -747,9 +747,9 @@ abstract class info {
                     // We make sure that we add a data attribute to the name so we can change it later if the
                     // original module name changes.
                     if (
-                        $cm->has_view()
+                        \course_modinfo::is_mod_type_visible_on_course($cm->modname)
+                        && $cm->has_view()
                         && $cm->get_user_visible()
-                        && \course_modinfo::is_mod_type_visible_on_course($cm->modname)
                     ) {
                         // Help student by providing a link to the module which is preventing availability.
                         return \html_writer::link($cm->get_url(), $modulename, ['data-cm-name-for' => $cm->id]);
