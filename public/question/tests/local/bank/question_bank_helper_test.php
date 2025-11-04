@@ -356,6 +356,24 @@ final class question_bank_helper_test extends \advanced_testcase {
     }
 
     /**
+     * Attempting to create a default bank with an empty name throws an exception and does not create the bank.
+     */
+    public function test_create_default_open_instance_with_empty_name(): void {
+        $this->resetAfterTest();
+        self::setAdminUser();
+
+        $course = self::getDataGenerator()->create_course();
+        $bankname = '';
+
+        $this->expectException(\coding_exception::class);
+        question_bank_helper::create_default_open_instance($course, $bankname);
+
+        $modinfo = get_fast_modinfo($course);
+        $cminfos = $modinfo->get_instances_of('qbank');
+        $this->assertCount(0, $cminfos);
+    }
+
+    /**
      * Assert that viewing a question bank logs the view for that user up to a maximum of 5 unique bank views.
      *
      * @return void
