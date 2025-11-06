@@ -1,0 +1,57 @@
+issueNumber: MDL-87103
+notes:
+  core_question:
+    - message: >
+        The `core_question\view` class has been rewritten, so that it no longer
+        echoes output directly.
+        It now implements the `templatable` interface, so can be passed to
+        `core_renderer::render` to return the HTML for a question bank view.
+
+        As such, the following methods of this class are now deprecated:
+
+        * `display()`
+        * `wanted_filters()`
+        * `display_question_bank_header()`
+        * `display_question_list()`
+        * `display_bottom_controls()`
+        * `display_questions()`
+        * `print_table()`
+        * `print_table_headers()`
+        * `print_table_row()`
+        * `display_questions_table()`
+
+        These have been replaced with templatable classes and corresponding
+        templates.
+
+        Those components which already used templates via renderer methods now have templatable classes, 
+        and the following methods of `core_question_bank_renderer` have been deprecated:
+
+        * `render_column_header()`
+        * `render_column_sort()`
+        * `render_showtext_checkbox()`
+        * `render_bulk_actions_ui()`
+
+        Classes extending the question bank view will need to be updated to use
+        the templatable interface.
+
+        Output from question bank plugins, such as table cells and extra table
+        rows, was previously output directly using `column_base::display()`. This has
+        now been deprecated in favour of `column_base::render()`, which must
+        *return* the rendered HTML the plugin wishes to display.
+
+        It is up to the plugin how this is generated, however the recommended
+        approach is the extend the `core_question\output\question_cell` class
+        and its corresponding template for displaying table cells.
+
+        Other methods of the `column_base` class are also deprecated:
+
+        * `display_header()`
+        * `make_sort_link()`
+        * `get_sort_icon()`
+        * `display_start()`
+        * `display_content()`
+        * `display_end()`
+        * `display_preview()` - Replaced by `render_preview()`
+          
+        All overrides of these methods have also been deprecated in this MDL.
+      type: deprecated

@@ -18,6 +18,7 @@ namespace core_question;
 
 use core_question\local\bank\question_edit_contexts;
 use core_question\local\bank\view;
+use core_question\output\column_header;
 use testable_core_question_column;
 
 defined('MOODLE_INTERNAL') || die();
@@ -40,6 +41,7 @@ final class question_bank_column_test extends \advanced_testcase {
      *
      */
     public function test_column_header_multi_sort_no_tooltips(): void {
+        global $OUTPUT;
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
         $qbank = $this->getDataGenerator()->create_module('qbank', ['course' => $course->id]);
@@ -64,9 +66,9 @@ final class question_bank_column_test extends \advanced_testcase {
         ];
         $columnbase->set_sortable($sortable);
 
-        ob_start();
-        $columnbase->display_header();
-        $output = ob_get_clean();
+        $columnheader = new column_header($questionbank, $columnbase, [], '100px');
+
+        $output = $OUTPUT->render($columnheader);
 
         $this->assertStringContainsString(' title="Sort by Apple ascending">', $output);
         $this->assertStringContainsString(' title="Sort by Banana ascending">', $output);
@@ -77,6 +79,7 @@ final class question_bank_column_test extends \advanced_testcase {
      *
      */
     public function test_column_header_multi_sort_with_tooltips(): void {
+        global $OUTPUT;
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
         $qbank = $this->getDataGenerator()->create_module('qbank', ['course' => $course->id]);
@@ -103,9 +106,8 @@ final class question_bank_column_test extends \advanced_testcase {
         ];
         $columnbase->set_sortable($sortable);
 
-        ob_start();
-        $columnbase->display_header();
-        $output = ob_get_clean();
+        $columnheader = new column_header($questionbank, $columnbase, [], '100px');
+        $output = $OUTPUT->render($columnheader);
 
         $this->assertStringContainsString(' title="Sort by Apple Tooltips ascending">', $output);
         $this->assertStringContainsString(' title="Sort by Banana Tooltips ascending">', $output);

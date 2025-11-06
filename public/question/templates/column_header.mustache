@@ -77,8 +77,8 @@
         </div>
     </div>
     {{#sortable}}
-        <div class="sorters">
-            {{{sortlinks}}}
+        <div class="sorters{{#hassubsort}} subsort{{/hassubsort}}">
+            {{#sortlinks}}{{>core_question/column_sort}}{{/sortlinks}}
         </div>
     {{/sortable}}
 </th>

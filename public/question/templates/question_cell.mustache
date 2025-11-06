@@ -15,19 +15,22 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_question/column_sort
+    @template core_question/question_cell
+
+    Template for a single cell in a question row.
 
     Example context (json):
     {
-        "sorturl": "url",
-        "sortname": "Sort name",
-        "sortorder": "Sort order when activate this sort",
-        "sorttip": "Sort according to first name",
-        "sortcontent": "Sort title sort icon",
-        "lastsort": false
+        "class": "question-bank-column",
+        "columnid": "qbank_example-column1",
+        "content": "Default content"
     }
 }}
-<a href="{{{sorturl}}}" data-sortname="{{sortname}}" data-sortorder="{{sortorder}}" title="{{sorttip}}">
-    {{{sortcontent}}}{{#sorticon}}{{{sorticon}}}{{/sorticon}}
-</a>{{^lastsort}} / {{/lastsort}}
+<{{#heading}}th scope="row"{{/heading}}{{^heading}}td{{/heading}}
+    class="{{class}}"
+    data-columnid="{{columnid}}"
+    {{#colspan}}colspan="{{colspan}}"{{/colspan}}
+>
+    {{$content}}{{content}}{{/content}}
+</{{#heading}}th{{/heading}}{{^heading}}td{{/heading}}>
 

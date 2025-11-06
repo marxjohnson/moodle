@@ -19,9 +19,9 @@
 
     Example context (json):
     {
-        "displaydata": [
+        "hasbulkactions": true,
+        "bulkactionitems": [
           {
-                "bulkactionitems": "<input value='Move to'>",
                 "actionname": "Move to",
                 "actionkey": "deleteselected",
                 "actionurl": "/question/bank/bulkmove/move.php?courseid=2",
@@ -30,7 +30,7 @@
         ]
     }
 }}
-
+{{#hasbulkactions}}
 <div class="btn-group dropup mt-2" id="bulkactionsui-container">
     <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="bulkactionsui-selector">
         {{#str}} withselected, question{{/str}}
@@ -42,3 +42,4 @@
         {{/bulkactionitems}}
     </div>
 </div>
+{{/hasbulkactions}}

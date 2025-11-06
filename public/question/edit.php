@@ -89,7 +89,7 @@ $qbankaction = new qbank_action_menu($actionurl);
 echo $renderer->render($qbankaction);
 
 // Print the question area.
-$questionbank->display();
+echo $renderer->render($questionbank);
 
 [$categoryid, $contextid] = explode(',', $pagevars['cat']);
 $questionbank->init_bulk_actions_js();

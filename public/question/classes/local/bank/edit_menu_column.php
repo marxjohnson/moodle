@@ -24,7 +24,10 @@
 
 namespace core_question\local\bank;
 
+use core\attribute\deprecated;
 use \core\plugininfo\qbank;
+use core_question\output\edit_menu_cell;
+use stdClass;
 
 /**
  * A question bank column which gathers together all the actions into a menu.
@@ -47,6 +50,13 @@ class edit_menu_column extends column_base {
         return 'editmenu';
     }
 
+    #[deprecated(
+        replacement: column_base::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
+    #[\Override]
     protected function display_content($question, $rowclasses): void {
         global $OUTPUT;
         $actions = $this->qbank->get_question_actions();
@@ -68,6 +78,21 @@ class edit_menu_column extends column_base {
         }
 
         echo $OUTPUT->render($menu);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new edit_menu_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->qbank->get_question_actions(),
+            ),
+        );
     }
 
     public function get_required_fields(): array {

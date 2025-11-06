@@ -29,12 +29,20 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/question/editlib.php');
 
 use coding_exception;
+use core\attribute\deprecated;
+use core\context\module;
+use core\deprecation;
 use core\output\datafilter;
-use core_question\local\bank\condition;
+use core\output\renderable;
+use core\output\renderer_base;
+use core\output\templatable;
 use core_question\local\statistics\statistics_bulk_loader;
+use core_question\output\bulk_actions_ui;
+use core_question\output\column_header;
 use core_question\output\question_bank_filter_ui;
-use core_question\local\bank\column_manager_base;
-use qbank_managecategories\category_condition;
+use core_question\output\question_list;
+use core_question\output\question_row;
+use core_question\output\question_table;
 
 /**
  * This class prints a view of the question bank.
@@ -59,8 +67,7 @@ use qbank_managecategories\category_condition;
  * @author    2021 Safat Shahin <safatshahin@catalyst-au.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class view {
-
+class view implements renderable, templatable {
     /**
      * Maximum number of sorts allowed.
      */
@@ -158,7 +165,7 @@ class view {
     /**
      * @var ?array Stores all the average statistics that this question bank view needs.
      *
-     * This field gets initialised in {@see display_question_list()}. It is a two dimensional
+     * This field gets initialised in {@see load_required_statistics()}. It is a two dimensional
      * $this->loadedstatistics[$questionid][$fieldname] = $average value of that statistics for that question.
      * Column classes in qbank plugins can access these values using {@see get_aggregate_statistic()}.
      */
@@ -324,6 +331,33 @@ class view {
                 $this->bulkactions[$bulkactionobject->get_key()] = $bulkactionobject;
             }
         }
+    }
+
+    /**
+     * Return list of sorted column names and directions.
+     *
+     * @return array
+     */
+    public function get_sort(): array {
+        return $this->sort;
+    }
+
+    /**
+     * Get the current column manager.
+     *
+     * @return column_manager_base
+     */
+    public function get_columnmanager(): column_manager_base {
+        return $this->columnmanager;
+    }
+
+    /**
+     * Get the extra table rows for display.
+     *
+     * @return column_base[]
+     */
+    public function get_extrarows(): array {
+        return $this->extrarows;
     }
 
     /**
@@ -884,49 +918,99 @@ class view {
 
     /**
      * Shows the question bank interface.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Replaced output functions with templates.',
+        mdl: 'MDL-87103',
+    )]
     public function display(): void {
-        $editcontexts = $this->contexts->having_one_edit_tab_cap('questions');
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
+        echo $OUTPUT->render($this);
+    }
 
-        echo \html_writer::start_div('questionbankwindow boxwidthwide boxaligncenter', [
-            'data-component' => 'core_question',
-            'data-callback' => 'display_question_bank',
-            'data-contextid' => $editcontexts[array_key_last($editcontexts)]->id,
-        ]);
-
-        // Show the filters and search options.
-        $this->wanted_filters();
-        // Continues with list of questions.
-        $this->display_question_list();
-        echo \html_writer::end_div();
-
+    #[\Override]
+    public function export_for_template(renderer_base $output): array {
+        [, $contextid] = explode(',', $this->pagevars['cat']);
+        $catcontext = \context::instance_by_id($contextid);
+        $this->add_standard_search_conditions();
+        $filter = new question_bank_filter_ui(
+            $catcontext,
+            $this->searchconditions,
+            [
+                'perpage' => $this->pagevars['qperpage'],
+            ],
+            $this->component,
+            $this->callback,
+            static::class,
+            'qbank-table',
+            $this->cm?->id,
+            $this->pagevars,
+            $this->extraparams,
+        );
+        $questionlist = new question_list($this);
+        return [
+            'contextid' => $contextid,
+            'filter' => $filter->export_for_template($output),
+            'questionlist' => $questionlist->export_for_template($output),
+        ];
     }
 
     /**
      * The filters for the question bank.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Filters are now included in the template context.',
+        mdl: 'MDL-87103',
+    )]
     public function wanted_filters(): void {
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
         global $OUTPUT;
         [, $contextid] = explode(',', $this->pagevars['cat']);
         $catcontext = \context::instance_by_id($contextid);
         // Category selection form.
-        $this->display_question_bank_header();
+        echo $OUTPUT->heading(get_string('questionbank', 'question'));
         // Add search conditions.
         $this->add_standard_search_conditions();
         // Render the question bank filters.
-        $additionalparams = [
-            'perpage' => $this->pagevars['qperpage'],
-        ];
-        $filter = new question_bank_filter_ui($catcontext, $this->searchconditions, $additionalparams, $this->component,
-                $this->callback, static::class, 'qbank-table', $this->cm?->id, $this->pagevars,
-                $this->extraparams);
+        $filter = new question_bank_filter_ui(
+            $catcontext,
+            $this->searchconditions,
+            [
+                'perpage' => $this->pagevars['qperpage'],
+            ],
+            $this->component,
+            $this->callback,
+            static::class,
+            'qbank-table',
+            $this->cm?->id,
+            $this->pagevars,
+            $this->extraparams,
+        );
         echo $OUTPUT->render($filter);
     }
 
     /**
      * Display the header element for the question bank.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Header is now included in the template context.',
+        mdl: 'MDL-87103',
+    )]
     protected function display_question_bank_header(): void {
+        \core\deprecation::emit_deprecation([self::class, __FUNCTION__]);
         global $OUTPUT;
         echo $OUTPUT->heading(get_string('questionbank', 'question'), 2);
     }
@@ -950,7 +1034,7 @@ class view {
      * @param \core\context $context The current context, for permissions checks.
      * @param int $categoryid The current question category.
      */
-    protected function get_plugin_controls(\core\context $context, int $categoryid): string {
+    public function get_plugin_controls(\core\context $context, int $categoryid): string {
         global $OUTPUT;
         $orderedcontrols = [];
         foreach ($this->plugins as $plugin) {
@@ -974,68 +1058,19 @@ class view {
 
     /**
      * Prints the table of questions in a category with interactions
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_list::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     public function display_question_list(): void {
-        // This function can be moderately slow with large question counts and may time out.
-        // We probably do not want to raise it to unlimited, so randomly picking 5 minutes.
-        // Note: We do not call this in the loop because quiz ob_ captures this function (see raise() PHP doc).
-        \core_php_time_limit::raise(300);
-        raise_memory_limit(MEMORY_EXTRA);
-
-        [$categoryid, $contextid] = category_condition::validate_category_param($this->pagevars['cat']);
-        $catcontext = \context::instance_by_id($contextid);
-        // Update the question in the list with correct category context when we have selected category filter.
-        if (isset($this->pagevars['filter']['category']['values'])) {
-            $categoryid = $this->pagevars['filter']['category']['values'][0];
-            foreach ($this->contexts->all() as $context) {
-                if ((int) $context->instanceid === (int) $categoryid) {
-                    $catcontext = $context;
-                    break;
-                }
-            }
-        }
-
-        echo \html_writer::start_tag(
-            'div',
-            [
-                'id' => 'questionscontainer',
-                'data-component' => $this->component,
-                'data-callback' => $this->callback,
-                'data-contextid' => $this->get_most_specific_context()->id,
-            ]
-        );
-        echo $this->get_plugin_controls($catcontext, $categoryid);
-
-        $questions = $this->load_questions();
-
-        // This html will be refactored in the bulk actions implementation.
-        echo \html_writer::start_tag('form', ['action' => $this->baseurl, 'method' => 'post', 'id' => 'questionsubmit']);
-        echo \html_writer::start_tag('fieldset', ['class' => 'invisiblefieldset', 'style' => "display: block;"]);
-        echo \html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-        echo \html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'addonpage']);
-        echo \html_writer::input_hidden_params($this->baseurl);
-
-        $filtercondition = json_encode($this->get_pagevars());
-        // Embeded filterconditon into the div.
-        echo \html_writer::start_tag('div',
-            ['class' => 'categoryquestionscontainer', 'data-filtercondition' => $filtercondition]);
-        if ($this->totalcount > 0) {
-            // Bulk load any required statistics.
-            $this->load_required_statistics($questions);
-
-            // Bulk load any extra data that any column requires.
-            foreach ($this->requiredcolumns as $column) {
-                $column->load_additional_data($questions);
-            }
-            $this->display_questions($questions, $this->pagevars['qpage'], $this->pagevars['qperpage']);
-        }
-        echo \html_writer::end_tag('div');
-
-        $this->display_bottom_controls($catcontext);
-
-        echo \html_writer::end_tag('fieldset');
-        echo \html_writer::end_tag('form');
-        echo \html_writer::end_tag('div');
+        global $OUTPUT;
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
+        echo $OUTPUT->render(new question_list($this));
     }
 
     /**
@@ -1059,7 +1094,7 @@ class view {
      *
      * @param \stdClass[] $questions the questions that will be displayed indexed by question id.
      */
-    protected function load_required_statistics(array $questions): void {
+    public function load_required_statistics(array $questions): void {
         $requiredstatistics = $this->determine_required_statistics();
         $this->loadedstatistics = statistics_bulk_loader::load_aggregate_statistics(
                 array_keys($questions), $requiredstatistics);
@@ -1096,44 +1131,31 @@ class view {
      * Display the controls at the bottom of the list of questions.
      *
      * @param \context $catcontext The context of the category being displayed.
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: 'render_bottom_controls',
+        since: '5.2',
+        reason: 'Replaced direct output functions with templates',
+        mdl: 'MDL-87103',
+    )]
     protected function display_bottom_controls(\context $catcontext): void {
-        $caneditall = has_capability('moodle/question:editall', $catcontext);
-        $canuseall = has_capability('moodle/question:useall', $catcontext);
-        $canmoveall = has_capability('moodle/question:moveall', $catcontext);
-        if ($caneditall || $canmoveall || $canuseall) {
-            global $PAGE;
-            $bulkactiondatas = [];
-            $params = $this->base_url()->params();
-            $returnurl = new \moodle_url($this->base_url(), ['filter' => json_encode($this->pagevars['filter'])]);
-            $params['returnurl'] = $returnurl;
-            foreach ($this->bulkactions as $key => $action) {
-                // Check capabilities.
-                $capcount = 0;
-                foreach ($action->get_bulk_action_capabilities() as $capability) {
-                    if (has_capability($capability, $catcontext)) {
-                        $capcount ++;
-                    }
-                }
-                // At least one cap need to be there.
-                if ($capcount === 0) {
-                    unset($this->bulkactions[$key]);
-                    continue;
-                }
-                $actiondata = new \stdClass();
-                $actiondata->actionname = $action->get_bulk_action_title();
-                $actiondata->actionkey = $key;
-                $actiondata->actionurl = new \moodle_url($action->get_bulk_action_url(), $params);
-                $actiondata->actionclasses = $action->get_bulk_action_classes();
-                $bulkactiondata[] = $actiondata;
+        \core\deprecation::emit_deprecation([self::class, __FUNCTION__]);
+        echo $this->render_bottom_controls($catcontext);
+    }
 
-                $bulkactiondatas ['bulkactionitems'] = $bulkactiondata;
-            }
-            // We dont need to show this section if none of the plugins are enabled.
-            if (!empty($bulkactiondatas)) {
-                echo $PAGE->get_renderer('core_question', 'bank')->render_bulk_actions_ui($bulkactiondatas);
-            }
-        }
+    /**
+     * Return the HTML for the controls at the bottom of the list of questions.
+     *
+     * This returns rendered HTML rather than a templatable, so that subclasses can display something other than the bulk actions
+     * UI in the bottom controls.
+     *
+     * @param module $catcontext The context of the category being displayed.
+     * @return string The rendered controls.
+     */
+    public function render_bottom_controls(module $catcontext): string {
+        global $OUTPUT;
+        return $OUTPUT->render(new bulk_actions_ui($this, $catcontext));
     }
 
     /**
@@ -1150,29 +1172,18 @@ class view {
      * Display the questions.
      *
      * @param array $questions
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_table::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     public function display_questions($questions, $page = 0, $perpage = DEFAULT_QUESTIONS_PER_PAGE): void {
         global $OUTPUT;
-        if (!isset($this->pagevars['filter']['category'])) {
-            // We must have a category filter selected.
-            echo $OUTPUT->render_from_template('qbank_managecategories/choose_category', []);
-            return;
-        }
-        // Pagination.
-        $pageingurl = new \moodle_url($this->base_url());
-        // TODO MDL-82312: it really should not be necessary to set filter here, and not like this.
-        // This should be handled in baseurl, but it isn't so we do this so Moodle basically works for now.
-        $pageingurl->param('filter', json_encode($this->pagevars['filter']));
-        $pagingbar = new \paging_bar($this->totalcount, $page, $perpage, $pageingurl);
-        $pagingbar->pagevar = 'qpage';
-        echo $OUTPUT->render($pagingbar);
-
-        // Table of questions.
-        echo \html_writer::start_tag('div',
-            ['class' => 'question_table', 'id' => 'question_table']);
-        $this->print_table($questions);
-        echo \html_writer::end_tag('div');
-        echo $OUTPUT->render($pagingbar);
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
+        echo $OUTPUT->render(new question_table($this, $questions, $page, $perpage));
     }
 
     /**
@@ -1201,8 +1212,17 @@ class view {
      * Prints the actual table with question.
      *
      * @param array $questions
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_table::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     protected function print_table($questions): void {
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
+        global $OUTPUT;
         // Start of the table.
         echo \html_writer::start_tag('table', [
             'id' => 'categoryquestions',
@@ -1232,12 +1252,23 @@ class view {
 
     /**
      * Print table headers from child classes.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_table::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     protected function print_table_headers(): void {
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
+        global $OUTPUT;
         $columnactions = $this->columnmanager->get_column_actions($this);
         foreach ($this->visiblecolumns as $column) {
             $width = $this->columnmanager->get_column_width($column);
-            $column->display_header($columnactions, $width);
+            $header = new column_header($this, $column, $columnactions, $width);
+            echo $OUTPUT->render($header);
         }
     }
 
@@ -1248,7 +1279,7 @@ class view {
      * @param int $rowcount
      * @return array
      */
-    protected function get_row_classes($question, $rowcount): array {
+    public function get_row_classes($question, $rowcount): array {
         $classes = [];
         if ($question->status === question_version_status::QUESTION_STATUS_HIDDEN) {
             $classes[] = 'dimmed_text';
@@ -1265,8 +1296,16 @@ class view {
      *
      * @param \stdClass $question
      * @param int $rowcount
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_row::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     public function print_table_row($question, $rowcount): void {
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
         $rowclasses = implode(' ', $this->get_row_classes($question, $rowcount));
         $attributes = [];
 
@@ -1287,7 +1326,7 @@ class view {
         }
         echo \html_writer::start_tag('tr', $attributes);
         foreach ($this->visiblecolumns as $column) {
-            $column->display($question, $rowclasses);
+            echo $column->render($question, $rowclasses);
         }
         echo \html_writer::end_tag('tr');
         foreach ($this->extrarows as $row) {
@@ -1295,7 +1334,7 @@ class view {
                 // Add extrarow class to highlighted row.
                 $rowclasses .= ' extrarow' . ' ' . $this->extrarows[0];
             }
-            $row->display($question, $rowclasses);
+            echo $row->render($question, $rowclasses);
         }
     }
 
@@ -1358,16 +1397,24 @@ class view {
      * Display the questions table for the fragment/ajax.
      *
      * @return string HTML for the question table
+     * @deprecated Since 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_table::class,
+        since: '5.2',
+        reason: 'Replaced with renderable.',
+        mdl: 'MDL-87103',
+    )]
     public function display_questions_table(): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
         $this->add_standard_search_conditions();
         $questions = $this->load_questions();
         $questionhtml = '';
         if ($this->get_question_count() > 0) {
             $this->load_required_statistics($questions);
-            ob_start();
-            $this->display_questions($questions, $this->pagevars['qpage'], $this->pagevars['qperpage']);
-            $questionhtml = ob_get_clean();
+            $table = new question_table($this, $questions, $this->pagevars['qpage'], $this->pagevars['qperpage']);
+            $questionhtml = $OUTPUT->render($table);
         }
         return $questionhtml;
     }

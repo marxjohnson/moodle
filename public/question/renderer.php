@@ -22,6 +22,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\output\bulk_actions_ui;
+use core_question\output\column_header;
+use core_question\output\column_sort;
+use qbank_viewquestiontext\output\question_text_format;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -76,8 +82,16 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $qbankheaderdata
      * @return bool|string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: column_header::class,
+        since: '5.2',
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_column_header($qbankheaderdata) {
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
         return $this->render_from_template('core_question/column_header', $qbankheaderdata);
     }
 
@@ -86,8 +100,16 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $sortdata
      * @return bool|string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: column_sort::class,
+        since: '5.2',
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_column_sort($sortdata) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         return $this->render_from_template('core_question/column_sort', $sortdata);
     }
 
@@ -113,8 +135,16 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $displaydata
      * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: question_text_format::class,
+        since: '5.2',
+        reason: 'Replaced with a pluggable question bank control',
+        mdl: 'MDL-87103',
+    )]
     public function render_showtext_checkbox($displaydata) {
+        \core\deprecation::emit_deprecation([$this, __FUNCTION__]);
         return $this->render_from_template('core_question/showtext_option',
                 ['selected' . $displaydata['checked'] => true]);
     }
@@ -125,7 +155,14 @@ class core_question_bank_renderer extends plugin_renderer_base {
      * @param array $displaydata
      * @return bool|string
      */
+    #[deprecated(
+        replacement: bulk_actions_ui::class,
+        since: '5.2',
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_bulk_actions_ui($displaydata) {
+        \core\deprecation::emit_deprecation([$this, __FUNCTION__]);
         return $this->render_from_template('core_question/bulk_actions_ui', $displaydata);
     }
 }

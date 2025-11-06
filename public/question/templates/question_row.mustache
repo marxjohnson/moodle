@@ -15,19 +15,28 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_question/column_sort
+    @template core_question/question_row
+
+    Template for question rows in the question bank.
 
     Example context (json):
     {
-        "sorturl": "url",
-        "sortname": "Sort name",
-        "sortorder": "Sort order when activate this sort",
-        "sorttip": "Sort according to first name",
-        "sortcontent": "Sort title sort icon",
-        "lastsort": false
+        "attributes": [
+            {
+                "name": "class",
+                "value": "row1"
+            }
+        ],
+        "columns": [
+            {
+                "column": "<td>Question 1 Column 1</td>"
+            },
+            {
+                "column": "<td>Question 1 Column 2</td>"
+            }
+        ]
     }
 }}
-<a href="{{{sorturl}}}" data-sortname="{{sortname}}" data-sortorder="{{sortorder}}" title="{{sorttip}}">
-    {{{sortcontent}}}{{#sorticon}}{{{sorticon}}}{{/sorticon}}
-</a>{{^lastsort}} / {{/lastsort}}
-
+<tr{{#attributes}} {{name}}="{{value}}"{{/attributes}}>
+    {{#columns}}{{{column}}}{{/columns}}
+</tr>

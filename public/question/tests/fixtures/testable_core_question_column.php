@@ -22,6 +22,9 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\attribute\deprecated;
+use core\deprecation;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -52,8 +55,28 @@ class testable_core_question_column extends \core_question\local\bank\column_bas
         $this->sortable = $sortable;
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         echo 'Test Column';
+    }
+
+    #[\Override]
+    public function render($question, $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render_from_template(
+            'core_question/question_cell',
+            [
+                'class' => $this->get_classes(),
+                'data-columnid' => $this->get_column_id(),
+                'content' => 'Test Column',
+            ],
+        );
     }
 
     public function get_name() {

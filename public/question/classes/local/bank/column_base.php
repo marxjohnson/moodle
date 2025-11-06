@@ -24,6 +24,12 @@
 
 namespace core_question\local\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\output\column_header;
+use core_question\output\column_sort;
+use stdClass;
+
 /**
  * Base class for representing a column.
  *
@@ -104,9 +110,17 @@ abstract class column_base extends view_component {
      *
      * @param column_action_base[] $columnactions A list of column actions to include in the header.
      * @param string $width A CSS width property value.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: column_header::class,
+        since: '5.2',
+        reason: 'Replaced direct output with templates',
+        mdl: 'MDL-87103',
+    )]
     public function display_header(array $columnactions = [], string $width = ''): void {
         global $PAGE;
+        deprecation::emit_deprecation([self::class, __FUNCTION__]);
         $renderer = $PAGE->get_renderer('core_question', 'bank');
 
         $data = [];
@@ -122,12 +136,21 @@ abstract class column_base extends view_component {
                 $data['title'] = $title;
             }
             foreach ($sortable as $subsort => $details) {
-                $links[] = $this->make_sort_link($name . '-' . $subsort,
-                        $details['title'], isset($details['tip']) ? $details['tip'] : '', !empty($details['reverse']));
+                $sortlink = new column_sort(
+                    $this->qbank,
+                    $name . '-' . $subsort,
+                    $details['title'],
+                    isset($details['tip']) ? $details['tip'] : '',
+                    !empty($details['reverse']) ? SORT_DESC : SORT_ASC,
+                );
+                $sortlink->set_lastsort(true);
+                $links[] = $renderer->render($sortlink);
             }
             $data['sortlinks'] = implode(' / ', $links);
         } else if ($sortable) {
-            $data['sortlinks'] = $this->make_sort_link($name, $title, $tip);
+            $sortlink = new column_sort($this->qbank, $name, $title, $tip);
+            $sortlink->set_lastsort(true);
+            $data['sortlinks'] = $renderer->render($sortlink);
         } else {
             $data['sortable'] = false;
             $data['tiptitle'] = $title;
@@ -187,8 +210,16 @@ abstract class column_base extends view_component {
      * @param string $tip the link tool-tip text. If empty, defaults to title.
      * @param bool $defaultreverse whether the default sort order for this column is descending, rather than ascending.
      * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: column_sort::class,
+        since: '5.2',
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     protected function make_sort_link($sortname, $title, $tip, $defaultreverse = false): string {
+        deprecation::emit_deprecation([$this::class, __FUNCTION__]);
         global $PAGE;
         $sortdata = [];
         $currentsort = $this->qbank->get_primary_sort_order($sortname);
@@ -225,8 +256,16 @@ abstract class column_base extends view_component {
      *
      * @param bool $reverse sort is descending, not ascending.
      * @return string HTML image tag.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: column_sort::class,
+        since: '5.2',
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     protected function get_sort_icon($reverse): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
         if ($reverse) {
             return $OUTPUT->pix_icon('t/sort_desc', get_string('desc'));
@@ -237,13 +276,20 @@ abstract class column_base extends view_component {
 
     /**
      * Output this column.
+     *
      * @param object $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     public function display($question, $rowclasses): void {
-        $this->display_start($question, $rowclasses);
-        $this->display_content($question, $rowclasses);
-        $this->display_end($question, $rowclasses);
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        echo $this->render($question, $rowclasses);
     }
 
     /**
@@ -251,8 +297,16 @@ abstract class column_base extends view_component {
      *
      * @param \stdClass $question
      * @param string $rowclasses
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_start($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $tag = 'td';
         $attr = [
             'class' => $this->get_classes(),
@@ -266,11 +320,38 @@ abstract class column_base extends view_component {
     }
 
     /**
+     * Return the column content for a particular question as a string of HTML.
+     *
+     * Returns an empty cell by default. This should be overridden by each column class.
+     *
+     * @param stdClass $question the row from the $question table, augmented with extra information.
+     * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
+     */
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        if (self::class !== get_called_class()) {
+            // If called directly (not overridden) fall back to the deprecated display() function.
+            ob_start();
+            $this->display($question, $rowclasses);
+            return ob_get_clean();
+        }
+        return $OUTPUT->render_from_template(
+            'core_question/question_cell',
+            [
+                'class' => $this->get_classes(),
+                'data-columnid' => $this->get_column_id(),
+            ]
+        );
+    }
+
+    /**
      * The CSS classes to apply to every cell in this column.
      *
      * @return string
      */
-    protected function get_classes(): string {
+    public function get_classes(): string {
         $classes = $this->get_extra_classes();
         $classes[] = $this->get_name();
         return implode(' ', $classes);
@@ -333,18 +414,35 @@ abstract class column_base extends view_component {
 
     /**
      * Output the contents of this column.
+     *
      * @param object $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
-    abstract protected function display_content($question, $rowclasses);
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
+    protected function display_content($question, $rowclasses) {
+    }
 
     /**
      * Output the closing column tag
      *
      * @param object $question
      * @param string $rowclasses
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_end($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $tag = 'td';
         if ($this->isheading) {
             $tag = 'th';
@@ -471,8 +569,39 @@ abstract class column_base extends view_component {
      *
      * @param \stdClass $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
+    #[deprecated(
+        replacement: self::class . '::render_preview',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     public function display_preview(\stdClass $question, string $rowclasses): void {
-        $this->display($question, $rowclasses);
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        echo $this->render_preview($question, $rowclasses);
+    }
+
+    /**
+     * Return the column with an example value.
+     *
+     * By default, this will call $this->render() using whatever dummy data is passed in. Columns can override this
+     * to provide example output without requiring valid data.
+     *
+     * @param \stdClass $question the row from the $question table, augmented with extra information.
+     * @param string $rowclasses CSS class names that should be applied to this row of output.
+     */
+    public function render_preview(\stdClass $question, string $rowclasses): string {
+        return $this->render($question, $rowclasses);
+    }
+
+    /**
+     * Modify the column actions for this column.
+     *
+     * @param column_action_base[] $columnactions The default column actions, provided by the column manager.
+     * @return column_action_base[] The modified column actions.
+     */
+    public function get_column_actions(array $columnactions): array {
+        return $columnactions;
     }
 }
