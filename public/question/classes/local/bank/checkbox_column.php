@@ -24,7 +24,10 @@
 
 namespace core_question\local\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core\output\checkbox_toggleall;
+use core_question\output\checkbox_cell;
 
 /**
  * A column with a checkbox for each question with name q{questionid}.
@@ -78,7 +81,14 @@ class checkbox_column extends column_base {
         echo $renderer->render_column_header($data);
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
 
         $checkbox = new checkbox_toggleall('qbank', false, [
@@ -92,11 +102,30 @@ class checkbox_column extends column_base {
         echo $OUTPUT->render($checkbox);
     }
 
+    #[\Override]
+    public function render($question, $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new checkbox_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+            )
+        );
+    }
+
     public function get_required_fields(): array {
         return ['q.id'];
     }
 
     public function get_default_width(): int {
         return 30;
+    }
+
+    #[\Override]
+    public function get_column_actions(array $columnactions): array {
+        return [];
     }
 }

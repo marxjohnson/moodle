@@ -106,7 +106,7 @@ class custom_view extends \core_question\local\bank\view {
      * @param int $categoryid
      * @return string
      */
-    protected function get_plugin_controls(\core\context $context, int $categoryid): string {
+    public function get_plugin_controls(\core\context $context, int $categoryid): string {
         return '';
     }
 

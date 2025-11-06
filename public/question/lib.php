@@ -45,6 +45,7 @@ require_once($CFG->dirroot . '/question/editlib.php');
  * @return array|string
  */
 function core_question_output_fragment_question_data(array $args): string {
+    global $OUTPUT;
     if (empty($args)) {
         return '';
     }
@@ -82,9 +83,7 @@ function core_question_output_fragment_question_data(array $args): string {
     }
     $questionbank = new $viewclass($contexts, $thispageurl, $course, $cm, $pagevars, $extraparams);
     $questionbank->add_standard_search_conditions();
-    ob_start();
-    $questionbank->display_question_list();
-    return ob_get_clean();
+    return $OUTPUT->render(new \core_question\output\question_list($questionbank));
 }
 
 /**
