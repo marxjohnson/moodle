@@ -16,6 +16,7 @@
 
 namespace core_question;
 
+use core\exception\coding_exception;
 use core_question\local\bank\question_bank_helper;
 
 /**
@@ -365,8 +366,14 @@ final class question_bank_helper_test extends \advanced_testcase {
         $course = self::getDataGenerator()->create_course();
         $bankname = '';
 
-        $this->expectException(\coding_exception::class);
-        question_bank_helper::create_default_open_instance($course, $bankname);
+        try {
+            question_bank_helper::create_default_open_instance($course, $bankname);
+        } catch (coding_exception $e) {
+            $this->assertStringEndsWith(
+                'The provided bankname is empty. You must provide a name for the question bank.',
+                $e->getMessage(),
+            );
+        }
 
         $modinfo = get_fast_modinfo($course);
         $cminfos = $modinfo->get_instances_of('qbank');

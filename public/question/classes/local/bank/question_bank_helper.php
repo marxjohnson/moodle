@@ -626,7 +626,7 @@ class question_bank_helper {
             );
         }
 
-        if (empty($bankname)) {
+        if ($bankname === '') {
             throw new \coding_exception(
                 'The provided bankname is empty. You must provide a name for the question bank.',
             );
