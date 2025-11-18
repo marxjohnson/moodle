@@ -617,13 +617,11 @@ final class quiz_question_restore_test extends \advanced_testcase {
                 ['itemid' => $slot->id, 'component' => 'mod_quiz', 'questionarea' => 'slot']);
             $filterconditions = json_decode($setreference->filtercondition);
             $tags = [];
-            foreach ($filterconditions->tags as $tagstring) {
-                $tag = explode(',', $tagstring);
-                $tags[] = $tag[1];
+            foreach ($filterconditions->filter->qtagids->values as $tagid) {
+                $tags[] = \core_tag_tag::get($tagid, 'id, name')->name;
             }
             $this->assertEquals([], array_diff($randomtags[$slot->slot], $tags));
         }
-
     }
 
     /**
