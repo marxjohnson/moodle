@@ -282,6 +282,8 @@ class category_condition extends condition {
         ) {
             $newcategoryid = $restorestep->get_mappingid('question_category', $oldcategoryid);
             $filtercondition['filter']['category']['values'][0] = $newcategoryid;
+            // Make sure the questions context matches the new category.
+            $setreference->questionscontextid = $DB->get_field('question_categories', 'contextid', ['id' => $newcategoryid]);
         }
 
         $filtercondition['cat'] = implode(
