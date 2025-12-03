@@ -614,10 +614,7 @@ final class quiz_question_restore_test extends \advanced_testcase {
             $setreference = $DB->get_record('question_set_references',
                 ['itemid' => $slot->id, 'component' => 'mod_quiz', 'questionarea' => 'slot']);
             $filterconditions = json_decode($setreference->filtercondition);
-            $tags = [];
-            foreach ($filterconditions->filter->qtagids->values as $tagid) {
-                $tags[] = \core_tag_tag::get($tagid, 'id, name')->name;
-            }
+            $tags = array_map(fn($tag) => $tag->name, \core_tag_tag::get_bulk($filterconditions->filter->qtagids->values));
             $this->assertEquals([], array_diff($randomtags[$slot->slot], $tags));
         }
     }
