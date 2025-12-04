@@ -91,6 +91,11 @@ class category implements renderable, templatable {
         $questionbankurl = new moodle_url('/question/edit.php', $params);
         $questionbankurl->param('cat', helper::combine_id_context($this->category));
         $categoryname = format_string($this->category->name, true, ['context' => $this->context, 'escape' => false]);
+        $editablename = new categoryname(
+            $this->category,
+            $this->context,
+            $canmanagecategory,
+        );
         $idnumber = null;
         if ($this->category->idnumber !== null && $this->category->idnumber !== '') {
             $idnumber = $this->category->idnumber;
@@ -214,6 +219,7 @@ class category implements renderable, templatable {
             'contextid' => $this->category->contextid,
             'questionbankurl' => $questionbankurl->out(false),
             'categoryname' => $categoryname,
+            'editablename' => $editablename->export_for_template($output),
             'idnumber' => $idnumber,
             'questioncount' => $this->category->questioncount,
             'categorydesc' => $categorydesc,

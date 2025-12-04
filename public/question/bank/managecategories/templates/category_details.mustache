@@ -43,16 +43,21 @@
     }
 }}
 <strong>
-    <a title="{{#str}}editquestions, question{{/str}}" href="{{{questionbankurl}}}" role="button">
+    {{#editablename}}
+        {{> core/inplace_editable }}
+    {{/editablename}}
+    {{^editablename}}
         {{categoryname}}
-        {{#idnumber}}
-            <span class="badge text-bg-primary">
-                        <span class="accesshide">
-                            {{#str}}idnumber, question{{/str}}
-                        </span>
-                {{idnumber}}
-                    </span>
-        {{/idnumber}}
+    {{/editablename}}
+    {{#idnumber}}
+        <span class="badge text-bg-primary">
+            <span class="accesshide">
+                {{#str}}idnumber, question{{/str}}
+            </span>
+            {{idnumber}}
+        </span>
+    {{/idnumber}}
+    <a title="{{#str}}editquestions, question{{/str}}" href="{{{questionbankurl}}}" role="button">
         ({{questioncount}})
     </a>
 </strong>
