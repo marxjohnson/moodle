@@ -16,8 +16,11 @@
 
 namespace qbank_comment;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
-use question_bank;
+use qbank_comment\output\comment_count_cell;
+use stdClass;
 
 /**
  * A column to show the number of comments.
@@ -82,7 +85,14 @@ class comment_count_column extends column_base {
      * @param object $question The question object.
      * @param string $rowclasses Classes that can be added.
      */
+    #[deprecated(
+        replacement: column_base::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $DB;
 
         $syscontext = \context_system::instance();
@@ -119,6 +129,21 @@ class comment_count_column extends column_base {
             $tag = 'span';
         }
         echo \html_writer::tag($tag, $commentcount, $attributes);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new comment_count_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->qbank->course->id,
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

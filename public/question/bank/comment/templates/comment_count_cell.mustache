@@ -1,0 +1,49 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template qbank_comment/comment_count_cell
+
+    The comment count cell for a question. Displays a link to open the preview modal is `target` is set, just the count otherwise.
+
+    * commentcount - The number of comments
+    * target - ID of the preview modal
+    * questionid - The question ID
+    * courseid - The current course ID
+    * contextid - The system context ID
+
+    Example context (json):
+    {
+        "class": "qbank_comment-comment_count-column",
+        "data-columnid": "qbank_comment-comment_count-column_cell",
+        "commentcount": 6
+    }
+}}
+{{<core_question/question_cell}}
+    {{$content}}
+        {{#target}}
+            <a href="#"
+               data-target="{{target}}"
+               data-questionid="{{questionid}}"
+               data-courseid="{{courseid}}"
+               data-contextid="{{contextid}}"
+            >{{commentcount}}</a>
+        {{/target}}
+        {{^target}}
+            <span>{{commentcount}}</span>
+        {{/target}}
+    {{/content}}
+{{/core_question/question_cell}}
