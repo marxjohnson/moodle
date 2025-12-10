@@ -43,9 +43,25 @@
 
     .tertiary-navigation-selector {
         .dropdown-toggle {
-            padding: 0;
+            padding: 0.1em 0.1em 0;
             font-size: 1.4rem;
             font-weight: bold;
+            border: 0;
+            @include button-focus($primary-bg-subtle, $white);
+            &::after {
+              @extend .btn-icon;
+              content: fa-content($fa-var-chevron-right);
+              color: $primary;
+              background-color: $primary-light-background;
+              font-size: var(--bs-btn-font-size);
+              border-radius: var(--bs-border-radius);
+            }
+            &.show::after {
+              content: fa-content($fa-var-chevron-down);
+            }
+            &.btn.show {
+              outline: $btn-focus-width solid darken($primary-bg-subtle, 40%);
+            }
         }
     }
 
