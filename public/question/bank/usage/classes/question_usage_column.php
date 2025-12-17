@@ -16,7 +16,10 @@
 
 namespace qbank_usage;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_usage\output\question_usage_cell;
 
 /**
  * A column type for the name of the question type.
@@ -53,7 +56,14 @@ class question_usage_column extends column_base {
         return new \help_icon('questionusage', 'qbank_usage');
     }
 
+    #[deprecated(
+        replacement: column_base::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $usagecount = helper::get_question_entry_usage_count($question, $this->qbank->is_listing_specific_versions());
         $attributes = [];
         if (question_has_capability_on($question, 'view')) {
@@ -67,6 +77,19 @@ class question_usage_column extends column_base {
             ];
         }
         echo \html_writer::tag('a', $usagecount, $attributes);
+    }
+
+    #[\Override]
+    public function render(\stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(new question_usage_cell(
+            $question,
+            $this->get_classes(),
+            $rowclasses,
+            $this->get_column_id(),
+            $this->isheading,
+            helper::get_question_entry_usage_count($question, $this->qbank->is_listing_specific_versions()),
+        ));
     }
 
     public function get_extra_classes(): array {
