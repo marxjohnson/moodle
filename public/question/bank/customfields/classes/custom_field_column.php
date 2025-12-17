@@ -16,9 +16,13 @@
 
 namespace qbank_customfields;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
 use core_question\local\bank\view;
 use qbank_customfields\customfield\question_handler;
+use qbank_customfields\output\custom_field_cell;
+use stdClass;
 
 /**
  * A column type for the name of the question creator.
@@ -94,7 +98,14 @@ class custom_field_column extends column_base {
      * @param object $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
      */
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $fieldhandler = $this->field->get_handler();
         if ($fieldhandler->can_view($this->field, $question->id)) {
             $fielddata = $fieldhandler->get_field_data($this->field, $question->id);
@@ -102,6 +113,21 @@ class custom_field_column extends column_base {
         } else {
             echo '';
         }
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new custom_field_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->field,
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

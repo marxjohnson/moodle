@@ -16,9 +16,12 @@
 
 namespace qbank_customfields\customfield;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_customfield\api;
 use core_customfield\field_controller;
 use core_customfield\output\field_data;
+use qbank_customfields\output\custom_field_cell;
 
 /**
  * Question handler for custom fields.
@@ -216,7 +219,14 @@ class question_handler extends \core_customfield\handler {
      * @param object $fielddata The field data used for display.
      * @return string The HTML to display in the table column.
      */
+    #[deprecated(
+        replacement: custom_field_cell::class,
+        since: 5.2,
+        reason: 'Rendering cell content has been moved to a renderable.',
+        mdl: 'MDL-87103',
+    )]
     public function display_custom_field_table(object $fielddata): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $PAGE;
 
         $output = $PAGE->get_renderer('qbank_customfields');
