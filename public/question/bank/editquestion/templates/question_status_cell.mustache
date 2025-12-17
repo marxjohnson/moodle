@@ -15,27 +15,25 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template qbank_editquestion/question_status_dropdown
-
-    Dropdrown selector for question status in question bank.
-
-    Context variables required for this template:
-    * options - list of options for question status containing name, value, selected.
-    * questionid - Question id for status selection.
+    @template qbank_editquestion/question_status_cell
 
     Example context (json):
     {
-        "options" : [ { "name": "Ready", "value": "ready", "selected": true } ],
-        "questionid" : "12"
+        "class": "qbank_editquestion-question_status-column",
+        "data-columnid": "qbank_editquestion-question_status_cell",
+        "statusoptions": {
+            "options" : [ { "name": "Ready", "value": "ready", "selected": true } ],
+            "questionid" : "12"
+        }
     }
 }}
-<select
-    id="question_status_dropdown-{{questionid}}"
-    data-questionid="{{questionid}}"
-    class="form-select my-2"
-    name="question_status_dropdown"
->
-    {{#options}}
-        <option value="{{value}}" {{#selected}}selected{{/selected}}>{{name}}</option>
-    {{/options}}
-</select>
+{{<core_question/question_cell}}
+    {{$content}}
+        {{#statusoptions}}
+            {{>qbank_editquestion/question_status_dropdown}}
+        {{/statusoptions}}
+        {{^statusoptions}}
+            {{status}}
+        {{/statusoptions}}
+    {{/content}}
+{{/core_question/question_cell}}

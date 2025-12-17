@@ -44,12 +44,19 @@ const setQuestionStatus = (questionId, status) => Ajax.call([{
  * Entrypoint of the js.
  *
  * @method init
- * @param {Number} questionId Question id.
  */
-export const init = (questionId) => {
-    let target = document.querySelector('#question_status_dropdown-' + questionId);
-    target.addEventListener('change', (e) => {
-        const questionStatus = e.target.value;
+export const init = () => {
+    let table = document.querySelector('#question_table');
+    if (!table) {
+        return;
+    }
+    table.addEventListener('change', (e) => {
+        const select = e.target.closest('select[data-questionid]');
+        if (!select) {
+            return;
+        }
+        const questionId = select.dataset.questionid;
+        const questionStatus = select.value;
         setQuestionStatus(questionId, questionStatus)
         .then((response) => {
             if (response.error) {

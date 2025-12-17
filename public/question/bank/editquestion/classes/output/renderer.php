@@ -27,6 +27,9 @@
 
 namespace qbank_editquestion\output;
 
+use core\attribute\deprecated;
+use core\deprecation;
+
 /**
  * Renderer for add/edit/copy
  *
@@ -77,7 +80,14 @@ class renderer extends \plugin_renderer_base {
      * @param array $dropdownoptions
      * @return bool|string
      */
+    #[deprecated(
+        replacement: question_status_cell::class,
+        since: 5.2,
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_status_dropdown($dropdownoptions) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         return $this->render_from_template('qbank_editquestion/question_status_dropdown', $dropdownoptions);
     }
 }
