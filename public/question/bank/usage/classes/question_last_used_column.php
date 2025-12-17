@@ -16,7 +16,11 @@
 
 namespace qbank_usage;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_usage\output\question_last_used_cell;
+use stdClass;
 
 /**
  * Question bank column for the question last used.
@@ -40,7 +44,14 @@ class question_last_used_column extends column_base {
         return new \help_icon('questionlastused', 'qbank_usage');
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $DB, $PAGE;
         $displaydata = [];
         $questionusage = $DB->get_record_sql(helper::get_question_last_used_sql(), [$question->id]);
@@ -49,6 +60,20 @@ class question_last_used_column extends column_base {
             $displaydata['lastused'] = userdate($questionusage->lastused);
         }
         echo $PAGE->get_renderer('qbank_usage')->render_last_used_column($displaydata);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new question_last_used_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

@@ -16,6 +16,9 @@
 
 namespace qbank_usage\output;
 
+use core\attribute\deprecated;
+use core\deprecation;
+
 /**
  * Renderer for usage plugin.
  *
@@ -42,7 +45,14 @@ class renderer extends \plugin_renderer_base {
      * @param array $displaydata last used date or never
      * @return string
      */
+    #[deprecated(
+        replacement: question_last_used_cell::class,
+        since: 5.2,
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_last_used_column(array $displaydata): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         return $this->render_from_template('qbank_usage/last_used', $displaydata);
     }
 
