@@ -62,6 +62,6 @@ $PAGE->navbar->add($streditingquestions, $url);
 
 echo $OUTPUT->header();
 // Print the question area.
-$questionbank->display();
+echo $OUTPUT->render($questionbank);
 $questionbank->init_bulk_actions_js();
 echo $OUTPUT->footer();
