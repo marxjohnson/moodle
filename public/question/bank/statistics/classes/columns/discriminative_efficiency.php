@@ -16,7 +16,11 @@
 
 namespace qbank_statistics\columns;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_statistics\helper;
+use qbank_statistics\output\statistic_cell;
 
 /**
  * This column show the average discriminative efficiency for this question.
@@ -44,19 +48,66 @@ class discriminative_efficiency extends column_base {
         return ['discriminativeefficiency'];
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $PAGE;
 
         $discriminativeefficiency = $this->qbank->get_aggregate_statistic($question->id, 'discriminativeefficiency');
         echo $PAGE->get_renderer('qbank_statistics')->render_discriminative_efficiency($discriminativeefficiency);
     }
 
-    public function display_preview(\stdClass $question, string $rowclasses): void {
-        global $PAGE;
+    #[\Override]
+    public function render(\stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        $discriminativeefficiency = helper::format_percentage(
+            $this->qbank->get_aggregate_statistic($question->id, 'discriminativeefficiency'),
+            fraction: false,
+        );
+        return $OUTPUT->render(
+            new statistic_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $discriminativeefficiency,
+                'discriminative_efficiency',
+            ),
+        );
+    }
 
-        $this->display_start($question, $rowclasses);
-        echo $PAGE->get_renderer('qbank_statistics')->render_discriminative_efficiency(25);
-        $this->display_end($question, $rowclasses);;
+    #[deprecated(
+        replacement: self::class . '::render_preview',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
+    public function display_preview(\stdClass $question, string $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        echo $this->render_preview($question, $rowclasses);
+    }
+
+    #[\Override]
+    public function render_preview(\stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        $discriminativeefficiency = helper::format_percentage(25, fraction: false);
+        return $OUTPUT->render(
+            new statistic_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $discriminativeefficiency,
+                'discriminative_efficiency',
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

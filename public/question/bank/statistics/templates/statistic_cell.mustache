@@ -15,20 +15,25 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template qbank_statistics/facility_index
-
-    Deprecated since 5.2 favour of qbank_statistics/statistic_cell MDL-87103.
+    @template qbank_statistics/statistic_cell
 
     Example context (json):
     {
-        "statistics": [
-            {
-                "facility_index": "html content"
-            }
-        ]
+        "class": "qbank_statistics-statistic-column",
+        "data-columnid": "qbank_statistics-statistic_cell",
+        "statistic": {
+            "classes": "discrimination_index",
+            "value": "20%"
+        }
     }
 }}
+{{<core_question/question_cell}}
+    {{$content}}
+        {{#statistic}}
+            <div class="qbank_statistics {{classes}}">
+                {{{value}}}
+            </div>
+        {{/statistic}}
+    {{/content}}
+{{/core_question/question_cell}}
 
-<div class="qbank_statistics facility_index">
-    {{{facility_index}}}
-</div>
