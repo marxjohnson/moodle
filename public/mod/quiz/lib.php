@@ -2449,7 +2449,7 @@ function mod_quiz_output_fragment_quiz_question_bank($args): string {
 
     // Output.
     $renderer = $PAGE->get_renderer('mod_quiz', 'edit');
-    return $renderer->question_bank_contents($questionbank, $pagevars);
+    return $renderer->render($questionbank);
 }
 
 /**
@@ -2533,7 +2533,7 @@ function mod_quiz_output_fragment_add_random_question_form($args) {
     $questionbank = new mod_quiz\question\bank\random_question_view($contexts, $thispageurl, $course, $cm, $pagevars, $extraparams);
 
     $renderer = $PAGE->get_renderer('mod_quiz', 'edit');
-    $questionbankoutput = $renderer->question_bank_contents($questionbank, $pagevars);
+    $questionbankoutput = $renderer->render($questionbank);
 
     $maxrand = 100;
     for ($i = 1; $i <= min(100, $maxrand); $i++) {
@@ -2622,6 +2622,7 @@ function quiz_delete_references($quizid): void {
  * @return string
  */
 function mod_quiz_output_fragment_question_data(array $args): string {
+    global $OUTPUT;
     // Return if there is no args.
     if (empty($args)) {
         return '';
@@ -2647,12 +2648,10 @@ function mod_quiz_output_fragment_question_data(array $args): string {
     // Custom question bank View.
     $viewclass = clean_param($args['view'], PARAM_NOTAGS);
     $questionbank = new $viewclass($contexts, $thispageurl, $course, $cm, $params, $extraparams);
+    $questionbank->add_standard_search_conditions();
 
     // Question table.
-    $questionbank->add_standard_search_conditions();
-    ob_start();
-    $questionbank->display_question_list();
-    return ob_get_clean();
+    return $OUTPUT->render(new core_question\output\question_list($questionbank));
 }
 
 /**

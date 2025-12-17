@@ -16,6 +16,12 @@
 
 namespace mod_quiz\question\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\local\bank\column_base;
+use mod_quiz\output\question_name_text_cell;
+use stdClass;
+
 /**
  * A column type for the name followed by the start of the question text.
  *
@@ -38,8 +44,15 @@ class question_name_text_column extends question_name_column {
         return 800;
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     #[\Override]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         echo \html_writer::start_tag('div');
         $labelfor = $this->label_for($question);
         if ($labelfor) {
@@ -51,6 +64,21 @@ class question_name_text_column extends question_name_column {
             echo \html_writer::end_tag('label');
         }
         echo \html_writer::end_tag('div');
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new question_name_text_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->label_for($question),
+            ),
+        );
     }
 
     #[\Override]

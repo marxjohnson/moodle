@@ -16,6 +16,11 @@
 
 namespace mod_quiz\question\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use mod_quiz\output\preview_action_cell;
+use stdClass;
+
 /**
  * A column type for the preview question action.
  *
@@ -46,8 +51,15 @@ class preview_action_column extends \core_question\local\bank\column_base {
         return 45;
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     #[\Override]
     protected function display_content($question, $rowclasses) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $PAGE;
         if (!question_has_capability_on($question, 'use')) {
             return;
@@ -57,5 +69,20 @@ class preview_action_column extends \core_question\local\bank\column_base {
         }
         $editrenderer = $PAGE->get_renderer('quiz', 'edit');
         echo $editrenderer->question_preview_icon($this->qbank->get_quiz(), $question);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new preview_action_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->qbank->get_quiz(),
+            ),
+        );
     }
 }

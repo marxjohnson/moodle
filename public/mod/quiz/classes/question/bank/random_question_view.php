@@ -16,6 +16,8 @@
 
 namespace mod_quiz\question\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use qbank_viewquestiontype\question_type_column;
 
 /**
@@ -37,6 +39,18 @@ class random_question_view extends custom_view {
     }
 
     #[\Override]
+    #[deprecated(
+        replacement: self::class . '::render_bottom_controls',
+        since: '5.2',
+        reason: 'Replaced direct output functions with templates',
+        mdl: 'MDL-87103',
+    )]
     protected function display_bottom_controls(\context $catcontext): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+    }
+
+    #[\Override]
+    public function render_bottom_controls(\context $catcontext): string {
+        return '';
     }
 }

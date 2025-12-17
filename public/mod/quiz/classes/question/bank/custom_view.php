@@ -27,13 +27,18 @@ namespace mod_quiz\question\bank;
 
 defined('MOODLE_INTERNAL') || die();
 
+use core\attribute\deprecated;
+use core\context;
+use core\deprecation;
 use core\output\datafilter;
-use core\output\html_writer;
+use core\output\named_templatable;
+use core\output\renderer_base;
 use core_question\local\bank\column_base;
 use core_question\local\bank\condition;
 use core_question\local\bank\column_manager_base;
 use core_question\local\bank\filter_condition_manager;
 use core_question\local\bank\question_version_status;
+use mod_quiz\output\add_to_quiz_button;
 
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 /**
@@ -43,7 +48,7 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
  * @author     2021 Safat Shahin <safatshahin@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class custom_view extends \core_question\local\bank\view {
+class custom_view extends \core_question\local\bank\view implements named_templatable {
     /** @var int number of questions per page to show in the add from question bank modal. */
     const DEFAULT_PAGE_SIZE = 20;
 
@@ -180,36 +185,33 @@ class custom_view extends \core_question\local\bank\view {
      * @param string $tabname
      * @return string HTML code for the form
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Replaced output functions with templates.',
+        mdl: 'MDL-87103',
+    )]
     public function render($pagevars, $tabname): string {
-        ob_start();
-        $this->display();
-        $out = ob_get_contents();
-        ob_end_clean();
-        return $out;
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
+        return $OUTPUT->render($this);
     }
 
+    #[deprecated(
+        replacement: 'render_bottom_controls',
+        since: '5.2',
+        reason: 'Replaced direct output functions with templates',
+        mdl: 'MDL-87103',
+    )]
     protected function display_bottom_controls(\context $catcontext): void {
-        $cmoptions = new \stdClass();
-        $cmoptions->hasattempts = !empty($this->quizhasattempts);
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        echo $this->render_bottom_controls($catcontext);
+    }
 
-        $canuseall = has_capability('moodle/question:useall', $catcontext);
-
-        echo \html_writer::start_tag('div', ['class' => 'pt-2']);
-        if ($canuseall) {
-            // Add selected questions to the quiz.
-            $params = [
-                'type' => 'submit',
-                'name' => 'add',
-                'class' => 'btn btn-primary',
-                'value' => get_string('addselectedquestionstoquiz', 'quiz'),
-                'data-action' => 'toggle',
-                'data-togglegroup' => 'qbank',
-                'data-toggle' => 'action',
-                'disabled' => true,
-            ];
-            echo \html_writer::empty_tag('input', $params);
-        }
-        echo \html_writer::end_tag('div');
+    #[\Override]
+    public function render_bottom_controls(context\module $catcontext): string {
+        global $OUTPUT;
+        return $OUTPUT->render(new add_to_quiz_button($catcontext));
     }
 
     /**
@@ -228,7 +230,13 @@ class custom_view extends \core_question\local\bank\view {
      * because we don't want to print the headers in the fragment
      * for the modal.
      */
+    #[deprecated(
+        since: '5.2',
+        reason: 'No longer required, we just don\'t call render_header() in this class.',
+        mdl: 'MDL-87103',
+    )]
     protected function display_question_bank_header(): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
     }
 
     protected function build_query(): void {
@@ -313,22 +321,16 @@ class custom_view extends \core_question\local\bank\view {
      *
      * @return void
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Replaced output functions with templates.',
+        mdl: 'MDL-87103',
+    )]
     public function display(): void {
-
-        echo \html_writer::start_div('questionbankwindow boxwidthwide boxaligncenter', [
-            'data-component' => 'core_question',
-            'data-callback' => 'display_question_bank',
-            'data-contextid' => $this->contexts->lowest()->id,
-        ]);
-
-        // Show the 'switch question bank' button.
-        echo $this->display_bank_switch();
-
-        // Show the filters and search options.
-        $this->wanted_filters();
-        // Continues with list of questions.
-        $this->display_question_list();
-        echo \html_writer::end_div();
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
+        echo $OUTPUT->render($this);
     }
 
     /**
@@ -336,7 +338,14 @@ class custom_view extends \core_question\local\bank\view {
      *
      * @return string
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Replaced output functions with templates.',
+        mdl: 'MDL-87103',
+    )]
     protected function display_bank_switch(): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
 
         if (!$this->requirebankswitch) {
@@ -346,5 +355,20 @@ class custom_view extends \core_question\local\bank\view {
         $cminfo = \cm_info::create($this->cm);
 
         return $OUTPUT->render_from_template('mod_quiz/switch_bank_header', ['currentbank' => $cminfo->get_formatted_name()]);
+    }
+
+    #[\Override]
+    public function get_template_name(renderer_base $renderer): string {
+        return 'mod_quiz/quiz_question_bank_view';
+    }
+
+    #[\Override]
+    public function export_for_template(renderer_base $output): array {
+        $export = parent::export_for_template($output);
+        if ($this->requirebankswitch) {
+            $cminfo = \cm_info::create($this->cm);
+            $export['bankswitch']['currentbank'] = $cminfo->get_formatted_name();
+        }
+        return $export;
     }
 }

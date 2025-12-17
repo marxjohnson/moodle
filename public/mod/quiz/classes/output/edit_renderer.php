@@ -24,6 +24,8 @@
 
 namespace mod_quiz\output;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\question_version_status;
 use mod_quiz\question\bank\qbank_helper;
 use \mod_quiz\structure;
@@ -1425,8 +1427,14 @@ class edit_renderer extends \plugin_renderer_base {
      * @param array $pagevars the variables from {@link \question_edit_setup()}.
      * @return string HTML to output / send back in response to an AJAX request.
      */
+    #[deprecated(
+        replacement: custom_view::class . '::export_for_template',
+        since: 5.2,
+        reason: 'Replaced output functions with templates',
+        mdl: 'MDL-87103',
+    )]
     public function question_bank_contents(\mod_quiz\question\bank\custom_view $questionbank, array $pagevars) {
-
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $qbank = $questionbank->render($pagevars, 'editq');
         return html_writer::div(html_writer::div($qbank, 'bd'), 'questionbankformforpopup');
     }

@@ -16,6 +16,12 @@
 
 namespace mod_quiz\question\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\local\bank\column_base;
+use mod_quiz\output\question_name_cell;
+use stdClass;
+
 /**
  * A column type for the name of the question name.
  *
@@ -51,7 +57,14 @@ class question_name_column extends \core_question\local\bank\column_base {
         }
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $labelfor = $this->label_for($question);
         if ($labelfor) {
             echo \html_writer::start_tag('label', ['for' => $labelfor]);
@@ -60,6 +73,21 @@ class question_name_column extends \core_question\local\bank\column_base {
         if ($labelfor) {
             echo \html_writer::end_tag('label');
         }
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new question_name_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->label_for($question),
+            ),
+        );
     }
 
     public function get_required_fields(): array {

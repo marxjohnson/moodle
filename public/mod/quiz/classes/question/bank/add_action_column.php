@@ -16,6 +16,12 @@
 
 namespace mod_quiz\question\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\local\bank\column_base;
+use mod_quiz\output\add_action_cell;
+use stdClass;
+
 /**
  * A column type for the add this question to the quiz action.
  *
@@ -25,8 +31,7 @@ namespace mod_quiz\question\bank;
  * @author     2021 Safat Shahin <safatshahin@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class add_action_column extends \core_question\local\bank\column_base {
-
+class add_action_column extends column_base {
     /** @var string caches a lang string used repeatedly. */
     protected $stradd;
 
@@ -47,7 +52,14 @@ class add_action_column extends \core_question\local\bank\column_base {
         return 'addtoquizaction';
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
         if (!question_has_capability_on($question, 'use')) {
             return;
@@ -59,5 +71,21 @@ class add_action_column extends \core_question\local\bank\column_base {
                 ['title' => $this->stradd],
                 new \pix_icon('t/add', $this->stradd));
         echo $OUTPUT->render($link);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new add_action_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->qbank->add_to_quiz_url($question->id),
+                $this->stradd,
+            ),
+        );
     }
 }
