@@ -63,6 +63,6 @@ $PAGE->set_show_navigation_footer(false);
 
 echo $OUTPUT->header();
 // Print the question area.
-$questionbank->display();
+echo $OUTPUT->render($questionbank);
 $questionbank->init_bulk_actions_js();
 echo $OUTPUT->footer();

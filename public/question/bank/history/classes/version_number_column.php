@@ -16,7 +16,10 @@
 
 namespace qbank_history;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_history\output\version_number_cell;
 
 /**
  * Question bank column for the question version number.
@@ -36,8 +39,29 @@ class version_number_column extends column_base {
         return get_string('questionversionnumber', 'qbank_history');
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         print_string('questionversiondata', 'qbank_history', $question->version);
+    }
+
+    #[\Override]
+    public function render(\stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new version_number_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

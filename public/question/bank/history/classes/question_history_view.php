@@ -16,9 +16,18 @@
 
 namespace qbank_history;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core\di;
+use core\output\notification;
+use core\output\renderer_base;
+use core\output\single_button;
 use core_question\local\bank\question_edit_contexts;
 use core_question\local\bank\view;
+use core_question\output\question_list;
+use moodle_database;
 use moodle_url;
+use qbank_history\output\history_header;
 use stdClass;
 
 /**
@@ -46,6 +55,13 @@ class question_history_view extends view {
     protected $basereturnurl;
 
     /**
+     * The record for the latest version of this question.
+     *
+     * @var stdClass $latestquestiondata
+     */
+    protected $latestquestiondata;
+
+    /**
      * Constructor for the history.
      * @param question_edit_contexts $contexts the contexts of api call
      * @param moodle_url $pageurl url of the page
@@ -63,6 +79,7 @@ class question_history_view extends view {
         array $params = [],
         array $extraparams = [],
     ) {
+        global $DB;
         if ($cm === null) {
             debugging('$cm is now a required field', DEBUG_DEVELOPER);
         }
@@ -70,6 +87,17 @@ class question_history_view extends view {
         // The extra params can come straight from a web service request, so the entry id must be cleaned here.
         $this->entryid = clean_param($extraparams['entryid'] ?? 0, PARAM_INT);
         $this->basereturnurl = new \moodle_url($extraparams['returnurl']);
+        $sql = 'SELECT q.*
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE qv.version  = (SELECT MAX(v.version)
+                                        FROM {question_versions} v
+                                        JOIN {question_bank_entries} be
+                                          ON be.id = v.questionbankentryid
+                                       WHERE be.id = qbe.id)
+                   AND qbe.id = ?';
+        $this->latestquestiondata = $DB->get_record_sql($sql, [$this->entryid]);
         parent::__construct($contexts, $pageurl, $course, $cm, $params, $extraparams);
     }
 
@@ -136,27 +164,19 @@ class question_history_view extends view {
     /**
      * Display the header for the question bank in the history page to include question name and type.
      */
+    #[deprecated(
+        replacement: history_header::class,
+        since: '5.2',
+        reason: 'Replaced with templatable.',
+        mdl: 'MDL-87103',
+    )]
     public function display_question_bank_header(): void {
-        global $PAGE, $DB, $OUTPUT;
-        $sql = 'SELECT q.*
-                 FROM {question} q
-                 JOIN {question_versions} qv ON qv.questionid = q.id
-                 JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                WHERE qv.version  = (SELECT MAX(v.version)
-                                       FROM {question_versions} v
-                                       JOIN {question_bank_entries} be
-                                         ON be.id = v.questionbankentryid
-                                      WHERE be.id = qbe.id)
-                  AND qbe.id = ?';
-        $latestquestiondata = $DB->get_record_sql($sql, [$this->entryid]);
-        if ($latestquestiondata) {
-            $historydata = [
-                'questionname' => $latestquestiondata->name,
-                'returnurl' => $this->basereturnurl,
-                'questionicon' => print_question_icon($latestquestiondata)
-            ];
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
+        if ($this->latestquestiondata) {
+            $header = new history_header($this->latestquestiondata->name, $this->latestquestiondata->qtype, $this->basereturnurl);
             // Header for the page before the actual form from the api.
-            echo $PAGE->get_renderer('qbank_history')->render_history_header($historydata);
+            echo $OUTPUT->render($header);
         } else {
             // Continue when all the question versions are deleted.
             echo $OUTPUT->notification(get_string('allquestionversionsdeleted', 'qbank_history'), 'notifysuccess');
@@ -173,10 +193,48 @@ class question_history_view extends view {
      *
      * @return void
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: '5.2',
+        reason: 'Replaced with templates',
+        mdl: 'MDL-87103',
+    )]
     public function wanted_filters(): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $this->display_question_bank_header();
-        // Add search conditions.
         $this->add_standard_search_conditions();
+    }
+
+    #[\Override]
+    public function export_for_template(renderer_base $output): array {
+        [, $contextid] = explode(',', $this->pagevars['cat']);
+        $this->add_standard_search_conditions();
+        $questionlist = new question_list($this);
+        $noversions = [];
+        $header = null;
+        if ($this->latestquestiondata) {
+            $header = new history_header($this->latestquestiondata->name, $this->latestquestiondata->qtype, $this->basereturnurl);
+            // Header for the page before the actual form from the api.
+        } else {
+            // Continue when all the question versions are deleted.
+            $notification = new notification(
+                get_string('allquestionversionsdeleted', 'qbank_history'),
+                notification::NOTIFY_SUCCESS,
+            );
+            $continue = new \single_button($this->basereturnurl, get_string('continue'), 'get', single_button::BUTTON_PRIMARY);
+            $continue->class = 'continuebutton';
+            $noversions = [
+                'notification' => $notification->export_for_template($output),
+                'continue' => $continue->export_for_template($output),
+            ];
+        }
+        return [
+            'contextid' => $contextid,
+            'header' => $header?->export_for_template($output),
+            'questionlist' => $questionlist->export_for_template($output),
+            'returnurl' => $this->basereturnurl,
+            'noversions' => $noversions,
+        ];
     }
 
 }
