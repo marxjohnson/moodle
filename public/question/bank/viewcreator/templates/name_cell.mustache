@@ -1,32 +1,39 @@
 {{!
     This file is part of Moodle - http://moodle.org/
+
     Moodle is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
+
     Moodle is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
+
     You should have received a copy of the GNU General Public License
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template qbank_viewcreator/creator_display
-
-    Deprecated since 5.2 in favour of qbank_viewcreator/name_cell. MDL-87103.
+    @template qbank_viewcreator/name_cell
 
     Example context (json):
     {
+        "class": "qbank_viewcreator-name-column",
+        "data-columnid": "qbank_viewcreator-name_cell",
         "creator": "Marc Ghaly",
         "date": "2 June 2021, 5:32 PM"
     }
 }}
+{{<core_question/question_cell}}
+    {{$content}}
+        <span class="qbank-creator-name">
+            {{creator}}
+        </span>
+        <br>
+        <span class="date">
+            {{date}}
+        </span>
+    {{/content}}
+{{/core_question/question_cell}}
 
-<span class="qbank-creator-name">
-    {{creator}}
-</span>
-<br>
-<span class="date">
-    {{date}}
-</span>
