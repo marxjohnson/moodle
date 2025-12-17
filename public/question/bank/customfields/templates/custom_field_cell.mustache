@@ -13,20 +13,27 @@
 
     You should have received a copy of the GNU General Public License
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-  }}
-{{!
-  @template qbank_customfields/table_display
-
-  Example context (json):
-  {
-      "hasvalue": true,
-      "ftype" : "text",
-      "shortname" : "nickname",
-      "value" : "Star Lord"
-  }
 }}
-{{#hasvalue}}
-    <div class="customfield customfield_{{type}} customfield_{{shortname}}">
-        <span class="customfieldvalue">{{{value}}}</span>
-    </div>
-{{/hasvalue}}
+{{!
+    @template qbank_customfields/custom_field_cell
+
+    Example context (json):
+    {
+        "class": "question-customfield-column",
+        "data-columnid": "qbank_customfield-custom_field_cell",
+        "fielddata": {
+            "hasvalue": true,
+            "ftype": "text",
+            "shortname": "nickname",
+            "value": "Star Lord"
+        }
+    }
+}}
+{{<core_question/question_cell}}
+    {{$content}}
+        {{#fielddata}}
+            {{>qbank_customfields/table_display}}
+        {{/fielddata}}
+    {{/content}}
+{{/core_question/question_cell}}
+

@@ -16,6 +16,8 @@
 
 namespace qbank_customfields\output;
 
+use core\attribute\deprecated;
+
 /**
  * Class renderer.
  *
@@ -32,6 +34,13 @@ class renderer extends \plugin_renderer_base {
      * @param object $fielddata The field data to display.
      * @return string The rendered HTML.
      */
+    #[deprecated(
+        replacement: custom_field_cell::class,
+        since: 5.2,
+        reason: 'Rendering cell content has been moved to a renderable.',
+        mdl: 'MDL-87103',
+        emit: false,
+    )]
     public function render_for_table(object $fielddata): string {
         $context = $fielddata->export_for_template($this);
         return $this->render_from_template('qbank_customfields/table_display', $context);
