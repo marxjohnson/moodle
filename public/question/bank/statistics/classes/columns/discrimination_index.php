@@ -16,7 +16,13 @@
 
 namespace qbank_statistics\columns;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_statistics\helper;
+use qbank_statistics\output\discrimination_index_cell;
+use qbank_statistics\output\statistic_cell;
+use stdClass;
 
 /**
  * This columns shows a message about whether this question is OK or needs revision.
@@ -46,19 +52,66 @@ class discrimination_index extends column_base {
         return ['discriminationindex'];
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $PAGE;
 
         $discriminationindex = $this->qbank->get_aggregate_statistic($question->id, 'discriminationindex');
         echo $PAGE->get_renderer('qbank_statistics')->render_discrimination_index($discriminationindex);
     }
 
-    public function display_preview(\stdClass $question, string $rowclasses): void {
-        global $PAGE;
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        $discriminationindex = $this->qbank->get_aggregate_statistic($question->id, 'discriminationindex');
+        [$value, $classes] = helper::format_discrimination_index($discriminationindex);
+        $classes .= ' discrimination_index';
+        return $OUTPUT->render(
+            new statistic_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $value,
+                $classes,
+            ),
+        );
+    }
 
-        $this->display_start($question, $rowclasses);
-        echo $PAGE->get_renderer('qbank_statistics')->render_discrimination_index(50.00);
-        $this->display_end($question, $rowclasses);;
+    #[deprecated(
+        replacement: self::class . '::render_preview',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
+    public function display_preview(\stdClass $question, string $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        echo $this->render_preview($question, $rowclasses);
+    }
+
+    #[\Override]
+    public function render_preview(\stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        [$value, $classes] = helper::format_discrimination_index(50.00);
+        $classes .= ' discrimination_index';
+        return $OUTPUT->render(
+            new statistic_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $value,
+                $classes,
+            ),
+        );
     }
 
     public function get_extra_classes(): array {

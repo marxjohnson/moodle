@@ -16,6 +16,10 @@
 
 namespace qbank_statistics\output;
 
+use core\deprecation;
+use qbank_statistics\columns\discrimination_index;
+use qbank_statistics\columns\discriminative_efficiency;
+use qbank_statistics\columns\facility_index;
 use qbank_statistics\helper;
 /**
  * Description
@@ -25,6 +29,12 @@ use qbank_statistics\helper;
  * @author     Nathan Nguyen <nathannguyen@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+#[deprecated(
+    replacement: statistic_cell::class,
+    since: 5.2,
+    reason: 'Replaced with a renderables',
+    mdl: 'MDL-87103',
+)]
 class renderer extends \plugin_renderer_base {
 
     /**
@@ -33,7 +43,14 @@ class renderer extends \plugin_renderer_base {
      * @param float|null $facility facility index
      * @return string
      */
+    #[deprecated(
+        replacement: facility_index::class . '::render',
+        since: 5.2,
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_facility_index(?float $facility): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $displaydata['facility_index'] = helper::format_percentage($facility);
         return $this->render_from_template('qbank_statistics/facility_index', $displaydata);
     }
@@ -44,7 +61,14 @@ class renderer extends \plugin_renderer_base {
      * @param float|null $discriminativeefficiency discriminative efficiency
      * @return string
      */
+    #[deprecated(
+        replacement: discriminative_efficiency::class . '::render',
+        since: 5.2,
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_discriminative_efficiency(?float $discriminativeefficiency): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $displaydata['discriminative_efficiency'] = helper::format_percentage($discriminativeefficiency, false);
         return $this->render_from_template('qbank_statistics/discriminative_efficiency', $displaydata);
     }
@@ -55,7 +79,14 @@ class renderer extends \plugin_renderer_base {
      * @param float|null $discriminationindex discrimination index
      * @return string
      */
+    #[deprecated(
+        replacement: discrimination_index::class . '::render',
+        since: 5.2,
+        reason: 'Replaced with a renderable',
+        mdl: 'MDL-87103',
+    )]
     public function render_discrimination_index(?float $discriminationindex): string {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         list($content, $classes) = helper::format_discrimination_index($discriminationindex);
         $displaydata['discrimination_index'] = $content;
         $displaydata['classes'] = $classes;
