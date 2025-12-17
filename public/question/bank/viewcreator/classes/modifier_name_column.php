@@ -16,7 +16,11 @@
 
 namespace qbank_viewcreator;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_viewcreator\output\name_cell;
+use stdClass;
 
 /**
  * A column for info of the question modifier.
@@ -36,7 +40,14 @@ class modifier_name_column extends column_base {
         return get_string('modifiedby', 'qbank_viewcreator');
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $PAGE;
         $displaydata = [];
         if (!empty($question->modifierfirstname) && !empty($question->modifierlastname)) {
@@ -46,6 +57,24 @@ class modifier_name_column extends column_base {
             $displaydata['creator'] = fullname($u);
             echo $PAGE->get_renderer('qbank_viewcreator')->render_creator_name($displaydata);
         }
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        $namefields = new stdClass();
+        $namefields = username_load_fields_from_object($namefields, $question, 'modifier');
+        return $OUTPUT->render(
+            new name_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $namefields,
+                userdate($question->timemodified, get_string('strftimedatetime', 'langconfig')),
+            ),
+        );
     }
 
     public function get_extra_joins(): array {
