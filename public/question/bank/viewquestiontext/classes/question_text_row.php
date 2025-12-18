@@ -16,7 +16,12 @@
 
 namespace qbank_viewquestiontext;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\local\bank\column_base;
 use core_question\local\bank\row_base;
+use core_question\output\question_row;
+use qbank_viewquestiontext\output\question_text_cell;
 use qbank_viewquestiontext\output\question_text_format;
 use question_utils;
 
@@ -53,7 +58,14 @@ class question_text_row extends row_base {
         return get_string('questiontext', 'question');
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         // Access 'showtext' filter from pagevars.
         if ($this->preference !== question_text_format::OFF) {
             $text = '';
@@ -72,6 +84,26 @@ class question_text_row extends row_base {
             }
             echo $text;
         }
+    }
+
+    #[\Override]
+    public function render($question, $rowclasses): string {
+        global $OUTPUT;
+        $cell = new question_text_cell(
+            $question,
+            $this->get_classes(),
+            $rowclasses,
+            $this->get_column_id(),
+            $this->isheading,
+            $this->qbank->get_column_count(),
+            $this->preference,
+            $this->formatoptions,
+        );
+        $row = new question_row(
+            ['class' => $rowclasses],
+            [['column' => $OUTPUT->render($cell)]],
+        );
+        return $OUTPUT->render($row);
     }
 
     public function get_required_fields(): array {
