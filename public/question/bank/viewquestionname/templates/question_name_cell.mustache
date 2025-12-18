@@ -1,0 +1,95 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template qbank_viewquestionname/question_name_cell
+
+    Example context (json):
+    {
+        "class": "qbank_questionname-name-column",
+        "data-columnid": "qbank_questionname-name_cell",
+        "questiondisplay": {
+            "displayvalue" : "<a href=\"#\">Question 1</a>",
+            "value" : "Question 1",
+            "itemid" : "1",
+            "component" : "core_unknown",
+            "itemtype" : "unknown",
+            "edithint" : "Edit question name",
+            "editlabel" : "New name for Question 1",
+            "type" : "text",
+            "options" : "",
+            "linkeverything": 0
+        },
+        "idnumber": "1234",
+        "tags": {
+            "tags": [
+                {
+                    "id": 1,
+                    "name": "Cats",
+                    "viewurl": "http://moodle.org/tag/index.php?tag=Cats",
+                    "isstandard": "1",
+                    "flag": 0
+                },
+                {
+                    "id": 2,
+                    "name": "Dogs",
+                    "viewurl": "http://moodle.org/tag/index.php?tag=Dogs",
+                    "isstandard": "0",
+                    "flag": 1
+                }
+            ],
+            "label": "Tags",
+            "accesshidelabel": false,
+            "tagscount": 2,
+            "overflow": 0,
+            "classes": "someadditionalclass",
+            "displaylink": false
+        }
+    }
+}}
+{{<core_question/question_cell}}
+    {{$content}}
+        <div class="d-inline-flex flex-nowrap overflow-hidden w-100">
+            {{#labelfor}}
+               <label for="{{labelfor}}">
+            {{/labelfor}}
+            {{^labelfor}}
+               <span class="questionname flex-grow-1 flex-shrink-1 text-truncate">
+            {{/labelfor}}
+            {{#questiondisplay}}
+                {{>core/inplace_editable}}
+            {{/questiondisplay}}
+            {{^labelfor}}
+                </span>
+            {{/labelfor}}
+            {{#labelfor}}
+                </label>
+            {{/labelfor}}
+            {{#idnumber}}
+                <span class="ms-1">
+                    <span class="accesshide">{{#str}}idnumber, question{{/str}}&nbsp;</span>
+                    <span class="badge bg-primary text-white">{{idnumber}}</span>
+                </span>
+            {{/idnumber}}
+            {{#tags}}
+                {{>core_tag/taglist}}
+            {{/tags}}
+        </div>
+        {{#invalidqtype}}
+            <span class="badge bg-danger text-white">{{#str}}invalidquestiontype, question, {{invalidqtype}}{{/str}}</span>
+        {{/invalidqtype}}
+    {{/content}}
+{{/core_question/question_cell}}

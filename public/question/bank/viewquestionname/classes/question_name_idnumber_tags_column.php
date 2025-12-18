@@ -16,6 +16,12 @@
 
 namespace qbank_viewquestionname;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core_question\local\bank\column_base;
+use qbank_viewquestionname\output\question_name_cell;
+use stdClass;
+
 /**
  * A question bank column showing the question name with idnumber and tags.
  *
@@ -30,7 +36,14 @@ class question_name_idnumber_tags_column extends viewquestionname_column_helper 
         return 'qnameidnumbertags';
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
 
         echo \html_writer::start_tag('div', ['class' => 'd-inline-flex flex-nowrap overflow-hidden w-100']);
@@ -82,6 +95,21 @@ class question_name_idnumber_tags_column extends viewquestionname_column_helper 
                 'badge bg-danger text-white');
         }
 
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new question_name_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+                $this->label_for($question),
+            ),
+        );
     }
 
     public function get_required_fields(): array {
