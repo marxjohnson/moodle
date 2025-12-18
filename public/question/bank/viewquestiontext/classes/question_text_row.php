@@ -24,6 +24,7 @@ use core_question\output\question_row;
 use qbank_viewquestiontext\output\question_text_cell;
 use qbank_viewquestiontext\output\question_text_format;
 use question_utils;
+use stdClass;
 
 /**
  * A column type for the name of the question name.
@@ -87,7 +88,7 @@ class question_text_row extends row_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         $cell = new question_text_cell(
             $question,

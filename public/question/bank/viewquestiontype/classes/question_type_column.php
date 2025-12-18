@@ -16,7 +16,11 @@
 
 namespace qbank_viewquestiontype;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use core_question\local\bank\column_base;
+use qbank_viewquestiontype\output\question_type_cell;
+use stdClass;
 
 /**
  * A column with a type of question for each question with name q{questionid}.
@@ -40,8 +44,29 @@ class question_type_column extends column_base {
         return get_string('questiontype', 'question');
     }
 
+    #[deprecated(
+        replacement: self::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+    )]
     protected function display_content($question, $rowclasses): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         echo print_question_icon($question);
+    }
+
+    #[\Override]
+    public function render(stdClass $question, string $rowclasses): string {
+        global $OUTPUT;
+        return $OUTPUT->render(
+            new question_type_cell(
+                $question,
+                $this->get_classes(),
+                $rowclasses,
+                $this->get_column_id(),
+                $this->isheading,
+            ),
+        );
     }
 
     public function get_required_fields(): array {
