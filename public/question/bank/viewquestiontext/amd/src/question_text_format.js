@@ -61,5 +61,8 @@ const handleFormatChange = async(e) => {
 export const init = (uiRootId) => {
     uiRoot = document.getElementById(uiRootId);
     const select = document.getElementById(SELECTORS.formatSelectId);
+    if (!select) {
+        return;
+    }
     select.addEventListener('change', handleFormatChange);
 };
