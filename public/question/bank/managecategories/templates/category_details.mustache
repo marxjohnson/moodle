@@ -33,10 +33,12 @@
     Example context (json):
     {
         "categoryid": "1",
-        "questionbankurl": "question/edit.php?cmid=123",
-        "categoryname": "Default for Miscellaneous & < > \" '",
+        "categoryname": {
+            "questionbankurl": "question/edit.php?cmid=123",
+            "categoryname": "Default for Miscellaneous & < > \" '",
+            "questioncount": " 1"
+        },
         "idnumber": "1",
-        "questioncount": " 1",
         "categorydesc": "The default category for questions shared in context Miscellaneous",
         "children": "",
         "newchildtooltip": "New child of Default for Miscellaneous"
@@ -47,7 +49,9 @@
         {{> core/inplace_editable }}
     {{/editablename}}
     {{^editablename}}
-        {{categoryname}}
+        {{#categoryname}}
+            {{> qbank_managecategories/category_link }}
+        {{/categoryname}}
     {{/editablename}}
     {{#idnumber}}
         <span class="badge text-bg-primary">
@@ -57,9 +61,6 @@
             {{idnumber}}
         </span>
     {{/idnumber}}
-    <a title="{{#str}}editquestions, question{{/str}}" href="{{{questionbankurl}}}" role="button">
-        ({{questioncount}})
-    </a>
 </strong>
 {{^children}}
     {{> qbank_managecategories/newchild }}

@@ -20,8 +20,11 @@ use core\context;
 use core\output\inplace_editable;
 use core\output\named_templatable;
 use core\output\renderable;
+use core\url;
 use core_external\external_api;
 use core_question\category_manager;
+use core_question\output\question_category_selector;
+use qbank_managecategories\helper;
 
 /**
  * Category name inplace editable
@@ -31,21 +34,21 @@ use core_question\category_manager;
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class categoryname extends inplace_editable implements named_templatable, renderable {
+class editable_name extends inplace_editable implements named_templatable, renderable {
     /**
      * Constructor.
      *
      * @param \stdClass $category The category record we are editing.
-     * @param context $context The context the category belongs to.
+     * @param string $categorylink The link to the question category.
      * @param bool $editable Whether the user has permission to edit this category.
      */
-    public function __construct(\stdClass $category, context $context, bool $editable) {
+    public function __construct(\stdClass $category, string $categorylink, bool $editable) {
         parent::__construct(
             'qbank_managecategories',
             'categoryname',
             $category->id,
             $editable,
-            format_string($category->name, true, ['context' => $context, 'escape' => false]),
+            $categorylink,
             $category->name,
             get_string('editcategorynamehint', 'qbank_managecategories'),
             get_string('editcategoryname', 'qbank_managecategories', $category->name),
@@ -65,7 +68,7 @@ class categoryname extends inplace_editable implements named_templatable, render
      * @return self
      */
     public static function callback(int $categoryid, string $newname): self {
-        global $DB;
+        global $DB, $OUTPUT;
 
         $context = context::instance_by_id($DB->get_field('question_categories', 'contextid', ['id' => $categoryid]));
         external_api::validate_context($context);
@@ -75,8 +78,25 @@ class categoryname extends inplace_editable implements named_templatable, render
 
         $updatedcategory = $DB->get_record('question_categories', ['id' => $categoryid]);
 
+        $questionbankurl = new url(
+            '/question/edit.php',
+            [
+                'cmid' => $context->instanceid,
+                'cat' => helper::combine_id_context($updatedcategory),
+            ],
+        );
+        $categoryname = format_string($updatedcategory->name, true, ['context' => $context, 'escape' => false]);
+        $questioncountsql = question_category_selector::question_count_sql(categoryparam: '?');
+        $questioncount = $DB->get_field_sql($questioncountsql, [$categoryid]);
+
+        $categorylink = new category_link(
+            $categoryname,
+            $questionbankurl,
+            $questioncount,
+        );
+
         // Prepare the element for the output.
         // The $editable argument is always true because `update_category()` throws an exception otherwise.
-        return new self($updatedcategory, $context, true);
+        return new self($updatedcategory, $OUTPUT->render($categorylink), true);
     }
 }

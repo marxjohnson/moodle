@@ -55,6 +55,6 @@ function qbank_managecategories_user_preferences(): array {
  */
 function qbank_managecategories_inplace_editable(string $itemtype, int $itemid, string $newvalue): \core\output\inplace_editable {
     if ($itemtype === 'categoryname') {
-        return \qbank_managecategories\output\categoryname::callback($itemid, $newvalue);
+        return \qbank_managecategories\output\editable_name::callback($itemid, $newvalue);
     }
 }
