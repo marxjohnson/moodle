@@ -16,6 +16,7 @@
 
 namespace qbank_viewquestionname;
 
+use core\attribute\deprecated;
 use core_question\local\bank\column_base;
 
 
@@ -53,6 +54,13 @@ class viewquestionname_column_helper extends column_base {
         return '';
     }
 
+    #[deprecated(
+        replacement: column_base::class . '::render',
+        since: 5.2,
+        reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
+        mdl: 'MDL-87103',
+        emit: false,
+    )]
     protected function display_content($question, $rowclasses): void {
         $labelfor = $this->label_for($question);
         if ($labelfor) {
