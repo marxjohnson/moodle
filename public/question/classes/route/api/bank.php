@@ -17,10 +17,9 @@
 namespace core_question\route\api;
 
 use core\context\course;
-use core\exception\coding_exception;
-use core\param;
 use core\context\module;
 use core\exception\required_capability_exception;
+use core\param;
 use core\router\require_login;
 use core\router\route;
 use core\router\schema\parameters\path_parameter;
@@ -82,6 +81,7 @@ class bank {
         // Get a count of all questions in each module context within this course, keyed by cmid.
         // Only include modules that have question category records, so we don't get a count for modules that don't use questions.
         // Return a count of 0 for those modules with no questions.
+        // The double LEFT JOIN of question_versions ensures we only get the latest version for a question bank entry.
         $sql = "
             SELECT c.instanceid,
                    COUNT(
@@ -93,25 +93,18 @@ class bank {
               JOIN {question_categories} qc ON qc.contextid = c.id
          LEFT JOIN {question_bank_entries} qbe ON qbe.questioncategoryid = qc.id
          LEFT JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
+         LEFT JOIN {question_versions} qv1 ON qv1.questionbankentryid = qbe.id AND qv.version < qv1.version 
          LEFT JOIN {question} q ON q.id = qv.questionid
              WHERE c.contextlevel = :module
-                   AND {$contextpathlike}  
+                   AND {$contextpathlike}
                    AND (q.parent = '0' OR q.id IS NULL)
-                   AND (
-                       qv.version = (
-                           SELECT MAX(qv1.version)
-                             FROM {question_versions} qv1
-                             JOIN {question_bank_entries} qbe1 ON qbe1.id = qv1.questionbankentryid
-                            WHERE qbe1.id = qbe.id
-                                  AND qv1.status != :hidden
-                       ) OR q.id IS NULL
-                   )
+                   AND (qv1.questionbankentryid IS NULL OR q.id IS NULL)
           GROUP BY c.instanceid 
         ";
         $params = [
             'hidden' => question_version_status::QUESTION_STATUS_HIDDEN,
             'module' => module::LEVEL,
-            'contextpath' => "%/{$coursecontext->id}/%",
+            'contextpath' => "{$coursecontext->path}/%",
         ];
         $counts = $DB->get_records_sql_menu($sql, $params);
         return new payload_response(

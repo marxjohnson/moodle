@@ -31,7 +31,6 @@ use core_question\local\bank\question_bank_helper;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class question_bank_list implements \renderable, \templatable {
-
     /**
      * Instantiate the output class.
      *
@@ -50,7 +49,6 @@ class question_bank_list implements \renderable, \templatable {
      * @return array
      */
     public function export_for_template(renderer_base $output): array {
-
         $banks = [];
         foreach ($this->bankinstances as $instance) {
             if (plugin_supports('mod', $instance->cminfo->modname, FEATURE_PUBLISHES_QUESTIONS)) {
@@ -75,7 +73,6 @@ class question_bank_list implements \renderable, \templatable {
                 ]),
                 $instance->name,
             );
-
 
             $banks[] = [
                 'purpose' => plugin_supports('mod', $instance->cminfo->modname, FEATURE_MOD_PURPOSE),
