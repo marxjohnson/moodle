@@ -361,7 +361,7 @@ class restore_quiz_activity_structure_step extends restore_questions_activity_st
         $module = $DB->get_record('quiz', ['id' => $data->quizid]);
 
         if (!$question) {
-            $randomquestion = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'randomquestion', $data->questionid);
+            $randomquestion = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'qtype_random_data', $data->questionid);
             $question = $randomquestion->info;
             // Set reference data.
             $questionsetreference = new stdClass();

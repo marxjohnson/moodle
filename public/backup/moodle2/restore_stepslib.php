@@ -5231,7 +5231,7 @@ class restore_create_categories_and_questions extends restore_structure_step {
                 // reference by the activity that uses it.
                 restore_dbops::set_backup_ids_record(
                     $this->get_restoreid(),
-                    'randomquestion',
+                    'qtype_random_data',
                     $data->id,
                     $questionmapping->id,
                     info: $data,
