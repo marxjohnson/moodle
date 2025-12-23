@@ -176,7 +176,7 @@ class qbank_helper {
 
                 $slot->category = $slot->filtercondition['filter']['category']['values'][0] ?? 0;
 
-                $slot->qtype = null; // Random questions have no qtype.
+                $slot->qtype = null; // Random slots don’t have an associated question.
                 $slot->random = true;
                 $slot->name = get_string('random', 'quiz');
                 $slot->length = 1;
