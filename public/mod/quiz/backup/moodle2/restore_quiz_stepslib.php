@@ -482,6 +482,10 @@ class restore_quiz_activity_structure_step extends restore_questions_activity_st
 
         if (is_null($tagid)) {
             // There is no corresponding tag, so leave it out of the filter.
+            $this->log(
+                get_string('restorenotag', 'quiz', (object) ['tagname' => $data->tagname, 'slotid' => $slotid]),
+                \backup::LOG_WARNING,
+            );
             return;
         }
 
