@@ -18,6 +18,7 @@ namespace core_question;
 
 use context_course;
 use context_module;
+use core\attribute\deprecated;
 use moodle_url;
 use core_question\local\bank\question_edit_contexts;
 
@@ -604,5 +605,95 @@ final class category_manager_test extends \advanced_testcase {
         $this->assertEquals(0, $manager->get_max_sortorder($qcategory2->id));
         $questiongenerator->create_question_category(['contextid' => $context->id, 'parent' => $qcategory2->id]);
         $this->assertEquals(1, $manager->get_max_sortorder($qcategory2->id));
+    }
+
+    /**
+     * Check that question categories with the wrong parent are fixed.
+     */
+    #[deprecated(
+        since: 5.2,
+        reason: 'Tests a function that is only required to once run during upgrade',
+        mdl: 'MDL-86444',
+        emit: false,
+    )]
+    public function test_fix_restored_category_parents(): void {
+        global $CFG, $DB, $USER;
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Create a course.
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+
+        // Add a quiz with question categories.
+        $quiz = $generator->create_module('quiz', ['course' => $course->id]);
+        $quizcontext = \context_module::instance($quiz->cmid);
+        $quiztoporiginal = question_get_top_category($quizcontext->id);
+        $quizquestioncats = $DB->get_records('question_categories', ['contextid' => $quizcontext->id]);
+        $this->assertCount(2, $quizquestioncats);
+
+        // Add a question bank with question categories.
+        $qbank = $this->getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $qbankcontext = \context_module::instance($qbank->cmid);
+        $qbanktoporiginal = question_get_top_category($qbankcontext->id);
+        $qbankquestioncats = $DB->get_records('question_categories', ['contextid' => $qbankcontext->id]);
+        $this->assertCount(2, $qbankquestioncats);
+
+        $bc = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $course->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_IMPORT,
+            $USER->id,
+        );
+
+        $backupid = $bc->get_backupid();
+        $bc->execute_plan();
+        $bc->destroy();
+
+        // Do restore to new course with default settings.
+        $newcourse = $generator->create_course();
+        $rc = new \restore_controller(
+            $backupid,
+            $newcourse->id,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_NEW_COURSE,
+        );
+        $rc->execute_precheck();
+        $rc->execute_plan();
+        $rc->destroy();
+
+        // Modify the restored child question categories so they are children of the original top categories.
+        $modinfo = get_fast_modinfo($newcourse->id);
+
+        $targetquizzes = $modinfo->get_instances_of('quiz');
+        $this->assertCount(1, $targetquizzes);
+        $targetquiz = reset($targetquizzes);
+        $targetquizcontext = \context_module::instance($targetquiz->id);
+        $quiztop = question_get_top_category($targetquizcontext->id);
+        $quiznontop = question_get_default_category($targetquizcontext->id);
+        $DB->set_field('question_categories', 'parent', $quiztoporiginal->id, ['id' => $quiznontop->id]);
+
+        $targetqbanks = $modinfo->get_instances_of('qbank');
+        $this->assertCount(1, $targetqbanks);
+        $targetqbankcontext = \context_module::instance(reset($targetqbanks)->id);
+        $qbanktop = question_get_top_category($targetqbankcontext->id);
+        $qbanknontop = question_get_default_category($targetqbankcontext->id);
+        $DB->set_field('question_categories', 'parent', $qbanktoporiginal->id, ['id' => $qbanknontop->id]);
+
+        $this->assertEquals($quiztoporiginal->id, $DB->get_field('question_categories', 'parent', ['id' => $quiznontop->id]));
+        $this->assertEquals($qbanktoporiginal->id, $DB->get_field('question_categories', 'parent', ['id' => $qbanknontop->id]));
+
+        // Run the fix.
+        category_manager::fix_restored_category_parents();
+
+        // Check that the child categories now have the correct parents.
+        $this->assertEquals($quiztop->id, $DB->get_field('question_categories', 'parent', ['id' => $quiznontop->id]));
+        $this->assertEquals($qbanktop->id, $DB->get_field('question_categories', 'parent', ['id' => $qbanknontop->id]));
     }
 }

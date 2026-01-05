@@ -16,6 +16,7 @@
 
 namespace core_question;
 
+use core\attribute\deprecated;
 use stdClass;
 use core\exception\moodle_exception;
 use core\context;
@@ -382,5 +383,35 @@ class category_manager {
                  WHERE parent = :parent";
         $lastmax = $DB->get_field_sql($sql, ['parent' => $parentid]);
         return $lastmax ?? 0;
+    }
+
+    /**
+     * Upgrade step to find question categories with the wrong parent category.
+     *
+     * This will find question categories that have a parent in a different context, and set the parent to the top category
+     * of the current context.
+     *
+     * This could occur before the fix for MDL-86300, where a course restore left question categories that were the child of a top
+     * category with the original top category as the parent, rather than the new top category.
+     *
+     * This only needs to one once on upgrade, so is deprecated for removal in 6.0.
+     */
+    #[deprecated(
+        since: 5.2,
+        reason: 'Only required to once run during upgrade',
+        mdl: 'MDL-86444',
+        emit: false,
+    )]
+    public static function fix_restored_category_parents(): void {
+        global $DB;
+        $categoriestofix = $DB->get_records_sql("
+            SELECT qc.id as id, qc3.id AS parent
+              FROM {question_categories} qc
+              JOIN {question_categories} qc2 ON qc.parent = qc2.id AND qc.contextid != qc2.contextid
+              JOIN {question_categories} qc3 ON qc.contextid = qc3.contextid AND qc3.parent = 0
+        ");
+        foreach ($categoriestofix as $categorytofix) {
+            $DB->update_record('question_categories', $categorytofix, true);
+        }
     }
 }
