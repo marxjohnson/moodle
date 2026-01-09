@@ -33,13 +33,14 @@ use core\context\module;
  */
 final class restore_test extends \advanced_testcase {
     /**
-     * Given a context, find the default question category and return the
+     * Given a context, find the default question category, return the question IDs and records.
      *
      * @param int $contextid
+     * @return array[int[], \stdClass[]] An array of the question ID, and an numerically-indexed array of question records.
      */
-    protected function get_question_in_default_category(int $contextid): \stdClass {
+    protected function get_questions_in_default_category(int $contextid): array {
         global $DB;
-        return $DB->get_record_sql(
+        $records = $DB->get_records_sql(
             "
                 SELECT q.*
                   FROM {question} q
@@ -54,6 +55,7 @@ final class restore_test extends \advanced_testcase {
                 'top' => 'top',
             ],
         );
+        return [array_keys($records), array_values($records)];
     }
 
     /**
@@ -62,7 +64,7 @@ final class restore_test extends \advanced_testcase {
      * @param int $courseid
      * @return array
      */
-    protected function create_qbank_with_question(int $courseid): array {
+    protected function create_qbank_with_questions(int $courseid): array {
         // Create a quiz with questions in the first course.
         $qbank = $this->getDataGenerator()->get_plugin_generator('mod_qbank')->create_instance(['course' => $courseid]);
         $context = \context_module::instance($qbank->cmid);
@@ -72,18 +74,24 @@ final class restore_test extends \advanced_testcase {
 
         // Create a short answer question.
         $saq = $questiongenerator->create_question('shortanswer', null, ['category' => $cat->id]);
+        // Create a multi-answer question with children.
+        $maq = $questiongenerator->create_question('multianswer', 'twosubq', ['category' => $cat->id]);
 
-        // Verify that we have 1 qbank, with a default category containing 1 question.
+        // Verify that we have 1 qbank, with a default category containing 4 questions (2, plus 2 children).
         $qbanks = get_fast_modinfo($courseid)->get_instances_of('qbank');
         $this->assertCount(1, $qbanks);
         $qbank1 = reset($qbanks);
         $qbankcontext = module::instance($qbank1->id);
-        $this->assertNotEmpty($this->get_question_in_default_category($qbankcontext->id));
-        return [$qbank, $saq];
+        [,$qbankquestions] = $this->get_questions_in_default_category($qbankcontext->id);
+        $this->assertCount(4, $qbankquestions);
+        return [$qbank, $saq, $maq];
     }
 
+    /**
+     * Importing (duplicating) a bank in the same course should give you a second bank with a copy of all the questions.
+     */
     public function test_import_qbank_into_same_course(): void {
-        global $CFG, $DB, $USER;
+        global $CFG, $USER;
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 
@@ -95,7 +103,7 @@ final class restore_test extends \advanced_testcase {
         $teacher = $USER;
         $generator->enrol_user($teacher->id, $course1->id, 'editingteacher');
 
-        [$qbank, $originalquestion] = $this->create_qbank_with_question($course1->id);
+        [$qbank, $originalsaq, $originalmaq] = $this->create_qbank_with_questions($course1->id);
 
         // Backup qbank.
         $bc = new \backup_controller(
@@ -129,18 +137,30 @@ final class restore_test extends \advanced_testcase {
         // The first qbank should be the same as before.
         $qbank1 = reset($qbanks);
         $qbank1context = module::instance($qbank1->id);
-        $qbank1question = $this->get_question_in_default_category($qbank1context->id);
-        $this->assertEquals($originalquestion->id, $qbank1question->id);
+        [$qbank1questionids, $qbank1questions] = $this->get_questions_in_default_category($qbank1context->id);
+        $this->assertCount(4, $qbank1questions);
+        $this->assertContains((int) $originalsaq->id, $qbank1questionids);
+        $this->assertContains((int) $originalmaq->id, $qbank1questionids);
 
-        // The second qbank should have its own categories and a copy of the question.
+        // The second qbank should have its own categories and a copy of each question.
         $qbank2 = end($qbanks);
         $qbank2context = module::instance($qbank2->id);
-        $qbank2question = $this->get_question_in_default_category($qbank2context->id);
-        $this->assertEquals($originalquestion->id, $qbank1question->id);
-        $this->assertNotEquals($originalquestion->id, $qbank2question->id);
-        $this->assertEquals($originalquestion->questiontext, $qbank2question->questiontext);
+        [$qbank2questionids, $qbank2questions] = $this->get_questions_in_default_category($qbank2context->id);
+        $this->assertCount(4, $qbank2questions);
+        foreach ($qbank2questions as $key => $qbank2question) {
+            $this->assertNotContains((int) $qbank2question->id, $qbank1questionids);
+            $this->assertEquals($qbank2question->questiontext, $qbank1questions[$key]->questiontext);
+            if ($qbank2question->parent != 0) {
+                // Check that child questions are linked to the parent in the same qbank.
+                $this->assertNotContains((int) $qbank2question->parent, $qbank1questionids);
+                $this->assertContains((int) $qbank2question->parent, $qbank2questionids);
+            }
+        }
     }
 
+    /**
+     * Importing a bank into a different course multiple times should copy all the questions each time.
+     */
     public function test_import_qbank_into_different_course_twice(): void {
         global $CFG, $USER;
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
@@ -156,7 +176,7 @@ final class restore_test extends \advanced_testcase {
         $generator->enrol_user($teacher->id, $course1->id, 'editingteacher');
         $generator->enrol_user($teacher->id, $course2->id, 'editingteacher');
 
-        [$qbank, $originalquestion] = $this->create_qbank_with_question($course1->id);
+        [$qbank, $originalsaq, $originalmaq] = $this->create_qbank_with_questions($course1->id);
 
         for ($i = 0, $j = 2; $i < $j; $i++) {
             // Backup qbank.
@@ -186,14 +206,31 @@ final class restore_test extends \advanced_testcase {
             $rc->destroy();
         }
 
-        // Verify that we have 2 qbanks on the destination course, each with its own categories and question.
+        $qbankcontext = module::instance($qbank->cmid);
+        [$seenquestionids] = $this->get_questions_in_default_category($qbankcontext->id);
+
+        // Verify that we have 2 qbanks on the destination course, each with its own categories and questions.
         $qbanks = get_fast_modinfo($course2->id)->get_instances_of('qbank');
         $this->assertCount(2, $qbanks);
         foreach ($qbanks as $qbank) {
             $qbankcontext = module::instance($qbank->id);
-            $qbankquestion = $this->get_question_in_default_category($qbankcontext->id);
-            $this->assertNotEquals($originalquestion->id, $qbankquestion->id);
-            $this->assertEquals($originalquestion->questiontext, $qbankquestion->questiontext);
+            [$qbankquestionids, $qbankquestions] = $this->get_questions_in_default_category($qbankcontext->id);
+            $this->assertCount(4, $qbankquestions);
+            // The new question bank doesn't contain the original questions.
+            $this->assertNotContains((int) $originalsaq->id, $qbankquestionids);
+            $this->assertNotContains((int) $originalmaq->id, $qbankquestionids);
+            // The new question bank doesn't contain questions from any other question bank.
+            $this->assertEmpty(array_intersect($seenquestionids, $qbankquestionids));
+            $seenquestionids = array_merge($seenquestionids, $qbankquestionids);
+            // The new question bank does contain its own copy of the questions.
+            $this->assertNotEmpty(
+                array_filter($qbankquestions, fn($question) => $question->questiontext == $originalsaq->questiontext)
+            );
+            $qbankmaq = array_filter($qbankquestions, fn($question) => $question->questiontext == $originalmaq->questiontext);
+            $qbankmaq = reset($qbankmaq);
+            $this->assertNotFalse($qbankmaq);
+            // It also contains 2 children of the multianswer question.
+            $this->assertCount(2, array_filter($qbankquestions, fn($question) => $question->parent == $qbankmaq->id));
         }
     }
 }
