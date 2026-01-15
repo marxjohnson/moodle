@@ -1,0 +1,8 @@
+issueNumber: MDL-87264
+notes:
+  core_question:
+    - message: >-
+        Moved the route for returning counts of questions in each of a course's
+        question banks to `/api/rest/v2/question/counts`, for a more RESTful URL
+        and consistency with other `core_question` routes.
+      type: improved
