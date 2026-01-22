@@ -5079,8 +5079,8 @@ function shift_course_mod_dates($modname, $fields, $timeshift, $courseid, $modid
  * It will retain the activities and the structure of the course.
  *
  * @param object $data an object containing all the settings including courseid (without magic quotes).
- * @param ?\core_course\exception\reset_timeout $timeout An optional timeout. This will be thrown if the time limit is exceeded.
- * @param ?\core\progress\base $progress Progress component, used for tracking process when called asynchronously.
+ * @param \core_course\exception\reset_timeout|null $timeout An optional timeout. This will be thrown if the time limit is exceeded.
+ * @param \core\progress\base|null $progress Progress component, used for tracking process when called asynchronously.
  * @return array status array of array component, item, error
  */
 function reset_course_userdata($data, ?\core_course\exception\reset_timeout $timeout = null, ?core\progress\base $progress = null) {
@@ -5181,20 +5181,20 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
         // If the timeout has been defined and it's been exceeded, throw the exception.
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_end_date)) {
         // If the user set a end date value respect it.
         $DB->set_field('course', 'enddate', $data->reset_end_date, array('id' => $data->courseid));
         $progress->increment_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     } else if ($data->timeshift > 0 && $data->reset_end_date_old) {
         // If there is a time shift apply it to the end date as well.
         $enddate = $data->reset_end_date_old + $data->timeshift;
         $DB->set_field('course', 'enddate', $enddate, array('id' => $data->courseid));
         $progress->increment_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_events)) {
@@ -5203,7 +5203,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         $DB->delete_records('event', array('courseid' => $data->courseid));
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_notes)) {
@@ -5213,7 +5213,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         note_delete_all($data->courseid);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->delete_blog_associations)) {
@@ -5223,7 +5223,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         blog_remove_associations_for_course($data->courseid);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_completion)) {
@@ -5235,7 +5235,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         $cc->delete_all_completion_data();
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_competency_ratings)) {
@@ -5244,7 +5244,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         \core_competency\api::hook_course_reset_competency_ratings($data->courseid);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     $componentstr = get_string('roles');
@@ -5260,7 +5260,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         $context->delete_capabilities();
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     if (!empty($data->reset_roles_local)) {
@@ -5273,7 +5273,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         }
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // First unenrol users - this cleans some of related user data too, such as forum subscriptions, tracking, etc.
@@ -5333,14 +5333,14 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
                 }
                 $data->unenrolled[$ue->userid] = $ue->userid;
                 $progress->progress();
-                is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+                \core_course\exception\reset_timeout::throw_if_expired($timeout);
             }
             $rs->close();
             $progress->end_progress();
-            is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+            \core_course\exception\reset_timeout::throw_if_expired($timeout);
         }
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
     if (!empty($data->unenrolled)) {
         $status[] = [
@@ -5359,7 +5359,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         groups_delete_group_members($data->courseid);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // Remove all groups.
@@ -5369,7 +5369,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         groups_delete_groups($data->courseid, false);
         $status[] = ['component' => $componentstr, 'item' => get_string('deleteallgroups', 'group'), 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // Remove all grouping members.
@@ -5379,7 +5379,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         groups_delete_groupings_groups($data->courseid, false);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // Remove all groupings.
@@ -5389,7 +5389,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         groups_delete_groupings($data->courseid, false);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // Look in every instance of every module for data to delete.
@@ -5421,14 +5421,14 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
             // Update calendar events for all modules.
             course_module_bulk_update_calendar_events($modname, $data->courseid);
             $progress->increment_progress();
-            is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+            \core_course\exception\reset_timeout::throw_if_expired($timeout);
         }
         // Purge the course cache after resetting course start date. MDL-76936
         if ($data->timeshift) {
             course_modinfo::purge_course_cache($data->courseid);
         }
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     // Mention unsupported mods.
@@ -5452,7 +5452,7 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         grade_regrade_final_grades($data->courseid, async: true);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
 
     } else if (!empty($data->reset_gradebook_grades)) {
         $itemstr = get_string('removeallcoursegrades', 'grades');
@@ -5460,13 +5460,13 @@ function reset_course_userdata($data, ?\core_course\exception\reset_timeout $tim
         grade_course_reset($data->courseid);
         $status[] = ['component' => $componentstr, 'item' => $itemstr, 'error' => false];
         $progress->end_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
     // Reset comments.
     if (!empty($data->reset_comments)) {
         \core_comment\manager::reset_course_page_comments($context);
         $progress->increment_progress();
-        is_null($timeout) || $timeout->within_timelimit() ?: throw $timeout;
+        \core_course\exception\reset_timeout::throw_if_expired($timeout);
     }
 
     $event = \core\event\course_reset_ended::create($eventparams);

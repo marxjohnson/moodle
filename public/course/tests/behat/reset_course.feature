@@ -88,6 +88,8 @@ Feature: Reset course
     And I should see "Student 1"
     And I am on the "Test assignment name" "assign activity" page
     And I should see "1" in the "Submitted" "table_row"
+    And I am on "Course 1" course homepage with editing mode on
+    And I should see "There is a pending reset requested for this course. Please do not edit the course until this is complete."
     # Run the asynchronous reset.
     When I run all adhoc tasks
     # Check the course has been reset.
@@ -99,19 +101,8 @@ Feature: Reset course
 
   @javascript
   Scenario: Reset large courses asynchronously
-    Given "2000" "users" exist with the following data:
-      | username  | studenta[count]             |
-      | firstname | Student                     |
-      | lastname  | [count]                     |
-      | email     | studenta[count]@example.com |
-    And "2000" "course enrolments" exist with the following data:
-      | user   | studenta[count] |
-      | course | C1              |
-      | role   | student         |
-    And "2000" "mod_assign > submissions" exist with the following data:
-      | assign     | Test assignment name               |
-      | user       | studenta[count]                    |
-      | onlinetext | I'm the studenta[count] submission |
+    # Simulate the reset taking a long time.
+    Given the time is frozen at "20 seconds"
     And I am on the "Course 1" "reset" page logged in as "teacher1"
     And I click on "Reset course" "button"
     And I click on "Reset course" "button" in the "Reset course?" "dialogue"
@@ -121,7 +112,7 @@ Feature: Reset course
     And I should see "Teacher 1"
     And I should see "Student 1"
     And I am on the "Test assignment name" "assign activity" page
-    And I should see "2001" in the "Submitted" "table_row"
+    And I should see "1" in the "Submitted" "table_row"
     # Enable asynchronous resets and try again.
     When the following config values are set as admin:
       | enableasyncresets | 1 |
@@ -143,8 +134,6 @@ Feature: Reset course
     # Monitor the indicator as the task is run
     And I am on the "Course 1" "reset" page logged in as "teacher1"
     And I run all adhoc tasks
-    And I wait until "Unenrol users" "text" exists
-    And I wait until "Unenrol users" "text" does not exist
     And I wait until "Reset course" "text" does not exist
     # Check the course has been reset.
     And I navigate to course participants

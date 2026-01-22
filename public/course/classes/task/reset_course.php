@@ -66,7 +66,7 @@ class reset_course extends adhoc_task {
      * Get the task ID for the given course, if async resets are enabled.
      *
      * @param int $courseid
-     * @return ?int The task ID if a reset is pending, or null if no reset is pending.
+     * @return int|null The task ID if a reset is pending, or null if no reset is pending.
      */
     public static function get_taskid_for_course(int $courseid): ?int {
         $tasks = manager::get_adhoc_tasks('\\' . self::class);
