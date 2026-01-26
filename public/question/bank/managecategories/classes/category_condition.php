@@ -20,6 +20,7 @@ use core\context;
 use core\output\datafilter;
 use core_question\local\bank\condition;
 use core_question\local\bank\view;
+use restore_dbops;
 use restore_questions_activity_structure_step;
 use stdClass;
 
@@ -270,12 +271,15 @@ class category_condition extends condition {
         // Decide if we're going to refer back to the original category, or to the new category.
         // Are we restoring to a different site?
         // Has the original context or category been deleted?
+        // Was a copy of the original context created during this restore?
         // Did the old category belong to the same context as the original set reference?
         // Are we allowed to use its questions?
         $questionscontext = context::instance_by_id($setreference->questionscontextid, IGNORE_MISSING);
+        $restoreid = $restorestep->get_task()->get_restoreid();
         if (
             !$restorestep->get_task()->is_samesite()
             || !$questionscontext
+            || restore_dbops::get_backup_ids_record($restoreid, 'questionbank', $questionscontext->id)
             || !$DB->record_exists('question_categories', ['id' => $oldcategoryid])
             || $setreference->usingcontextid == $setreference->questionscontextid
             || !has_capability('moodle/question:useall', $questionscontext)
