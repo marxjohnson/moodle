@@ -379,6 +379,9 @@ const reorderColumns = event => {
  */
 export const init = async() => {
     const uiRoot = document.getElementById('questionscontainer');
+    if (!uiRoot) {
+        return;
+    }
     await addHandleContainers(uiRoot);
     setUpMoveHandles(uiRoot.querySelectorAll(SELECTORS.moveAction));
     setUpResizeHandles(uiRoot);
