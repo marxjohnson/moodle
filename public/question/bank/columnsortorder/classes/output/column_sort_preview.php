@@ -16,7 +16,10 @@
 
 namespace qbank_columnsortorder\output;
 
+use core\attribute\deprecated;
+use core\deprecation;
 use moodle_url;
+use qbank_columnsortorder\local\bank\preview_view;
 use templatable;
 use renderable;
 use qbank_columnsortorder\column_manager;
@@ -31,6 +34,12 @@ use qbank_columnsortorder\column_manager;
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+#[deprecated(
+    replacement: preview_view::class,
+    since: 5.2,
+    reason: 'preview_view is now itself templatable, no need for another wrapper.',
+    mdl: 'MDL-87103',
+)]
 class column_sort_preview implements renderable, templatable {
     /** @var string Rendered preview HTML. */
     protected string $preview;
@@ -40,11 +49,25 @@ class column_sort_preview implements renderable, templatable {
      *
      * @param string $preview
      */
+    #[deprecated(
+        replacement: preview_view::class,
+        since: 5.2,
+        reason: 'preview_view is now itself templatable, no need for another wrapper.',
+        mdl: 'MDL-87103',
+    )]
     public function __construct(string $preview) {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $this->preview = $preview;
     }
 
+    #[deprecated(
+        replacement: preview_view::class,
+        since: 5.2,
+        reason: 'preview_view is now itself templatable, no need for another wrapper.',
+        mdl: 'MDL-87103',
+    )]
     public function export_for_template(\renderer_base $output): array {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $context = [
             'backurl' => new moodle_url('/question/bank/columnsortorder/sortcolumns.php'),
             'preview' => $this->preview,

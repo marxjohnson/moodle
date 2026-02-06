@@ -16,8 +16,16 @@
 
 namespace qbank_columnsortorder\local\bank;
 
+use core\attribute\deprecated;
+use core\deprecation;
+use core\output\named_templatable;
+use core\output\renderer_base;
+use core\url;
 use core_question\local\bank\view;
+use core_question\output\question_row;
+use core_question\output\question_table;
 use qbank_columnsortorder\column_manager;
+use qbank_columnsortorder\output\preview_table;
 
 /**
  * Custom view for displaying a preview of the question bank
@@ -27,7 +35,7 @@ use qbank_columnsortorder\column_manager;
  * @author    Mark Johnson <mark.johnson@catalyst-eu.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class preview_view extends view {
+class preview_view extends view implements named_templatable {
     /**
      * Use global settings for the column manager.
      *
@@ -43,7 +51,14 @@ class preview_view extends view {
      * @param \stdClass $question
      * @param int $rowcount
      */
+    #[deprecated(
+        replacement: question_row::class,
+        since: 5.2,
+        reason: 'Direct output functions have been replaced with templatables.',
+        mdl: 'MDL-87103',
+    )]
     public function print_table_row($question, $rowcount): void {
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
         $rowclasses = implode(' ', $this->get_row_classes($question, $rowcount));
         $attributes = [];
         if ($rowclasses) {
@@ -51,11 +66,11 @@ class preview_view extends view {
         }
         echo \html_writer::start_tag('tr', $attributes);
         foreach ($this->visiblecolumns as $column) {
-            $column->display_preview($question, $rowclasses);
+            echo $column->render_preview($question, $rowclasses);
         }
         echo \html_writer::end_tag('tr');
         foreach ($this->extrarows as $row) {
-            $row->display_preview($question, $rowclasses);
+            echo $row->render_preview($question, $rowclasses);
         }
     }
 
@@ -94,9 +109,39 @@ class preview_view extends view {
      *
      * @return string An HTML table containing the column headings and a single question row.
      */
+    #[deprecated(
+        replacement: self::class . '::export_for_template',
+        since: 5.2,
+        reason: 'Made this class directly templatable.',
+        mdl: 'MDL-87103',
+    )]
     public function get_preview(): string {
-        ob_start();
-        $this->display_questions([$this->get_dummy_question()]);
-        return ob_get_clean();
+        deprecation::emit_deprecation([$this, __FUNCTION__]);
+        global $OUTPUT;
+        return $OUTPUT->render($this);
+    }
+
+    #[\Override]
+    public function get_template_name(renderer_base $renderer): string {
+        return 'qbank_columnsortorder/column_sort_preview';
+    }
+
+    #[\Override]
+    public function export_for_template(renderer_base $output): array {
+        $table = new preview_table($this, [$this->get_dummy_question()]);
+        return [
+            'backurl' => new url('/question/bank/columnsortorder/sortcolumns.php'),
+            'previewtable' => $table->export_for_template($output),
+        ];
+    }
+
+    #[\Override]
+    public function get_question_count(): int {
+        return 1;
+    }
+
+    #[\Override]
+    public function get_aggregate_statistic(int $questionid, string $fieldname): ?float {
+        return 1.0;
     }
 }

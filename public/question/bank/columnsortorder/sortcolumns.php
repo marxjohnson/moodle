@@ -35,9 +35,7 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(new lang_string('qbankcolumnsortorder', 'qbank_columnsortorder'));
 if ($preview) {
     $columnmanager = new \qbank_columnsortorder\column_manager(true);
-    $preview = $columnmanager->get_questionbank()->get_preview();
-    echo $OUTPUT->render(new \qbank_columnsortorder\output\column_sort_preview($preview));
-
+    echo $OUTPUT->render($columnmanager->get_questionbank());
 } else {
     echo $OUTPUT->render(new \qbank_columnsortorder\output\column_sort_ui());
 }
