@@ -256,8 +256,8 @@ final class category_condition_test extends \advanced_testcase {
         $this->resetAfterTest();
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $category = $questiongenerator->create_question_category();
-        $fakecategory = $category->id - 1;
-        $fakecontext = $category->contextid - 1;
+        $fakecategory = $category->id + 1;
+        $fakecontext = $category->contextid + 1;
         $filtercondition = [
             'filter' => [
                 'category' => [
