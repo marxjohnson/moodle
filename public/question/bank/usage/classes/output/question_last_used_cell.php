@@ -21,7 +21,7 @@ use core_question\output\question_cell;
 use qbank_usage\helper;
 
 /**
- * Content of the question last used column
+ * Content of the question last used column.
  *
  * @package   qbank_usage
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}

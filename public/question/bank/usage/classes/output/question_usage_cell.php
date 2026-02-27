@@ -22,7 +22,7 @@ use qbank_usage\helper;
 use stdClass;
 
 /**
- * Content of the question usage column
+ * Content of the question usage column.
  *
  * @package   qbank_usage
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}

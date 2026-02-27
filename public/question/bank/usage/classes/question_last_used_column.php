@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use qbank_usage\output\question_last_used_cell;
+use stdClass;
 
 /**
  * Question bank column for the question last used.
@@ -62,7 +63,7 @@ class question_last_used_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new question_last_used_cell(
