@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use mod_quiz\output\add_action_cell;
+use stdClass;
 
 /**
  * A column type for the add this question to the quiz action.
@@ -73,7 +74,7 @@ class add_action_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new add_action_cell(

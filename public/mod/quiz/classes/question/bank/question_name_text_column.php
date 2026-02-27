@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use mod_quiz\output\question_name_text_cell;
+use stdClass;
 
 /**
  * A column type for the name followed by the start of the question text.
@@ -66,7 +67,7 @@ class question_name_text_column extends question_name_column {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new question_name_text_cell(

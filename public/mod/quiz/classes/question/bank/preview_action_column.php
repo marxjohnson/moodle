@@ -19,6 +19,7 @@ namespace mod_quiz\question\bank;
 use core\attribute\deprecated;
 use core\deprecation;
 use mod_quiz\output\preview_action_cell;
+use stdClass;
 
 /**
  * A column type for the preview question action.
@@ -71,7 +72,7 @@ class preview_action_column extends \core_question\local\bank\column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new preview_action_cell(
