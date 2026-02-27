@@ -21,6 +21,7 @@ use core\deprecation;
 use core_question\local\bank\column_base;
 use core_question\local\bank\question_version_status;
 use qbank_editquestion\output\question_status_cell;
+use stdClass;
 
 /**
  * A column to show the status of the question.
@@ -75,7 +76,7 @@ class question_status_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new question_status_cell(
