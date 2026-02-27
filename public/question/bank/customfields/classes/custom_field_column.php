@@ -22,6 +22,7 @@ use core_question\local\bank\column_base;
 use core_question\local\bank\view;
 use qbank_customfields\customfield\question_handler;
 use qbank_customfields\output\custom_field_cell;
+use stdClass;
 
 /**
  * A column type for the name of the question creator.
@@ -115,7 +116,7 @@ class custom_field_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new custom_field_cell(
