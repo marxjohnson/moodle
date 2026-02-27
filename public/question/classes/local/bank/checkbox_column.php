@@ -28,6 +28,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core\output\checkbox_toggleall;
 use core_question\output\checkbox_cell;
+use stdClass;
 
 /**
  * A column with a checkbox for each question with name q{questionid}.
@@ -87,6 +88,7 @@ class checkbox_column extends column_base {
         reason: 'Direct output of HTML was replaced with functions to return the rendered HTML for display',
         mdl: 'MDL-87103',
     )]
+    #[\Override]
     protected function display_content($question, $rowclasses): void {
         deprecation::emit_deprecation([$this, __FUNCTION__]);
         global $OUTPUT;
@@ -103,7 +105,7 @@ class checkbox_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new checkbox_cell(

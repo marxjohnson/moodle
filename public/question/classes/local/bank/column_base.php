@@ -110,6 +110,7 @@ abstract class column_base extends view_component {
      *
      * @param column_action_base[] $columnactions A list of column actions to include in the header.
      * @param string $width A CSS width property value.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: column_header::class,
@@ -140,7 +141,7 @@ abstract class column_base extends view_component {
                     $name . '-' . $subsort,
                     $details['title'],
                     isset($details['tip']) ? $details['tip'] : '',
-                    !empty($details['reverse'])
+                    !empty($details['reverse']) ? SORT_DESC : SORT_ASC,
                 );
                 $sortlink->set_lastsort(true);
                 $links[] = $renderer->render($sortlink);
@@ -209,6 +210,7 @@ abstract class column_base extends view_component {
      * @param string $tip the link tool-tip text. If empty, defaults to title.
      * @param bool $defaultreverse whether the default sort order for this column is descending, rather than ascending.
      * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: column_sort::class,
@@ -254,6 +256,7 @@ abstract class column_base extends view_component {
      *
      * @param bool $reverse sort is descending, not ascending.
      * @return string HTML image tag.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: column_sort::class,
@@ -273,8 +276,10 @@ abstract class column_base extends view_component {
 
     /**
      * Output this column.
+     *
      * @param object $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::render',
@@ -292,6 +297,7 @@ abstract class column_base extends view_component {
      *
      * @param \stdClass $question
      * @param string $rowclasses
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::render',
@@ -321,6 +327,7 @@ abstract class column_base extends view_component {
      * @param stdClass $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
      * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
@@ -407,8 +414,10 @@ abstract class column_base extends view_component {
 
     /**
      * Output the contents of this column.
+     *
      * @param object $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::render',
@@ -424,6 +433,7 @@ abstract class column_base extends view_component {
      *
      * @param object $question
      * @param string $rowclasses
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::render',
@@ -559,6 +569,7 @@ abstract class column_base extends view_component {
      *
      * @param \stdClass $question the row from the $question table, augmented with extra information.
      * @param string $rowclasses CSS class names that should be applied to this row of output.
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::render_preview',
@@ -568,7 +579,7 @@ abstract class column_base extends view_component {
     )]
     public function display_preview(\stdClass $question, string $rowclasses): void {
         deprecation::emit_deprecation([$this, __FUNCTION__]);
-        echo $this->render($question, $rowclasses);
+        echo $this->render_preview($question, $rowclasses);
     }
 
     /**
@@ -585,9 +596,9 @@ abstract class column_base extends view_component {
     }
 
     /**
-     * Modify the column actions for this column
+     * Modify the column actions for this column.
      *
-     * @param column_action_base[] $columnactions The default column actions, provided by the column manager,
+     * @param column_action_base[] $columnactions The default column actions, provided by the column manager.
      * @return column_action_base[] The modified column actions.
      */
     public function get_column_actions(array $columnactions): array {

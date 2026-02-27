@@ -23,7 +23,7 @@ use core\output\templatable;
 use core_question\local\bank\view;
 
 /**
- * Question bank column sort widget
+ * Question bank column sort widget.
  *
  * Displays a sorting link for a column, with an icon showing the sort direction if this is the current sort.
  *
@@ -45,7 +45,7 @@ class column_sort implements renderable, templatable {
      * @param string $sortname The internal name of this sort.
      * @param string $title The display name of this sort.
      * @param string $tip The tooltip describing the sort direction.
-     * @param bool $defaultreverse Should this link sort in decending order by default?
+     * @param int $defaultsort What order should this link sort in by default?
      */
     public function __construct(
         /** @var view The question bank view the header is being displayed in. */
@@ -56,8 +56,8 @@ class column_sort implements renderable, templatable {
         protected string $title,
         /** @var string The tooltip describing the sort direction. */
         protected string $tip,
-        /** @var bool Should this link sort in decending order by default? */
-        protected bool $defaultreverse = false,
+        /** @var int What order should this link sort in by default? */
+        protected int $defaultsort = SORT_ASC,
     ) {
     }
 
@@ -74,7 +74,7 @@ class column_sort implements renderable, templatable {
     public function export_for_template(renderer_base $output): array {
         $sortdata = [];
         $currentsort = $this->qbank->get_primary_sort_order($this->sortname);
-        $newsortreverse = $this->defaultreverse;
+        $newsortreverse = $this->defaultsort == SORT_DESC;
         if ($currentsort) {
             $newsortreverse = $currentsort == SORT_ASC;
         }

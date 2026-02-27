@@ -27,6 +27,7 @@ namespace core_question\local\bank;
 use core\attribute\deprecated;
 use \core\plugininfo\qbank;
 use core_question\output\edit_menu_cell;
+use stdClass;
 
 /**
  * A question bank column which gathers together all the actions into a menu.
@@ -80,7 +81,7 @@ class edit_menu_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new edit_menu_cell(

@@ -82,6 +82,7 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $qbankheaderdata
      * @return bool|string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: column_header::class,
@@ -99,6 +100,7 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $sortdata
      * @return bool|string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: column_sort::class,
@@ -133,6 +135,7 @@ class core_question_bank_renderer extends plugin_renderer_base {
      *
      * @param array $displaydata
      * @return string
+     * @deprecated Since Moodle 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_text_format::class,

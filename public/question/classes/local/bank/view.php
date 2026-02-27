@@ -917,6 +917,8 @@ class view implements renderable, templatable {
 
     /**
      * Shows the question bank interface.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::export_for_template',
@@ -959,6 +961,8 @@ class view implements renderable, templatable {
 
     /**
      * The filters for the question bank.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: self::class . '::export_for_template',
@@ -972,7 +976,7 @@ class view implements renderable, templatable {
         [, $contextid] = explode(',', $this->pagevars['cat']);
         $catcontext = \context::instance_by_id($contextid);
         // Category selection form.
-        $OUTPUT->heading(get_string('questionbank', 'question'));
+        echo $OUTPUT->heading(get_string('questionbank', 'question'));
         // Add search conditions.
         $this->add_standard_search_conditions();
         // Render the question bank filters.
@@ -995,9 +999,11 @@ class view implements renderable, templatable {
 
     /**
      * Display the header element for the question bank.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
-        replacement: self::class . '::export_for_tempalte',
+        replacement: self::class . '::export_for_template',
         since: '5.2',
         reason: 'Header is now included in the template context.',
         mdl: 'MDL-87103',
@@ -1005,7 +1011,7 @@ class view implements renderable, templatable {
     protected function display_question_bank_header(): void {
         \core\deprecation::emit_deprecation([self::class, __FUNCTION__]);
         global $OUTPUT;
-        $OUTPUT->heading(get_string('questionbank', 'question'), 2);
+        echo $OUTPUT->heading(get_string('questionbank', 'question'), 2);
     }
 
     /**
@@ -1051,6 +1057,8 @@ class view implements renderable, templatable {
 
     /**
      * Prints the table of questions in a category with interactions
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_list::class,
@@ -1122,6 +1130,7 @@ class view implements renderable, templatable {
      * Display the controls at the bottom of the list of questions.
      *
      * @param \context $catcontext The context of the category being displayed.
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: 'render_bottom_controls',
@@ -1162,9 +1171,10 @@ class view implements renderable, templatable {
      * Display the questions.
      *
      * @param array $questions
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
-        replacement: question_list::class . ' and ' . question_table::class,
+        replacement: question_table::class,
         since: '5.2',
         reason: 'Replaced direct output with templates',
         mdl: 'MDL-87103',
@@ -1201,6 +1211,7 @@ class view implements renderable, templatable {
      * Prints the actual table with question.
      *
      * @param array $questions
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_table::class,
@@ -1240,6 +1251,8 @@ class view implements renderable, templatable {
 
     /**
      * Print table headers from child classes.
+     *
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_table::class,
@@ -1282,6 +1295,7 @@ class view implements renderable, templatable {
      *
      * @param \stdClass $question
      * @param int $rowcount
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_row::class,
@@ -1382,6 +1396,7 @@ class view implements renderable, templatable {
      * Display the questions table for the fragment/ajax.
      *
      * @return string HTML for the question table
+     * @deprecated Since 5.2 MDL-87103.
      */
     #[deprecated(
         replacement: question_table::class,

@@ -24,7 +24,7 @@ use core_question\local\bank\column_base;
 use core_question\local\bank\view;
 
 /**
- * Column header renderable
+ * Column header renderable.
  *
  * Displays the name of each column, the sorting links and the column actions menu.
  *
@@ -76,7 +76,7 @@ class column_header implements renderable, templatable {
                     $name . '-' . $subsort,
                     $details['title'],
                     isset($details['tip']) ? $details['tip'] : '',
-                    !empty($details['reverse'])
+                    empty($details['reverse']) ? SORT_ASC : SORT_DESC,
                 );
             }
         } else if ($sortable) {

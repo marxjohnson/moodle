@@ -22,7 +22,7 @@ use core\output\templatable;
 use stdClass;
 
 /**
- * Base class for a cell in the question bank table
+ * Base class for a cell in the question bank table.
  *
  * @package   core_question
  * @copyright 2025 onwards Catalyst IT EU {@link https://catalyst-eu.net}
