@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use qbank_viewquestiontype\output\question_type_cell;
+use stdClass;
 
 /**
  * A column with a type of question for each question with name q{questionid}.
@@ -55,7 +56,7 @@ class question_type_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new question_type_cell(
