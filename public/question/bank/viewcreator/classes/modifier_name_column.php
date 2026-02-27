@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use qbank_viewcreator\output\name_cell;
+use stdClass;
 
 /**
  * A column for info of the question modifier.
@@ -59,9 +60,9 @@ class modifier_name_column extends column_base {
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
-        $namefields = new \stdClass();
+        $namefields = new stdClass();
         $namefields = username_load_fields_from_object($namefields, $question, 'modifier');
         return $OUTPUT->render(
             new name_cell(
