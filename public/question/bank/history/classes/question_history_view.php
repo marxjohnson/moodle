@@ -79,7 +79,7 @@ class question_history_view extends view {
         array $params = [],
         array $extraparams = [],
     ) {
-        $db = di::get(moodle_database::class);
+        global $DB;
         if ($cm === null) {
             debugging('$cm is now a required field', DEBUG_DEVELOPER);
         }
@@ -87,16 +87,16 @@ class question_history_view extends view {
         $this->entryid = $extraparams['entryid'];
         $this->basereturnurl = new \moodle_url($extraparams['returnurl']);
         $sql = 'SELECT q.*
-                 FROM {question} q
-                 JOIN {question_versions} qv ON qv.questionid = q.id
-                 JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                WHERE qv.version  = (SELECT MAX(v.version)
-                                       FROM {question_versions} v
-                                       JOIN {question_bank_entries} be
-                                         ON be.id = v.questionbankentryid
-                                      WHERE be.id = qbe.id)
-                  AND qbe.id = ?';
-        $this->latestquestiondata = $db->get_record_sql($sql, [$this->entryid]);
+                  FROM {question} q
+                  JOIN {question_versions} qv ON qv.questionid = q.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+                 WHERE qv.version  = (SELECT MAX(v.version)
+                                        FROM {question_versions} v
+                                        JOIN {question_bank_entries} be
+                                          ON be.id = v.questionbankentryid
+                                       WHERE be.id = qbe.id)
+                   AND qbe.id = ?';
+        $this->latestquestiondata = $DB->get_record_sql($sql, [$this->entryid]);
         parent::__construct($contexts, $pageurl, $course, $cm, $params, $extraparams);
     }
 
