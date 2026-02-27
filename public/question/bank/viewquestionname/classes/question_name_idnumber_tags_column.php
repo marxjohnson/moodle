@@ -20,6 +20,7 @@ use core\attribute\deprecated;
 use core\deprecation;
 use core_question\local\bank\column_base;
 use qbank_viewquestionname\output\question_name_cell;
+use stdClass;
 
 /**
  * A question bank column showing the question name with idnumber and tags.
@@ -83,7 +84,7 @@ class question_name_idnumber_tags_column extends viewquestionname_column_helper 
     }
 
     #[\Override]
-    public function render($question, $rowclasses): string {
+    public function render(stdClass $question, string $rowclasses): string {
         global $OUTPUT;
         return $OUTPUT->render(
             new question_name_cell(
