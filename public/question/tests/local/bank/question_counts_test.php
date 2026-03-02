@@ -19,6 +19,8 @@ namespace core_question\local\bank;
 use advanced_testcase;
 use core\context\course;
 use core\context\module;
+use core\di;
+use moodle_database;
 
 /**
  * Unit tests for \core_question\local\bank\question_counts
@@ -169,6 +171,193 @@ final class question_counts_test extends advanced_testcase {
                 $quiz->cmid => 2,
             ],
             $counts->by_course(course::instance($course->id)),
+        );
+    }
+
+    /**
+     * An empty category should return a count of 0.
+     */
+    public function test_by_category_empty(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $generator = self::getDataGenerator();
+        $course = $generator->create_course();
+        $qbank = $generator->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id);
+        $questiongenerator = $generator->get_plugin_generator('core_question');
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            0,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+    }
+
+    /**
+     * An category with questions should return the correct count.
+     */
+    public function test_by_category_question(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $generator = self::getDataGenerator();
+        $course = $generator->create_course();
+        $qbank = $generator->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id, true);
+        $questiongenerator = $generator->get_plugin_generator('core_question');
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            2,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            3,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+    }
+
+    /**
+     * A question with multiple versions should only be counted once, unless specified.
+     */
+    public function test_by_category_versions(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id, true);
+        // Create 1 question with 2 versions, and another with 1 version.
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $q1 = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $questiongenerator->update_question($q1, overrides: ['questiontext' => 'edited']);
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        // Only count latest versions.
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            2,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+
+        // Count all versions.
+        [$sql, $params] = $counts->by_category_query(showallversions: 1, categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            3,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+    }
+
+    /**
+     * Subquestions should not be counted.
+     */
+    public function test_by_category_subquestions(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id, true);
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $questiongenerator->create_question('multianswer', 'twosubq', ['category' => $category->id]);
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            1,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+    }
+
+    /**
+     * Hidden questions should not be included in the question bank's total
+     */
+    public function test_by_category_hidden_questions(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id, true);
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $hiddenquestion = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $questiongenerator->update_question($hiddenquestion, null, ['status' => question_version_status::QUESTION_STATUS_HIDDEN]);
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            1,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
         );
     }
 }

@@ -1,0 +1,9 @@
+issueNumber: MDL-87848
+notes:
+  core_question:
+    - message: >-
+        `core_question\output\question_category_selector::question_count_sql`
+        has been replaces with
+        `core_question\local\bank\question_counts\by_category_query`, to keep
+        all the question counting logic together in one place.
+      type: deprecated

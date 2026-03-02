@@ -101,4 +101,32 @@ class question_counts {
         ];
         return $db->get_records_sql_menu($sql, $params);
     }
+
+    /**
+     * Return the SQL query for getting a count of questions in a single category.
+     *
+     * @param int $showallversions 1 to show all versions not only the latest.
+     * @param string $categoryparam Category ID parameter or field. This can be a paramter that is added to the $params array
+     *     by the calling code, or field in another table where this is used as a subquery.
+     * @return array The SQL and its parameters.
+     */
+    public function by_category_query(int $showallversions = 0, string $categoryparam = 'c.id'): array {
+        $sql = "
+            SELECT COUNT(1)
+              FROM {question} q
+              JOIN {question_versions} qv ON qv.questionid = q.id
+              JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+         LEFT JOIN {question_versions} qv1 ON qv1.questionbankentryid = qbe.id AND qv.version < qv1.version
+             WHERE q.parent = :topparent
+                   AND qv.status != :hidden
+                   AND (:showallversions = 1 OR qv1.id IS NULL)
+                   AND qbe.questioncategoryid = {$categoryparam}
+        ";
+        $params = [
+            'showallversions' => $showallversions,
+            'topparent' => 0,
+            'hidden' => question_version_status::QUESTION_STATUS_HIDDEN,
+        ];
+        return [$sql, $params];
+    }
 }
