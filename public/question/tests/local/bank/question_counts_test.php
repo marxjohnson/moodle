@@ -112,6 +112,32 @@ final class question_counts_test extends advanced_testcase {
      * Hidden questions should not be included in the question bank's total
      */
     public function test_by_course_modules_hidden_questions(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $hiddenquestion = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $DB->set_field(
+            'question_versions',
+            'status',
+            question_version_status::QUESTION_STATUS_HIDDEN,
+            ['questionid' => $hiddenquestion->id],
+        );
+
+        $counts = new question_counts();
+
+        $this->assertEquals([$qbank->cmid => 1], $counts->by_course_modules([$qbankcontext->id]));
+    }
+
+    /**
+     * A question should be included in the bank's total if it has a newer version, but that version is hidden.
+     */
+    public function test_by_course_modules_hidden_newer_version(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
@@ -125,7 +151,7 @@ final class question_counts_test extends advanced_testcase {
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 1], $counts->by_course_modules([$qbankcontext->id]));
+        $this->assertEquals([$qbank->cmid => 2], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
@@ -335,6 +361,44 @@ final class question_counts_test extends advanced_testcase {
      * Hidden questions should not be included in the question bank's total
      */
     public function test_by_category_hidden_questions(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $db = di::get(moodle_database::class);
+        $course = self::getDataGenerator()->create_course();
+        $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $bankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($bankcontext->id, true);
+        $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
+        $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $hiddenquestion = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        $DB->set_field(
+            'question_versions',
+            'status',
+            question_version_status::QUESTION_STATUS_HIDDEN,
+            ['questionid' => $hiddenquestion->id],
+        );
+        $questiongenerator->create_categories_and_questions($bankcontext, ['category2' => ['q1' => 'truefalse']]);
+
+        $counts = new question_counts();
+        [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            1,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+    }
+
+    /**
+     * A question with a newer version that's hidden should still be counted.
+     */
+    public function test_by_category_hidden_newer_version(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $db = di::get(moodle_database::class);
@@ -352,7 +416,21 @@ final class question_counts_test extends advanced_testcase {
         [$sql, $params] = $counts->by_category_query(categoryparam: ':categoryid');
 
         $this->assertEquals(
-            1,
+            2,
+            $db->get_field_sql(
+                $sql,
+                [
+                    ...$params,
+                    'categoryid' => $category->id,
+                ]
+            )
+        );
+
+        // The hidden version should never be counted.
+        [$sql, $params] = $counts->by_category_query(showallversions: 1, categoryparam: ':categoryid');
+
+        $this->assertEquals(
+            2,
             $db->get_field_sql(
                 $sql,
                 [
