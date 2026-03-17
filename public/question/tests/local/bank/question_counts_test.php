@@ -35,50 +35,51 @@ final class question_counts_test extends advanced_testcase {
     /**
      * An empty bank should return a count of 0.
      */
-    public function test_by_course_empty(): void {
+    public function test_by_course_modules_empty(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
         $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
+        $qbankcontext = module::instance($qbank->cmid);
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 0], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 0], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
      * A bank should return the correct number of questions.
      */
-    public function test_by_course_questions(): void {
+    public function test_by_course_modules_questions(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
         $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
-        $bankcontext = module::instance($qbank->cmid);
-        $category = question_get_default_category($bankcontext->id, true);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 2], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 2], $counts->by_course_modules([$qbankcontext->id]));
 
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
 
-        $this->assertEquals([$qbank->cmid => 3], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 3], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
      * A question with multiple versions should only be counted once.
      */
-    public function test_by_course_versions(): void {
+    public function test_by_course_modules_versions(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
         $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
-        $bankcontext = module::instance($qbank->cmid);
-        $category = question_get_default_category($bankcontext->id, true);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         $q1 = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
         $questiongenerator->update_question($q1, overrides: ['questiontext' => 'edited']);
@@ -86,37 +87,37 @@ final class question_counts_test extends advanced_testcase {
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 2], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 2], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
      * Subquestions should not be included in the question bank's total
      */
-    public function test_by_course_subquestions(): void {
+    public function test_by_course_modules_subquestions(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
         $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
-        $bankcontext = module::instance($qbank->cmid);
-        $category = question_get_default_category($bankcontext->id, true);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         $questiongenerator->create_question('multianswer', 'twosubq', ['category' => $category->id]);
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 1], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 1], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
      * Hidden questions should not be included in the question bank's total
      */
-    public function test_by_course_hidden_questions(): void {
+    public function test_by_course_modules_hidden_questions(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
         $course = self::getDataGenerator()->create_course();
         $qbank = self::getDataGenerator()->create_module('qbank', ['course' => $course->id]);
-        $bankcontext = module::instance($qbank->cmid);
-        $category = question_get_default_category($bankcontext->id, true);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
         $hiddenquestion = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
@@ -124,7 +125,7 @@ final class question_counts_test extends advanced_testcase {
 
         $counts = new question_counts();
 
-        $this->assertEquals([$qbank->cmid => 1], $counts->by_course(course::instance($course->id)));
+        $this->assertEquals([$qbank->cmid => 1], $counts->by_course_modules([$qbankcontext->id]));
     }
 
     /**
@@ -145,13 +146,14 @@ final class question_counts_test extends advanced_testcase {
         $questiongenerator = self::getDataGenerator()->get_plugin_generator('core_question');
         // Generate questions.
         // 1 in qbank 1.
-        $bank1context = module::instance($qbank1->cmid);
-        $category1 = question_get_default_category($bank1context->id, true);
+        $qbank1context = module::instance($qbank1->cmid);
+        $category1 = question_get_default_category($qbank1context->id, true);
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category1->id]);
         // None in qbank 2.
+        $qbank2context = module::instance($qbank2->cmid);
         // 3 in qbank 3.
-        $bank3context = module::instance($qbank3->cmid);
-        $category3 = question_get_default_category($bank3context->id, true);
+        $qbank3context = module::instance($qbank3->cmid);
+        $category3 = question_get_default_category($qbank3context->id, true);
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category3->id]);
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category3->id]);
         $questiongenerator->create_question('truefalse', overrides: ['category' => $category3->id]);
@@ -170,7 +172,7 @@ final class question_counts_test extends advanced_testcase {
                 $qbank3->cmid => 3,
                 $quiz->cmid => 2,
             ],
-            $counts->by_course(course::instance($course->id)),
+            $counts->by_course_modules([$qbank1context->id, $qbank2context->id, $qbank3context->id, $quizcontext->id]),
         );
     }
 

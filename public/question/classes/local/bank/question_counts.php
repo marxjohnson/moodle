@@ -31,46 +31,19 @@ use core\exception\required_capability_exception;
  */
 class question_counts {
     /**
-     * Return a list of question counts for each module context within a course, that has question categories.
+     * Return a list of question counts for each course module context.
      *
-     * @param course $coursecontext The context of the course to search within.
+     * @param int[] $coursemodulecontextids The course modules to return a count for.
      * @return array [cmid => count]
      */
-    public function by_course(course $coursecontext): array {
+    public function by_course_modules(array $coursemodulecontextids): array {
         $db = di::get(\moodle_database::class);
-        $capabilities = array_merge(question_edit_contexts::$caps['editq'], question_edit_contexts::$caps['categories']);
 
-        if (!has_any_capability($capabilities, $coursecontext)) {
-            throw new required_capability_exception(
-                $coursecontext,
-                reset($capabilities),
-                'missingcapability',
-                'question',
-            );
-        }
-
-        $modinfo = get_fast_modinfo($coursecontext->instanceid);
-
-        $questioncontexts = [];
-        $supportedmods = [];
-        foreach ($modinfo->get_cms() as $cminfo) {
-            if (array_key_exists($cminfo->modname, $supportedmods)) {
-                $supported = $supportedmods[$cminfo->modname];
-            } else {
-                $supported = call_user_func($cminfo->modname . '_supports', FEATURE_USES_QUESTIONS)
-                    || call_user_func($cminfo->modname . '_supports', FEATURE_PUBLISHES_QUESTIONS);
-                $supportedmods[$cminfo->modname] = $supported;
-            }
-            if ($supported) {
-                $questioncontexts[] = $cminfo->context->id;
-            }
-        }
-
-        if (empty($questioncontexts)) {
+        if (empty($coursemodulecontextids)) {
             return [];
         }
 
-        [$contextinsql, $contextinparams] = $db->get_in_or_equal($questioncontexts, SQL_PARAMS_NAMED);
+        [$contextinsql, $contextinparams] = $db->get_in_or_equal($coursemodulecontextids, SQL_PARAMS_NAMED);
 
         // Get a count of all questions in each module context, keyed by cmid.
         // Only look in contexts for those module which support FEATURE_PUBLISHES_QUESTIONS.

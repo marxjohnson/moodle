@@ -41,6 +41,7 @@ use core_question\output\question_category_selector;
 use core_question\question_category;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use stdClass;
 
 /**
  * Web service functions related to question banks
@@ -95,11 +96,29 @@ class bank {
         ServerRequestInterface $request,
         ResponseInterface $response,
         question_counts $questioncounts,
+        question_bank_helper $bankhelper,
         course $coursecontext,
     ): payload_response {
+        $capabilities = array_merge(question_edit_contexts::$caps['editq'], question_edit_contexts::$caps['categories']);
+        /** @var formatted_bank[] $sharedbanks */
+        $sharedbanks = $bankhelper->get_activity_instances_with_shareable_questions(
+            [$coursecontext->instanceid],
+            havingcap: $capabilities,
+            filtercontext: $coursecontext,
+        );
+        /** @var formatted_bank[] $privatebanks */
+        $privatebanks = $bankhelper->get_activity_instances_with_private_questions(
+            [$coursecontext->instanceid],
+            havingcap: $capabilities,
+            filtercontext: $coursecontext,
+        );
+        $coursemodulecontextids = [
+            ...array_map(fn($bank) => $bank->cminfo->context->id, $sharedbanks),
+            ...array_map(fn($bank) => $bank->cminfo->context->id, $privatebanks),
+        ];
         return new payload_response(
             payload: [
-                'counts' => $questioncounts->by_course($coursecontext),
+                'counts' => $questioncounts->by_course_modules($coursemodulecontextids),
             ],
             request: $request,
             response: $response,
