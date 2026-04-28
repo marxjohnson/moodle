@@ -46,14 +46,10 @@ Feature: Use the qbank plugin manager page for deletequestion
     And I should see "Delete question"
     And I click on "Disable" "link" in the "Delete question" "table_row"
     And I am on the "Test quiz" "mod_quiz > question bank" page
-    And I apply question bank filter "Category" with value "Test questions"
-    And I click on "With selected" "button"
     Then I should not see question bulk action "deleteselected"
     And I navigate to "Plugins > Question bank plugins > Manage question bank plugins" in site administration
     And I click on "Enable" "link" in the "Delete question" "table_row"
     And I am on the "Test quiz" "mod_quiz > question bank" page
-    And I apply question bank filter "Category" with value "Test questions"
-    And I click on "With selected" "button"
     And I should see question bulk action "deleteselected"
 
   @javascript
@@ -62,7 +58,6 @@ Feature: Use the qbank plugin manager page for deletequestion
     And I apply question bank filter "Category" with value "Test questions"
     And I click on "Question 1" "checkbox"
     And I click on "Question 2" "checkbox"
-    And I click on "With selected" "button"
     And I click on question bulk action "deleteselected"
     And I click on "Delete" "button" in the "Delete questions?" "dialogue"
     Then I should not see "Question 1"
@@ -79,7 +74,6 @@ Feature: Use the qbank plugin manager page for deletequestion
     And I apply question bank filter "Category" with value "Test questions"
     And I apply question bank filter "Tag" with value "foo"
     And I click on "Question 1" "checkbox"
-    And I click on "With selected" "button"
     And I click on question bulk action "deleteselected"
     When I click on "Delete" "button" in the "Delete question?" "dialogue"
     Then I should not see "Third question"
@@ -91,7 +85,6 @@ Feature: Use the qbank plugin manager page for deletequestion
     # Select questions to be deleted.
     And I click on "Question 1" "checkbox"
     And I click on "Question 2" "checkbox"
-    And I click on "With selected" "button"
     When I press "Delete"
     # Confirm that delete confirmation message is displayed.
     Then I should see "This will delete the following questions and all their versions:"
