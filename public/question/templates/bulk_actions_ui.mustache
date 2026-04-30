@@ -19,25 +19,20 @@
 
     Example context (json):
     {
-        "displaydata": [
-          {
-                "bulkactionitems": [
-                    {
-                        "actionname": "Move to",
-                        "actionkey": "move",
-                        "actionurl": "/question/bank/bulkmove/move.php?courseid=2",
-                        "actionclasses": "text-danger",
-                        "icon": "i/move_2d"
-                    },
-                    {
-                        "actionname": "Move to",
-                        "actionkey": "move",
-                        "actionurl": "/question/bank/bulkmove/move.php?courseid=2",
-                        "actionclasses": "text-danger",
-                        "icon": "i/delete"
-                    }
-                ]
-          }
+        "bulkactionitems": [
+            {
+                "actionname": "Move to",
+                "actionkey": "move",
+                "actionurl": "/question/bank/bulkmove/move.php?courseid=2",
+                "icon": "i/move_2d"
+            },
+            {
+                "actionname": "Delete",
+                "actionkey": "delete",
+                "actionurl": "/question/bank/deletequestion/delete.php",
+                "actionclasses": "text-danger",
+                "icon": "i/delete"
+            }
         ]
     }
 }}
