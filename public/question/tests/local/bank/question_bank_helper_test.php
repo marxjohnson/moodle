@@ -16,6 +16,8 @@
 
 namespace core_question;
 
+use core\context\course;
+use core\context\module;
 use core\exception\coding_exception;
 use core_question\local\bank\formatted_bank;
 use core_question\local\bank\question_bank_helper;
@@ -653,5 +655,203 @@ final class question_bank_helper_test extends \advanced_testcase {
                     "Those are probably the two most commonly used modes of behaviour. ",
             ],
         ];
+    }
+
+    /**
+     * Create 6 modules with question banks, shared and private, on a course with a teacher.
+     *
+     * @return array
+     */
+    protected function create_banks(): array {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $course = $generator->create_course();
+        $generator->enrol_user($user->id, $course->id, 'editingteacher');
+        $sharedbanks = [];
+        $privatebanks = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $sharedbanks[] = $generator->create_module('qbank', ['course' => $course->id]);
+            $privatebanks[] = $generator->create_module('quiz', ['course' => $course->id]);
+        }
+        return [$user, $course, $sharedbanks, $privatebanks];
+    }
+
+    /**
+     * Return all shared and private banks on the course.
+     */
+    public function test_get_banks_for_course(): void {
+        [$user, $course, $sharedbanks, $privatebanks] = $this->create_banks();
+        $this->setUser($user);
+        $banks = question_bank_helper::get_banks_for_course(
+            course::instance($course->id),
+            includeprivate: true,
+        );
+        $this->assertCount(6, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+        }
+        foreach ($privatebanks as $privatebank) {
+            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+        }
+    }
+
+    /**
+     * Don't return banks from another course.
+     */
+    public function test_get_banks_for_course_other_course(): void {
+        [$user, $course] = $this->create_banks();
+        $generator = $this->getDataGenerator();
+        $course2 = $generator->create_course();
+        $generator->enrol_user($user->id, $course2->id, 'editingteacher');
+        $course2bank = $generator->create_module('qbank', ['course' => $course2->id]);
+        $course2quiz = $generator->create_module('quiz', ['course' => $course2->id]);
+        $this->setUser($user);
+        $banks = question_bank_helper::get_banks_for_course(
+            course::instance($course->id),
+            includeprivate: true,
+        );
+        $this->assertCount(6, $banks);
+        $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $course2bank->cmid));
+        $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $course2quiz->cmid));
+    }
+
+    /**
+     * Return just the shared banks.
+     */
+    public function test_get_banks_for_course_shared(): void {
+        [$user, $course, $sharedbanks, $privatebanks] = $this->create_banks();
+        $this->setUser($user);
+        $banks = question_bank_helper::get_banks_for_course(course::instance($course->id));
+        $this->assertCount(3, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+        }
+        foreach ($privatebanks as $privatebank) {
+            $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+        }
+    }
+
+    /**
+     * Return just the private banks.
+     */
+    public function test_get_banks_for_course_private(): void {
+        [$user, $course, $sharedbanks, $privatebanks] = $this->create_banks();
+        $this->setUser($user);
+        $banks = question_bank_helper::get_banks_for_course(
+            course::instance($course->id),
+            includeshared: false,
+            includeprivate: true,
+        );
+        $this->assertCount(3, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+        }
+        foreach ($privatebanks as $privatebank) {
+            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+        }
+    }
+
+    /**
+     * When passing a current module and getting private banks, we only get the private bank for the current module.
+     */
+    public function test_get_banks_for_course_current(): void {
+        [$user, $course, $sharedbanks, $privatebanks] = $this->create_banks();
+        $this->setUser($user);
+        $currentquiz = reset($privatebanks);
+        $banks = question_bank_helper::get_banks_for_course(
+            course::instance($course->id),
+            module::instance($currentquiz->cmid),
+            includeprivate: true,
+        );
+        $this->assertCount(4, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+        }
+        foreach ($privatebanks as $privatebank) {
+            if ($privatebank == $currentquiz) {
+                $this->assertCount(
+                    1,
+                    array_filter(
+                        $banks,
+                        fn($bank) => $bank->cminfo->id == $privatebank->cmid && $bank->current
+                    )
+                );
+            } else {
+                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            }
+        }
+    }
+
+    /**
+     * Recent banks get an additional entry with the recent flag set.
+     */
+    public function test_get_banks_for_course_recent(): void {
+        [$user, $course, $sharedbanks] = $this->create_banks();
+        $this->setUser($user);
+        $recentbank = reset($sharedbanks);
+        question_bank_helper::add_bank_context_to_recently_viewed(module::instance($recentbank->cmid));
+        $banks = question_bank_helper::get_banks_for_course(
+            course::instance($course->id),
+            includerecent: true,
+        );
+        $this->assertCount(4, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            if ($sharedbank->cmid == $recentbank->cmid) {
+                $this->assertCount(
+                    1,
+                    array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid && $bank->recent),
+                );
+                $this->assertCount(
+                    1,
+                    array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid && !$bank->recent),
+                );
+            } else {
+                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            }
+        }
+    }
+
+    /**
+     * Only return banks where the user has permission to use questions.
+     */
+    public function test_get_banks_for_course_permissions(): void {
+        [$user, $course, $sharedbanks, $privatebanks] = $this->create_banks();
+        $hiddenbank = reset($sharedbanks);
+        $hiddenquiz = reset($privatebanks);
+        $nobankroleid = $this->getDataGenerator()->create_role(['shortname' => 'nobank']);
+        $this->getDataGenerator()->create_role_capability(
+            $nobankroleid,
+            ['moodle/question:useall' => 'prohibit', 'moodle/question:usemine' => 'prohibit'],
+            module::instance($hiddenbank->cmid),
+        );
+        $this->getDataGenerator()->create_role_capability(
+            $nobankroleid,
+            ['moodle/question:useall' => 'prohibit', 'moodle/question:usemine' => 'prohibit'],
+            module::instance($hiddenquiz->cmid),
+        );
+        $coursecontext = course::instance($course->id);
+        $this->getDataGenerator()->role_assign($nobankroleid, $user->id, $coursecontext->id);
+        $this->setUser($user);
+        $banks = question_bank_helper::get_banks_for_course(
+            $coursecontext,
+            includeprivate: true,
+        );
+        $this->assertCount(4, $banks);
+        foreach ($sharedbanks as $sharedbank) {
+            if ($sharedbank->cmid == $hiddenbank->cmid) {
+                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            } else {
+                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            }
+        }
+        foreach ($privatebanks as $privatebank) {
+            if ($privatebank->cmid == $hiddenquiz->cmid) {
+                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            } else {
+                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            }
+        }
     }
 }
