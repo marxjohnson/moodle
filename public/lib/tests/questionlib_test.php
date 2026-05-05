@@ -16,8 +16,10 @@
 
 namespace core;
 
+use core\context\module;
 use core_question\local\bank\question_bank_helper;
 use mod_quiz\quiz_settings;
+use qbank_managecategories\category_condition;
 use question_bank;
 
 defined('MOODLE_INTERNAL') || die();
@@ -370,6 +372,26 @@ final class questionlib_test extends \advanced_testcase {
 
         [, $course, , $qcat, $questions] = $this->setup_quiz_and_questions();
 
+        // Create a second quiz using the question category for a random question.
+        $course2 = $this->getDataGenerator()->create_course();
+        $quiz2 = $this->getDataGenerator()->create_module('quiz', ['course' => $course2->id]);
+        [, $quiz2cm] = get_course_and_cm_from_cmid($quiz2->cmid, 'quiz');
+        $quiz2settings = new quiz_settings($quiz2, $quiz2cm, $course2);
+        $quiz2structure = $quiz2settings->get_structure();
+        $quiz2structure->add_random_questions(
+            1,
+            1,
+            [
+                'filter' => [
+                    'category' => [
+                        'jointype' => category_condition::JOINTYPE_DEFAULT,
+                        'values' => [$qcat->id],
+                    ],
+                ],
+                'cat' => implode(',', [$qcat->id, $qcat->contextid]),
+            ],
+        );
+
         $targetcourseid = $coursedeletion ? SITEID : $course->id;
 
         question_category_delete_safe($qcat, $coursedeletion);
@@ -401,6 +423,85 @@ final class questionlib_test extends \advanced_testcase {
         $this->assertEquals($newcm->modname, 'qbank');
         $this->assertEquals(question_bank_helper::TYPE_SYSTEM, $DB->get_field('qbank', 'type', ['id' => $newcm->instance]));
         $this->assertEquals($targetcourseid, $newcourse->id);
+
+        // Verify the random question's set reference now points to the new category.
+        $quiz2structure = $quiz2settings->get_structure();
+        $randomquestion = $quiz2structure->get_question_in_slot(1);
+        $this->assertEquals($newcategory->id, $randomquestion->filtercondition['filter']['category']['values'][0]);
+        $this->assertEquals([$newcategory->id, $newcategorycontext->id], explode(',', $randomquestion->filtercondition['cat']));
+    }
+
+    /**
+     * Delete a category containing a question by a set reference, but with no usages so the question will not be saved.
+     *
+     * @param bool $coursedeletion If true, simulate calling question_category_delete_safe as part of deletion of the whole course.
+     * @dataProvider delete_category_parameters
+     * @covers ::question_category_delete_safe
+     */
+    public function test_question_category_delete_safe_set_references(bool $coursedeletion): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $generator = $this->getDataGenerator();
+        $questiongenerator = $generator->get_plugin_generator('core_question');
+        // Create a quiz using a shared question category for a random question.
+        $course = $generator->create_course();
+        $quiz = $generator->create_module('quiz', ['course' => $course->id]);
+        $qbank = $generator->create_module('qbank', ['course' => $course->id]);
+        $qbankcontext = module::instance($qbank->cmid);
+        $category = question_get_default_category($qbankcontext->id, true);
+        $question = $questiongenerator->create_question('truefalse', overrides: ['category' => $category->id]);
+        [, $quizcm] = get_course_and_cm_from_cmid($quiz->cmid, 'quiz');
+        $quiz2settings = new quiz_settings($quiz, $quizcm, $course);
+        $quiz2structure = $quiz2settings->get_structure();
+        $quiz2structure->add_random_questions(
+            1,
+            1,
+            [
+                'filter' => [
+                    'category' => [
+                        'jointype' => category_condition::JOINTYPE_DEFAULT,
+                        'values' => [$category->id],
+                    ],
+                ],
+                'cat' => implode(',', [$category->id, $qbankcontext->contextid]),
+            ],
+        );
+
+        $targetcourseid = $coursedeletion ? SITEID : $course->id;
+
+        question_category_delete_safe($category, $coursedeletion);
+
+        // Verify category deleted.
+        $criteria = ['id' => $category->id];
+        $this->assertEquals(0, $DB->count_records('question_categories', $criteria));
+
+        // Verify question deleted.
+        $this->assert_category_contains_questions($category->id, 0);
+        $criteria = ['id' => $question->id];
+        $savedquestion = $DB->get_record_sql(
+            "SELECT q.*, qbe.questioncategoryid
+               FROM {question} q
+                    JOIN {question_versions} qv ON qv.questionid = q.id
+                    JOIN {question_bank_entries} qbe ON qv.questionbankentryid = qbe.id",
+            $criteria
+        );
+        $this->assertEmpty($savedquestion);
+
+        // Verify the random question's set reference now points to a new category.
+        $quiz2structure = $quiz2settings->get_structure();
+        $randomquestion = $quiz2structure->get_question_in_slot(1);
+        [$newcategoryid, $newcategorycontextid] = explode(',', $randomquestion->filtercondition['cat']);
+        $this->assertNotEquals($category->id, $newcategoryid);
+        $newcategory = $DB->get_record('question_categories', ['id' => $newcategoryid], strictness: MUST_EXIST);
+        $this->assertEquals($newcategorycontextid, $newcategory->contextid);
+        $newcategorycontext = context::instance_by_id($newcategory->contextid);
+        $this->assertEquals(\context_module::LEVEL, $newcategorycontext->contextlevel);
+        [$newcourse, $newcm] = get_course_and_cm_from_cmid($newcategorycontext->instanceid);
+        $this->assertEquals($newcm->modname, 'qbank');
+        $this->assertEquals(question_bank_helper::TYPE_SYSTEM, $DB->get_field('qbank', 'type', ['id' => $newcm->instance]));
+        $this->assertEquals($targetcourseid, $newcourse->id);
+        $this->assertEquals($newcategory->id, $randomquestion->filtercondition['filter']['category']['values'][0]);
     }
 
     /**

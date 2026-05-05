@@ -232,7 +232,7 @@ function match_grade_options($gradeoptionsfull, $grade, $matchgrades = 'error') 
  * 2/ Any questions that can't be deleted are moved to a new category
  * NOTE: this function is called from lib/db/upgrade.php
  *
- * @param object|core_course_category $category course category object
+ * @param object $category question category object
  * @param bool $coursedeletion Is the course this category is under being deleted? If so, move saved questions to the site course.
  */
 function question_category_delete_safe($category, bool $coursedeletion = false): void {
@@ -240,7 +240,17 @@ function question_category_delete_safe($category, bool $coursedeletion = false):
     $criteria = ['questioncategoryid' => $category->id];
     $context = context::instance_by_id($category->contextid, IGNORE_MISSING);
     $rescue = null; // See the code around the call to question_save_from_deletion.
-
+    $rescuecourse = get_site();
+    $rescuename = get_string('unknown', 'question');
+    if ($context !== false) {
+        $parentcontext = $context->get_course_context(false);
+        $rescuecourse = ($parentcontext && !$coursedeletion) ? get_course($parentcontext->instanceid) : $rescuecourse;
+        if ($context->get_context_name() !== '') {
+            $rescuename = $context->get_context_name();
+        } else if ($parentcontext) {
+            $rescuename = $parentcontext->get_context_name();
+        }
+    }
     // Deal with any questions in the category.
     if ($questionentries = $DB->get_records('question_bank_entries', $criteria, '', 'id')) {
 
@@ -267,15 +277,19 @@ function question_category_delete_safe($category, bool $coursedeletion = false):
             }
         }
         if (!empty($questionids)) {
-            $name = get_string('unknown', 'question');
-            if ($context !== false) {
-                $name = $context->get_context_name();
-                $parentcontext = $context->get_course_context(false);
-                $course = ($parentcontext && !$coursedeletion) ? get_course($parentcontext->instanceid) : get_site();
-            }
-            $qbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
-            question_save_from_deletion(array_keys($questionids), $qbank->context->id, $name, $rescue);
+            $qbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($rescuecourse, true);
+            $rescue = question_save_from_deletion(array_keys($questionids), $qbank->context->id, $rescuename, $rescue);
         }
+    }
+    // Update set references pointing at the deleted category.
+    if ($context && $DB->record_exists('question_set_references', ['questionscontextid' => $context->id])) {
+        if (is_null($rescue)) {
+            // We didn't save any questions. Create an empty category in a qbank, so we don't end up with broken set references.
+            $qbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($rescuecourse, true);
+            $qbankcontext = \core\context\module::instance($qbank->id);
+            $rescue = \core_question\category_manager::create_rescue_category($qbankcontext->id, $rescuename);
+        }
+        move_question_set_references($category->id, $rescue->id, $context->id, $rescue->contextid);
     }
 
     // Now delete the category.
@@ -460,15 +474,7 @@ function question_save_from_deletion($questionids, $newcontextid, $oldplace, $ne
 
     // Make a category in the parent context to move the questions to.
     if (is_null($newcategory)) {
-        $newcategory = new stdClass();
-        $newcategory->parent = question_get_top_category($newcontextid, true)->id;
-        $newcategory->contextid = $newcontextid;
-        // Max length of column name in question_categories is 255.
-        $newcategory->name = shorten_text(get_string('questionsrescuedfrom', 'question', $oldplace), 255);
-        $newcategory->info = get_string('questionsrescuedfrominfo', 'question', $oldplace);
-        $newcategory->sortorder = 999;
-        $newcategory->stamp = make_unique_id_code();
-        $newcategory->id = $DB->insert_record('question_categories', $newcategory);
+        $newcategory = \core_question\category_manager::create_rescue_category($newcontextid, $oldplace);
     }
 
     // Move any remaining questions to the 'saved' category.
