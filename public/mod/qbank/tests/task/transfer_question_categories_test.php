@@ -616,18 +616,22 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $usedunusedcourse = $usedunusedmodinfo->get_course();
         $usedunusedqbanks = $usedunusedmodinfo->get_instances_of('qbank');
         $usedunusedqbank = reset($usedunusedqbanks);
-        $this->assertEquals("$usedunusedcourse->shortname shared question bank", $usedunusedqbank->name);
+        $this->assertEquals(question_bank_helper::get_bank_name_string('systembank', 'question'), $usedunusedqbank->name);
 
-        // We should now only have 3 categories. Top, used and unused.
+        // We should now only have 4 categories. Top, used and unused and a rescue category.
         $usedunusedcats = $DB->get_records(
             'question_categories',
             ['contextid' => $usedunusedqbank->context->id],
             fields: 'name, id',
         );
-        $this->assertCount(3, $usedunusedcats);
+        $this->assertCount(4, $usedunusedcats);
         $this->assertArrayHasKey('top', $usedunusedcats);
         $this->assertArrayHasKey('Used Question Cat', $usedunusedcats);
         $this->assertArrayHasKey('Unused Question Cat', $usedunusedcats);
+        $this->assertArrayHasKey(
+            get_string('questionsrescuedfrom', 'question', $this->usedunusedcontext->get_context_name()),
+            $usedunusedcats,
+        );
         $this->assertArrayNotHasKey('Empty Question Cat', $usedunusedcats);
 
         $this->assertEmpty($this->get_question_data([$usedunusedcats['top']->id]));
