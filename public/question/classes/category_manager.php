@@ -429,4 +429,25 @@ class category_manager {
         }
         return count($questionids);
     }
+
+    /**
+     * Create a category to move rescued questions to.
+     *
+     * @param int $newcontextid The context ID for the rescue category.
+     * @param string $oldplace The name of the place (context, category) the questions were rescued from.
+     * @return stdClass
+     */
+    public static function create_rescue_category(int $newcontextid, string $oldplace): stdClass {
+        global $DB;
+        $newcategory = new stdClass();
+        $newcategory->parent = question_get_top_category($newcontextid, true)->id;
+        $newcategory->contextid = $newcontextid;
+        // Max length of column name in question_categories is 255.
+        $newcategory->name = shorten_text(get_string('questionsrescuedfrom', 'question', $oldplace), 255);
+        $newcategory->info = get_string('questionsrescuedfrominfo', 'question', $oldplace);
+        $newcategory->sortorder = 999;
+        $newcategory->stamp = make_unique_id_code();
+        $newcategory->id = $DB->insert_record('question_categories', $newcategory);
+        return $newcategory;
+    }
 }
