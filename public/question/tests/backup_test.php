@@ -17,6 +17,9 @@
 namespace core_question;
 
 use context_course;
+use core\context\coursecat;
+use core\task\asynchronous_copy_task;
+use core_course\task\course_delete_modules;
 use mod_quiz\quiz_settings;
 use moodle_url;
 use question_bank;
@@ -718,6 +721,98 @@ final class backup_test extends \advanced_testcase {
         $this->assertEquals(1, $DB->count_records('question_categories', ['stamp' => $data->qbankcategory->stamp]));
         // Check there is no additional copy of the referenced question bank question.
         $this->assertEquals(1, $DB->count_records('question', ['name' => $data->qbankquestion->name]));
+    }
+
+    /**
+     * If we copy a course, and the user does not have permission to back up role assignments, the restore process will
+     * create a default qbank module on the new course. This is in case it needs to restore question categories when they cannot
+     * access the original. However, if it doesn't actually restore any categories here, it will leave an empty qbank, so it should
+     * be deleted afterwards.
+     */
+    public function test_copy_course_limited_permissions(): void {
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/backup/util/helper/copy_helper.class.php');
+
+        $this->resetAfterTest();
+
+        // Create a course to copy.
+        $data = $this->add_course_quiz_and_qbank();
+
+        $restoreuser = self::getDataGenerator()->create_user();
+        $coursecreatorid = $DB->get_field('role', 'id', ['shortname' => 'coursecreator']);
+        $coursecatcontext = coursecat::instance($data->course->category);
+        self::getDataGenerator()->role_assign(
+            $coursecreatorid,
+            $restoreuser->id,
+            $coursecatcontext->id,
+        );
+        self::getDataGenerator()->enrol_user($restoreuser->id, $data->course->id, 'editingteacher');
+        $this->setUser($restoreuser);
+
+        // Mock up the form data.
+        $formdata = new \stdClass();
+        $formdata->courseid = $data->course->id;
+        $formdata->fullname = 'copy course';
+        $formdata->shortname = 'copy course short';
+        $formdata->category = $data->course->category;
+        $formdata->visible = 0;
+        $formdata->startdate = 1582376400;
+        $formdata->enddate = 1582386400;
+        $formdata->idnumber = 123;
+        $formdata->userdata = 0;
+
+        // Create the course copy records and associated ad-hoc task.
+        $copydata = \copy_helper::process_formdata($formdata);
+        \copy_helper::create_copy($copydata);
+
+        // We are expecting trace output during this test.
+        $this->expectOutputRegex("/{$data->course->id}/");
+
+        // Execute the copy task.
+        $timestart = time() + MINSECS;
+        $task = \core\task\manager::get_next_adhoc_task($timestart);
+        $this->assertInstanceOf(asynchronous_copy_task::class, $task);
+        $task->execute();
+        \core\task\manager::adhoc_task_complete($task);
+
+        // We should now have a task to delete the empty qbank. Execute that too.
+        $task = \core\task\manager::get_next_adhoc_task($timestart);
+        $this->assertInstanceOf(course_delete_modules::class, $task);
+        $task->execute();
+        \core\task\manager::adhoc_task_complete($task);
+
+        $newcourse = $DB->get_record('course', ['shortname' => 'copy course short']);
+        $modinfo = get_fast_modinfo($newcourse);
+
+        // Assert we have a copy of the original quiz and qbank, but not an additional system qbank.
+        $newquizzes = $modinfo->get_instances_of('quiz');
+        $newqbanks = $modinfo->get_instances_of('qbank');
+        $this->assertCount(1, $newquizzes);
+        $this->assertCount(1, $newqbanks);
+        /** @var \cm_info $newquiz */
+        $newquiz = reset($newquizzes);
+        /** @var \cm_info $newqbank */
+        $newqbank = reset($newqbanks);
+        $quiz = $DB->get_record('quiz', ['id' => $newquiz->instance], '*', MUST_EXIST);
+        [$course, $cm] = get_course_and_cm_from_instance($quiz, 'quiz');
+        $newquizsettings = new quiz_settings($quiz, $cm, $course);
+        $newq1 = $newquizsettings->get_structure()->get_question_in_slot(1);
+        $newq2 = $newquizsettings->get_structure()->get_question_in_slot(2);
+
+        $newquizcontext = module::instance($newquiz->id);
+        $qbankcontext = module::instance($newqbank->id);
+
+        // Check we've got a copy of the quiz question in the new context.
+        $this->assertEquals($data->quizquestion->name, $newq2->name);
+        $this->assertEquals($newquizcontext->id, $newq2->contextid);
+        // Check we've got a reference to the qbank question in the new qbank.
+        $this->assertEquals($data->qbankquestion->name, $newq1->name);
+        $this->assertEquals($qbankcontext->id, $newq1->contextid);
+        // Check we have the expected categories - there should be 2 copies of each.
+        $this->assertEquals(2, $DB->count_records('question_categories', ['stamp' => $data->quizcategory->stamp]));
+        $this->assertEquals(2, $DB->count_records('question_categories', ['stamp' => $data->qbankcategory->stamp]));
+        // There is no system qbank on the course.
+        $this->assertNull(question_bank_helper::get_default_open_instance_system_type($course));
     }
 
     /**
