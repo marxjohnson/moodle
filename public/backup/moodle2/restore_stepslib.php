@@ -27,6 +27,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use core\context\module;
+use core_question\local\bank\question_bank_helper;
 use core_question\local\bank\question_version_status;
 use core_question\versions;
 
@@ -5563,6 +5565,7 @@ class restore_move_module_questions_categories extends restore_execution_step {
         $after35 = $this->task->backup_release_compare('3.5', '>=') && $this->task->backup_version_compare(20180205, '>');
 
         $contexts = restore_dbops::restore_get_question_banks($this->get_restoreid(), CONTEXT_MODULE);
+        $course = get_course($this->get_courseid());
         foreach ($contexts as $contextid => $contextlevel) {
             if (!$newcontext = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'context', $contextid)) {
                 // The bank for the question categories required by this module was not included in the backup,
@@ -5618,7 +5621,6 @@ class restore_move_module_questions_categories extends restore_execution_step {
                 // We have no target question bank so create a default bank for categories without a module to attach to.
                 // This can occur when a quiz backup contains references to a question bank module,
                 // that was not included in the backup and does not exist in the site being restored to.
-                $course = get_course($this->get_courseid());
                 $defaultqbank = core_question\local\bank\question_bank_helper::get_default_open_instance_system_type($course, true);
                 $context = context_module::instance($defaultqbank->id);
                 $newcontext = new stdClass();
@@ -5736,6 +5738,38 @@ class restore_move_module_questions_categories extends restore_execution_step {
         );
         foreach ($categories as $category) {
             question_category_delete_safe($category);
+        }
+        // If a default question bank was created, check whether it has any questions or non-default categories.
+        // If not, remove it.
+        $defaultbank = question_bank_helper::get_default_open_instance_system_type($course);
+        if ($defaultbank) {
+            $context = module::instance($defaultbank->id);
+            $delete = true;
+            $defaultcategoryids = [];
+            $topcategory = question_get_top_category($context->id);
+            if ($topcategory) {
+                $defaultcategoryids[] = $topcategory->id;
+                $defaultcategory = question_get_default_category($context->id);
+                $hasquestions = false;
+                if ($defaultcategory) {
+                    // Are there any questions in the default category?
+                    $defaultcategoryids[] = $defaultcategory->id;
+                    $hasquestions = $DB->record_exists('question_bank_entries', ['questioncategoryid' => $defaultcategory->id]);
+                }
+                // Are there any other categories at all?
+                [$notinsql, $params] = $DB->get_in_or_equal($defaultcategoryids, SQL_PARAMS_NAMED, equal: false);
+                $params['contextid'] = $context->id;
+                $hascategories = $DB->record_exists_select(
+                    'question_categories',
+                    "contextid = :contextid AND id {$notinsql}",
+                    $params,
+                );
+                $delete = !$hasquestions && !$hascategories;
+            }
+            if ($delete) {
+                // Queue the deletion, so we don't interfere with the running restore process.
+                (new core_courseformat\local\cmactions($course))->delete($defaultbank->id, true);
+            }
         }
     }
 }
