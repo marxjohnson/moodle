@@ -40,25 +40,64 @@ const setQuestionStatus = (questionId, status) => Ajax.call([{
     }
 }])[0];
 
+let changeListener = null;
+
+let recoverListener = null;
+
+const SELECTORS = {
+    QUESTIONS_CONTAINER: '#questionscontainer',
+    STATUS_DROPDOWN: "[name='question_status_dropdown']",
+    RECOVER_BUTTON: '.recoverquestion',
+};
+
 /**
  * Entrypoint of the js.
  *
  * @method init
- * @param {Number} questionId Question id.
  */
-export const init = (questionId) => {
-    let target = document.querySelector('#question_status_dropdown-' + questionId);
-    target.addEventListener('change', (e) => {
-        const questionStatus = e.target.value;
-        setQuestionStatus(questionId, questionStatus)
-        .then((response) => {
-            if (response.error) {
-                Notification.addNotification({
-                    type: 'error',
-                    message: response.error
-                });
+export const init = () => {
+    const questionsContainer = document.querySelector(SELECTORS.QUESTIONS_CONTAINER);
+    if (!questionsContainer) {
+        return;
+    }
+    if (changeListener === null) {
+        changeListener = questionsContainer.addEventListener('change', (e) => {
+            const statusDropDown = e.target.closest(SELECTORS.STATUS_DROPDOWN);
+            if (statusDropDown) {
+                e.preventDefault();
+                const questionId = parseInt(statusDropDown.id.split('-')[1]);
+                const questionStatus = e.target.value;
+                setQuestionStatus(questionId, questionStatus)
+                    .then((response) => {
+                        if (response.error) {
+                            Notification.addNotification({
+                                type: 'error',
+                                message: response.error
+                            });
+                        }
+                        return;
+                    }).catch();
             }
-            return;
-        }).catch();
-    });
+        });
+    }
+    if (recoverListener === null) {
+        recoverListener = questionsContainer.addEventListener('click', (e) => {
+            const recoverButton = e.target.closest(SELECTORS.RECOVER_BUTTON);
+            if (recoverButton) {
+                e.preventDefault();
+                const questionId = parseInt(recoverButton.dataset.questionid);
+                setQuestionStatus(questionId, 'ready')
+                    .then((response) => {
+                        if (response.error) {
+                            Notification.addNotification({
+                                type: 'error',
+                                message: response.error
+                            });
+                        } else {
+                            window.location.reload();
+                        }
+                    }).catch();
+            }
+        });
+    }
 };

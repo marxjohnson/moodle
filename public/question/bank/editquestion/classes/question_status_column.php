@@ -39,8 +39,9 @@ class question_status_column extends column_base {
 
     protected function display_content($question, $rowclasses): void {
         global $PAGE;
-        if (question_has_capability_on($question, 'edit')
-            && $question->status !== question_version_status::QUESTION_STATUS_HIDDEN) {
+        $renderer = $PAGE->get_renderer('qbank_editquestion');
+        $canedit = question_has_capability_on($question, 'edit');
+        if ($canedit && $question->status !== question_version_status::QUESTION_STATUS_HIDDEN) {
             $options = [];
             $options['questionid'] = $question->id;
             $statuslist = editquestion_helper::get_question_status_list();
@@ -51,12 +52,18 @@ class question_status_column extends column_base {
                     'selected' => ($question->status) === $value ? true : false
                 ];
             }
-            echo $PAGE->get_renderer('qbank_editquestion')->render_status_dropdown($options);
-            $PAGE->requires->js_call_amd('qbank_editquestion/question_status', 'init', [$question->id]);
+            echo $renderer->render_status_dropdown($options);
         } else {
             $statuslist = editquestion_helper::get_question_status_list(true);
             echo $statuslist[$question->status];
+            if ($canedit && $question->status === question_version_status::QUESTION_STATUS_HIDDEN) {
+                echo $renderer->render_from_template(
+                    'qbank_editquestion/recover_question',
+                    ['questionid' => $question->id],
+                );
+            }
         }
+        $PAGE->requires->js_call_amd('qbank_editquestion/question_status', 'init');
     }
 
     public function get_extra_classes(): array {

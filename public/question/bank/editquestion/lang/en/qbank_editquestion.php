@@ -35,6 +35,7 @@ $string['questionstatusready'] = 'Ready';
 $string['questionstatushidden'] = 'Hidden';
 $string['questionstatusdraft'] = 'Draft';
 $string['questionstatusheader'] = 'Change question status';
+$string['recoverversion'] = 'Recover this version';
 $string['unrecognizedstatus'] = 'Unrecognised status';
 
 // Edit form.
