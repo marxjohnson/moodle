@@ -1649,28 +1649,31 @@ function xmldb_main_upgrade($oldversion) {
         // At this point, such questions were created during a restore, but never used by anything (otherwise they would have
         // been converted to question set references and deleted already), so they are all safe to delete.
 
-        // Process the questions in batches, to avoid running out of memory.
-        $batchsize = 50000;
-        $lastid = 0;
-        do {
-            $questions = $DB->get_records_sql(
-                "SELECT id FROM {question} WHERE qtype = 'random' AND id > :lastid ORDER BY id",
-                ['lastid' => $lastid],
-                0,
-                $batchsize,
-            );
-            $recordcount = 0;
-            foreach ($questions as $question) {
-                $lastid = $question->id;
-                question_delete_question($question->id);
-                $recordcount++;
+        $questionids = $DB->get_fieldset('question', 'id', ['qtype' => 'random']);
+        if (!empty($questionids)) {
+            // Process the questions in batches, to avoid exceeding query parameter limits.
+            $batchsize = 50000;
+            $questionidchunks = array_chunk($questionids, $batchsize);
+            foreach ($questionidchunks as $questionidchunk) {
+                [$insql, $params] = $DB->get_in_or_equal($questionidchunk);
+                $questionversionsandentires = $DB->get_records_select_menu(
+                    'question_versions',
+                    'questionid ' . $insql,
+                    $params,
+                    fields: 'id, questionbankentryid'
+                );
+                $versionids = array_keys($questionversionsandentires);
+                $entryids = array_unique(array_values($questionversionsandentires));
+                // No need to call question_delete_question, it is safe to delete the records directly. See MDL-88393.
+                $DB->delete_records_list('question_versions', 'id', $versionids);
+                $DB->delete_records_list('question_bank_entries', 'id', $entryids);
+                $DB->delete_records_list('question', 'id', $questionidchunk);
             }
-            // Reset timeout after each batch to avoid timeouts on large sites.
-            upgrade_set_timeout();
-        } while ($recordcount === $batchsize);
-        // Finally, uninstall qtype_random as it's been removed.
-        uninstall_plugin('qtype', 'random');
-        upgrade_main_savepoint(true, 2026010900.02);
+
+            // Finally, uninstall qtype_random as it's been removed.
+            uninstall_plugin('qtype', 'random');
+            upgrade_main_savepoint(true, 2026010900.02);
+        }
     }
 
     if ($oldversion < 2026011600.01) {
