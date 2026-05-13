@@ -21,6 +21,7 @@ use core\context\module;
 use core\exception\coding_exception;
 use core_question\local\bank\formatted_bank;
 use core_question\local\bank\question_bank_helper;
+use stdClass;
 
 /**
  * question bank helper class tests.
@@ -679,6 +680,57 @@ final class question_bank_helper_test extends \advanced_testcase {
     }
 
     /**
+     * Assert the course module for a bank activity is in the provided list of banks.
+     *
+     * @param stdClass $expectedbank The question bank activity, with a cmid property.
+     * @param formatted_bank[] $actualbanks The list of banks to check against.
+     * @param bool|null $current If set, also check the bank's `current` property matches this value.
+     * @param bool|null $recent If set, also check the bank's `recent` property matches this value.
+     * @param int $count How many times should the bank appear in the list (0 if it shouldn't)?
+     */
+    protected function assert_cm_in_list(
+        stdClass $expectedbank,
+        array $actualbanks,
+        ?bool $current = null,
+        ?bool $recent = null,
+        int $count = 1,
+    ): void {
+        $matchingbanks = array_filter(
+            $actualbanks,
+            function ($bank) use ($expectedbank, $current, $recent) {
+                $match = $bank->cminfo->id == $expectedbank->cmid;
+                if (!is_null($current)) {
+                    $match = $match && $bank->current == $current;
+                }
+                if (!is_null($recent)) {
+                    $match = $match && $bank->recent == $recent;
+                }
+                return $match;
+            },
+        );
+        $this->assertCount($count, $matchingbanks);
+    }
+
+    /**
+     * Assert the course module for a bank activity is not in the provided list of banks.
+     *
+     * Convenience function for more readable tests, this calls {@see assert_cm_in_list} with a count of 0.
+     *
+     * @param stdClass $expectedbank The question bank activity, with a cmid property.
+     * @param formatted_bank[] $actualbanks The list of banks to check against.
+     * @param bool|null $current If set, also check the bank's `current` property matches this value.
+     * @param bool|null $recent If set, also check the bank's `recent` property matches this value.
+     */
+    protected function assert_cm_not_in_list(
+        stdClass $expectedbank,
+        array $actualbanks,
+        ?bool $current = null,
+        ?bool $recent = null,
+    ): void {
+        $this->assert_cm_in_list($expectedbank, $actualbanks, $current, $recent, 0);
+    }
+
+    /**
      * Return all shared and private banks on the course.
      */
     public function test_get_banks_for_course(): void {
@@ -690,10 +742,10 @@ final class question_bank_helper_test extends \advanced_testcase {
         );
         $this->assertCount(6, $banks);
         foreach ($sharedbanks as $sharedbank) {
-            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            $this->assert_cm_in_list($sharedbank, $banks);
         }
         foreach ($privatebanks as $privatebank) {
-            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            $this->assert_cm_in_list($privatebank, $banks);
         }
     }
 
@@ -713,8 +765,8 @@ final class question_bank_helper_test extends \advanced_testcase {
             includeprivate: true,
         );
         $this->assertCount(6, $banks);
-        $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $course2bank->cmid));
-        $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $course2quiz->cmid));
+        $this->assert_cm_not_in_list($course2bank, $banks);
+        $this->assert_cm_not_in_list($course2quiz, $banks);
     }
 
     /**
@@ -726,10 +778,10 @@ final class question_bank_helper_test extends \advanced_testcase {
         $banks = question_bank_helper::get_banks_for_course(course::instance($course->id));
         $this->assertCount(3, $banks);
         foreach ($sharedbanks as $sharedbank) {
-            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            $this->assert_cm_in_list($sharedbank, $banks);
         }
         foreach ($privatebanks as $privatebank) {
-            $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            $this->assert_cm_not_in_list($privatebank, $banks);
         }
     }
 
@@ -746,10 +798,10 @@ final class question_bank_helper_test extends \advanced_testcase {
         );
         $this->assertCount(3, $banks);
         foreach ($sharedbanks as $sharedbank) {
-            $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            $this->assert_cm_not_in_list($sharedbank, $banks);
         }
         foreach ($privatebanks as $privatebank) {
-            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+            $this->assert_cm_in_list($privatebank, $banks);
         }
     }
 
@@ -767,19 +819,13 @@ final class question_bank_helper_test extends \advanced_testcase {
         );
         $this->assertCount(4, $banks);
         foreach ($sharedbanks as $sharedbank) {
-            $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+            $this->assert_cm_in_list($sharedbank, $banks);
         }
         foreach ($privatebanks as $privatebank) {
             if ($privatebank == $currentquiz) {
-                $this->assertCount(
-                    1,
-                    array_filter(
-                        $banks,
-                        fn($bank) => $bank->cminfo->id == $privatebank->cmid && $bank->current
-                    )
-                );
+                $this->assert_cm_in_list($privatebank, $banks, current: true);
             } else {
-                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+                $this->assert_cm_not_in_list($privatebank, $banks);
             }
         }
     }
@@ -799,16 +845,10 @@ final class question_bank_helper_test extends \advanced_testcase {
         $this->assertCount(4, $banks);
         foreach ($sharedbanks as $sharedbank) {
             if ($sharedbank->cmid == $recentbank->cmid) {
-                $this->assertCount(
-                    1,
-                    array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid && $bank->recent),
-                );
-                $this->assertCount(
-                    1,
-                    array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid && !$bank->recent),
-                );
+                $this->assert_cm_in_list($sharedbank, $banks, recent: true);
+                $this->assert_cm_in_list($sharedbank, $banks, recent: false);
             } else {
-                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+                $this->assert_cm_in_list($sharedbank, $banks);
             }
         }
     }
@@ -841,16 +881,16 @@ final class question_bank_helper_test extends \advanced_testcase {
         $this->assertCount(4, $banks);
         foreach ($sharedbanks as $sharedbank) {
             if ($sharedbank->cmid == $hiddenbank->cmid) {
-                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+                $this->assert_cm_not_in_list($sharedbank, $banks);
             } else {
-                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $sharedbank->cmid));
+                $this->assert_cm_in_list($sharedbank, $banks);
             }
         }
         foreach ($privatebanks as $privatebank) {
             if ($privatebank->cmid == $hiddenquiz->cmid) {
-                $this->assertCount(0, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+                $this->assert_cm_not_in_list($privatebank, $banks);
             } else {
-                $this->assertCount(1, array_filter($banks, fn($bank) => $bank->cminfo->id == $privatebank->cmid));
+                $this->assert_cm_in_list($privatebank, $banks);
             }
         }
     }
