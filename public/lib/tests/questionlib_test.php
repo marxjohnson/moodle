@@ -20,6 +20,7 @@ use core\context\course;
 use core\context\module;
 use core_question\local\bank\question_bank_helper;
 use mod_quiz\quiz_settings;
+use PHPUnit\Framework\Attributes\DataProvider;
 use question_bank;
 
 defined('MOODLE_INTERNAL') || die();
@@ -1781,31 +1782,74 @@ final class questionlib_test extends \advanced_testcase {
     }
 
     /**
-     * Check the page type list is correct based on the context of the module the question is in.
+     * Provide examples of different modules and the page types returned by their _page_type_list function.
+     *
+     * @return array[] Module name, and a list of page types.
+     */
+    public static function module_page_types(): array {
+        return [
+            'quiz' => [
+                'module' => 'quiz',
+                'pagetypes' => [
+                    'mod-quiz-*',
+                    'mod-quiz-view',
+                    'mod-quiz-attempt',
+                    'mod-quiz-summary',
+                    'mod-quiz-review',
+                    'mod-quiz-edit',
+                    'mod-quiz-report',
+                ],
+            ],
+            'forum' => [
+                'module' => 'forum',
+                'pagetypes' => [
+                    'mod-forum-*',
+                    'mod-forum-view',
+                    'mod-forum-discuss',
+                ],
+            ],
+            'scorm' => [
+                'module' => 'scorm',
+                'pagetypes' => [
+                    'mod-scorm-*',
+                ],
+            ],
+            'lti' => [ // LTI has no additional page types.
+                'module' => 'lti',
+                'pagetypes' => [],
+            ],
+        ];
+    }
+
+    /**
+     * Calling question_page_type_list should return the question page types, plus the page types for the module context.
      *
      * @covers ::question_page_type_list()
+     * @param string $module The module name.
+     * @param string[] $pagetypes A list of the page type patterns this module should add.
      */
-    public function test_question_page_type_list(): void {
+    #[DataProvider('module_page_types')]
+    public function test_question_page_type_list(string $module, array $pagetypes): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
         $course = $this->getDataGenerator()->create_course();
         $coursecontext = course::instance($course->id);
 
-        $quiz = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id]);
-        $quizcontext = module::instance($quiz->cmid);
+        $modulerecord = $this->getDataGenerator()->create_module($module, ['course' => $course->id]);
+        $modulecontext = module::instance($modulerecord->cmid);
 
-        $forum = $this->getDataGenerator()->create_module('forum', ['course' => $course->id]);
-        $forumcontext = module::instance($forum->cmid);
+        $questionpagetypes = [
+            'question-*',
+            'question-edit',
+            'question-bank-managecategories-category',
+            'question-bank-exportquestions-export',
+            'question-bank-importquestions-import',
+        ];
 
-        $scorm = $this->getDataGenerator()->create_module('scorm', ['course' => $course->id]);
-        $scormcontext = module::instance($scorm->cmid);
-
-        // Function quiz_page_type_list has 7 additional page types.
-        $this->assertCount(12, question_page_type_list('question-edit', $coursecontext, $quizcontext));
-        // Function forum_page_type_list has 3 additional page types.
-        $this->assertCount(8, question_page_type_list('question-edit', $coursecontext, $forumcontext));
-        // Function scorm_page_type_list has 1 additional page types.
-        $this->assertCount(6, question_page_type_list('question-edit', $coursecontext, $scormcontext));
+        $expectedpagetypes = array_merge($pagetypes, $questionpagetypes);
+        $actualpagetypes = question_page_type_list('question-edit', $coursecontext, $modulecontext);
+        // Check that the expected page type patterns match those returned for this module.
+        $this->assertEquals($expectedpagetypes, array_keys($actualpagetypes));
     }
 }

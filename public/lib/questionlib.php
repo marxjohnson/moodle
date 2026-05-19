@@ -1841,6 +1841,9 @@ function core_question_question_preview_pluginfile($previewcontext, $questionid,
 
 /**
  * Return a list of page types for questions and the page types for the current module/context.
+ *
+ * This list is used when displaying blocks on a question page, to provide the list of possible page type patterns for the block.
+ *
  * @param string $pagetype current page type
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
@@ -1854,6 +1857,7 @@ function question_page_type_list($pagetype, $parentcontext, $currentcontext): ar
         'question-bank-exportquestions-export' => get_string('page-question-export', 'question'),
         'question-bank-importquestions-import' => get_string('page-question-import', 'question'),
     ];
+    // If current page is in a module context, include the list of page types for that module, if it provides one.
     if ($currentcontext && $currentcontext->contextlevel == CONTEXT_MODULE) {
         [, $cm] = get_course_and_cm_from_cmid($currentcontext->instanceid);
         $directory = core_component::get_plugin_directory('mod', $cm->modname);
