@@ -58,7 +58,7 @@ class task_indicator implements renderable, templatable {
      * @param ?url $redirecturl An optional URL to redirect to when the task completes.
      * @param ?pix_icon $icon An optional icon to display with the heading.
      * @param array $extraclasses Extra class names to apply to the indicator's container.
-     * @throws \coding_exception
+     * @param bool $compact Display a compact version of the indicator, ideal displaying in a list of tasks?
      */
     public function __construct(
         /** @var adhoc_task $task The task whose progress is being indicated. The task class must use stored_progress_task_trait. */
@@ -73,6 +73,8 @@ class task_indicator implements renderable, templatable {
         protected ?pix_icon $icon = new pix_icon('i/timer', ''),
         /** @var array $extraclasses Extra class names to apply to the indicator's container. */
         protected array $extraclasses = [],
+        /** @var bool $compact Display a compact version of the indicator, ideal displaying in a list of tasks? */
+        protected bool $compact = false,
     ) {
         if (!class_uses($task::class, stored_progress_task_trait::class)) {
             throw new \coding_exception('task_indicator can only be used for tasks using stored_progress_task_trait.');
@@ -128,10 +130,16 @@ class task_indicator implements renderable, templatable {
             $export['icon'] = $this->icon ? $this->icon->export_for_template($output) : '';
             $export['redirecturl'] = $this->redirecturl?->out();
             $export['extraclasses'] = implode(' ', $this->extraclasses);
+            if ($this->compact) {
+                $export['extraclasses'] .= ' task-indicator-compact';
+            }
             $export['runurl'] = $this->runurl?->out();
             $export['runlabel'] = $this->runlabel;
             if ($this->progressbar !== null) {
                 $export['progress'] = $this->progressbar->export_for_template($output);
+                if ($this->compact) {
+                    $export['progress']['class'] = str_replace('mb-3', 'mb-0', $export['progress']['class']);
+                }
                 $this->progressbar->init_js();
             }
         }

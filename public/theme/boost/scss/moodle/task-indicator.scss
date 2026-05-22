@@ -1,19 +1,4 @@
 .task-indicator {
-    padding-top: 2rem;
-
-    img.icon {
-        width: 145px;
-        height: 145px;
-        max-height: 145px;
-        max-width: 145px;
-        font-size: 145px;
-        padding-bottom: 2rem;
-    }
-
-    .progressbar_container {
-        padding-top: 2rem;
-    }
-
     .stored-progress-bar {
         opacity: 1;
         transition: opacity 0.5s;
@@ -21,5 +6,54 @@
 
     .stored-progress-notstarted {
         opacity: 0;
+    }
+    &:not(.task-indicator-compact) {
+        padding-top: 2rem;
+
+        img.icon {
+            width: 145px;
+            height: 145px;
+            max-height: 145px;
+            max-width: 145px;
+            font-size: 145px;
+            padding-bottom: 2rem;
+        }
+
+        .progressbar_container {
+            padding-top: 2rem;
+        }
+    }
+}
+.task-indicator-compact {
+    .text-center {
+        display: flex;
+        align-items: start;
+        flex-direction: row;
+        h2 {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 0;
+            margin-right: 1em;
+        }
+        p {
+            margin-bottom: 0;
+        }
+    }
+    .stored-progress-bar {
+        transition: max-height 0.5s, opacity 0.5s;
+        max-height: 1.5em;
+    }
+    .stored-progress-notstarted {
+        max-height: 0;
+    }
+    .progressbar_container {
+        display: flex;
+        align-items: start;
+        flex-direction: row;
+        margin: 0;
+        .progress {
+            width: 10em;
+            align-self: center;
+        }
     }
 }
