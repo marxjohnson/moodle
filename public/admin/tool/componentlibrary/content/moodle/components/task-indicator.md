@@ -112,11 +112,81 @@ indicator.
         "id": "progressbar_test",
         "message": "Task pending",
         "idnumber": "progressbar_test",
-        "class": "stored-progress-bar stored-progress-notstarted",
+        "class": "mb-3 stored-progress-bar stored-progress-notstarted",
         "width": "500",
         "value": "0"
     },
     "runurl": "http://example.com/runtask.php?id=1",
     "runlabel": "Run now"
+}
+{{< /mustache >}}
+
+### Compact mode
+
+You may want to display a task indicator in a more compact form, for example if you want to display it inside
+a table row, or in a list of tasks.
+
+You can achieve this my passing the `compact` argument to the `task_indicator` constructor:
+
+{{< php >}}
+
+$task = new mytask($id);
+$taskindicator = new \core\output\task_indicator(
+    task: $task,
+    heading: 'Task processing',
+    message: get_string('recalculatinggradesadhoc', 'grades'),
+    icon: new \core\output\pix_icon('i/grades', ''),
+    redirecturl: $PAGE->url,
+    compact: true,
+);
+
+{{< /php  >}}
+
+This will then render the indicator with the `.task-indicator-compact` CSS class, which displays the icon,
+heading and message on a single line.
+
+{{< mustache template="core/task_indicator" >}}
+{
+    "heading": "Grading",
+    "icon": {
+        "attributes": [
+            {"name": "src", "value": "/pix/i/timer.svg"},
+            {"name": "alt", "value": ""}
+        ]
+    },
+    "message": "Grading in progress.",
+    "progress": {
+        "id": "progressbar_test",
+        "message": "",
+        "idnumber": "progressbar_test",
+        "class": "stored-progress-bar stored-progress-notstarted",
+        "width": "500",
+        "value": "0"
+    },    
+    "extraclasses": "task-indicator-compact"
+}
+{{< /mustache >}}
+
+When the task starts, the progress bar is revealed below.
+
+{{< mustache template="core/task_indicator" >}}
+{
+    "heading": "Grading",
+    "icon": {
+        "attributes": [
+            {"name": "src", "value": "/pix/i/timer.svg"},
+            {"name": "alt", "value": ""}
+        ]
+    },
+    "message": "Grading in progress.",
+    "progress": {
+        "id": "progressbar_test",
+        "message": "",
+        "idnumber": "progressbar_test",
+        "class": "stored-progress-bar",
+        "width": "500",
+        "value": "50"
+    },    
+    "extraclasses": "task-indicator-compact"
 }
 {{< /mustache >}}

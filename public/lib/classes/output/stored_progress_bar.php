@@ -231,19 +231,16 @@ class stored_progress_bar extends progress_bar {
      * @return array
      */
     public function export_for_template(\renderer_base $output): array {
-        $class = 'stored-progress-bar';
+        $export = parent::export_for_template($output);
+        $export['id'] = $this->recordid;
+        $export['value'] = $this->percent;
+        $export['message'] = $this->message;
+        $export['error'] = $this->haserrored;
+        $export['class'] .= ' stored-progress-bar';
         if (empty($this->timestart)) {
-            $class .= ' stored-progress-notstarted';
+            $export['class'] .= ' stored-progress-notstarted';
         }
-        return [
-            'id' => $this->recordid,
-            'idnumber' => $this->idnumber,
-            'width' => $this->width,
-            'class' => $class,
-            'value' => $this->percent,
-            'message' => $this->message,
-            'error' => $this->haserrored,
-        ];
+        return $export;
     }
 
     /**
