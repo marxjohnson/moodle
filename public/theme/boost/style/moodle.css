@@ -52026,10 +52026,17 @@ input[type=button].btn-block {
   width: 100%;
 }
 
-.task-indicator {
+.task-indicator .stored-progress-bar {
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+.task-indicator .stored-progress-notstarted {
+  opacity: 0;
+}
+.task-indicator:not(.task-indicator-compact) {
   padding-top: 2rem;
 }
-.task-indicator img.icon {
+.task-indicator:not(.task-indicator-compact) img.icon {
   width: 145px;
   height: 145px;
   max-height: 145px;
@@ -52037,15 +52044,40 @@ input[type=button].btn-block {
   font-size: 145px;
   padding-bottom: 2rem;
 }
-.task-indicator .progressbar_container {
+.task-indicator:not(.task-indicator-compact) .progressbar_container {
   padding-top: 2rem;
 }
-.task-indicator .stored-progress-bar {
-  opacity: 1;
-  transition: opacity 0.5s;
+
+.task-indicator-compact .text-center {
+  display: flex;
+  align-items: start;
+  flex-direction: row;
 }
-.task-indicator .stored-progress-notstarted {
-  opacity: 0;
+.task-indicator-compact .text-center h2, .task-indicator-compact .text-center .h2 {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-right: 1em;
+}
+.task-indicator-compact .text-center p {
+  margin-bottom: 0;
+}
+.task-indicator-compact .stored-progress-bar {
+  transition: max-height 0.5s, opacity 0.5s;
+  max-height: 1.5em;
+}
+.task-indicator-compact .stored-progress-notstarted {
+  max-height: 0;
+}
+.task-indicator-compact .progressbar_container {
+  display: flex;
+  align-items: start;
+  flex-direction: row;
+  margin: 0;
+}
+.task-indicator-compact .progressbar_container .progress {
+  width: 10em;
+  align-self: center;
 }
 
 body {

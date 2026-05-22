@@ -253,7 +253,7 @@ class progress_bar implements renderable, templatable {
             'id' => '',
             'idnumber' => $this->idnumber,
             'width' => $this->width,
-            'class' => '',
+            'class' => 'mb-3',
             'value' => 0,
             'error' => 0,
         ];
