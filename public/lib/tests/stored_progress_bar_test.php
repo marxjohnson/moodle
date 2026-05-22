@@ -186,7 +186,7 @@ final class stored_progress_bar_test extends \advanced_testcase {
             'id' => $progress->id,
             'idnumber' => $progress->idnumber,
             'width' => 0,
-            'class' => 'stored-progress-bar',
+            'class' => 'mb-3 stored-progress-bar',
             'value' => $progress->percentcompleted,
             'message' => $progress->message,
             'error' => $progress->haserrored,
