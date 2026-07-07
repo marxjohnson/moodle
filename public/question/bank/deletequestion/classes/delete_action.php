@@ -109,8 +109,8 @@ class delete_action extends question_action_base {
      */
     public function get_action_menu_link(\stdClass $question): ?\action_menu_link {
         $deletelink = parent::get_action_menu_link($question);
-        $confirmurl = new url($deletelink->url, ['sesskey' => sesskey(), 'confirm' => true]);
         if ($deletelink !== null) {
+            $confirmurl = new url($deletelink->url, ['sesskey' => sesskey(), 'confirm' => true]);
             $deletelink->add_class('text-danger');
             $deleteallversions = $confirmurl->param('deleteall') ?? false;
             [$confirmtitle, $confirmessage] = helper::get_delete_confirmation_message([$question->id], $deleteallversions);
