@@ -1,0 +1,8 @@
+issueNumber: MDL-82654
+notes:
+  mod_quiz:
+    - message: >-
+        The external function for getting quiz attempts, `mod_quiz_get_attempt_review`, has been modified
+        to return SUBMITTED attempts as FINISHED, to return backwards-compatibility with the app.
+        This function has been deprecated in favour of the new route `mod_quiz/attempts/{attemptid}/review`.
+      type: deprecated
