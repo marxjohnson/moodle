@@ -1904,6 +1904,8 @@ class quiz_attempt {
             // Trigger event.
             $this->fire_state_transition_event('\mod_quiz\event\attempt_submitted', $timestamp, $studentisonline);
             \core\hook\manager::get_instance()->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
+            // Tell any access rules that care that the attempt is over.
+            $this->get_access_manager($timestamp)->current_attempt_finished();
         }
 
         $transaction->allow_commit();
@@ -1944,8 +1946,6 @@ class quiz_attempt {
             $this->fire_state_transition_event('\mod_quiz\event\attempt_graded', $timestamp, false);
 
             di::get(hook\manager::class)->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
-            // Tell any access rules that care that the attempt is over.
-            $this->get_access_manager($timestamp)->current_attempt_finished();
         }
 
         $transaction->allow_commit();
