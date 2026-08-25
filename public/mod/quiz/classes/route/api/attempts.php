@@ -29,6 +29,7 @@ use core\router\schema\response\content\json_media_type;
 use core\router\schema\response\payload_response;
 use core\router\schema\response\response;
 use dml_exception;
+use mod_quiz\output\grades\grade_out_of;
 use mod_quiz\quiz_attempt;
 use mod_quiz\quiz_attempt_datum;
 use mod_quiz\quiz_attempt_question;
@@ -96,7 +97,8 @@ class attempts {
                                         'timemodifiedoffline' => new scalar_type(param::INT),
                                         'timecheckstate' => new scalar_type(param::INT),
                                         'sumgrades' => new scalar_type(param::FLOAT),
-                                        'gradenotificationsenttime' => new scalar_type(param::INT),
+                                        'gradednotificationsenttime' => new scalar_type(param::INT),
+                                        'gradeitemmarks' => new array_of_things(grade_out_of::class),
                                     ],
                                 ),
                                 'questions' => new array_of_things(quiz_attempt_question::class),
@@ -160,7 +162,7 @@ class attempts {
                 ],
             ),
         ],
-        requirelogin: new require_login(true, false, 'course', false)
+        requirelogin: new require_login(true, autologinguest: false)
     )]
     public function get_review(
         ServerRequestInterface $request,
@@ -180,7 +182,8 @@ class attempts {
         }
 
         try {
-            $review = $attempt->get_review($params['page'] ?: null);
+            require_course_login($attempt->get_course(), false, $attempt->get_cm());
+            $review = $attempt->get_review($params['page'] ?? null);
             return new payload_response(
                 payload: $review,
                 request: $request,
@@ -189,7 +192,7 @@ class attempts {
         } catch (moodle_exception $e) {
             $statuscode = match ($e->errorcode) {
                 'attemptclosed' => 400,
-                'noreview', 'noreviewattempt' => 403,
+                'noreview', 'noreviewattempt', 'nopermissions' => 403,
                 default => 500,
             };
             return new payload_response(
