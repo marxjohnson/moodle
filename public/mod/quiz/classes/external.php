@@ -1668,7 +1668,7 @@ class mod_quiz_external extends external_api {
 
         // Prepare the output.
         $result = [];
-        $result['attempt'] = $attemptobj->get_attempt();
+        $result['attempt'] = clone $attemptobj->get_attempt(); // Clone to avoid mutating the state of the real attempt object.
         if ($result['attempt']->state == quiz_attempt::SUBMITTED) {
             $result['attempt']->state = quiz_attempt::FINISHED; // For backwards compatibility.
         }
