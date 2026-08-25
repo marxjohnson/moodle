@@ -103,7 +103,7 @@ if ($ADMIN->fulltree) {
 
     $quizsettings->add(
         new admin_setting_configcheckbox(
-            'asyncgrading',
+            'quiz/asyncgrading',
             new lang_string('configasyncgrading', 'quiz'),
             new lang_string('configasyncgrading_desc', 'quiz'),
             0,
