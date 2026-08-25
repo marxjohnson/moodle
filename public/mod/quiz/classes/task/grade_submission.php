@@ -16,6 +16,9 @@
 
 namespace mod_quiz\task;
 
+use core\exception\moodle_exception;
+use core\lock\lock_config;
+use core\lock\lock_utils;
 use core\task\adhoc_task;
 use core\task\stored_progress_task_trait;
 use mod_quiz\quiz_attempt;
@@ -33,6 +36,11 @@ use mod_quiz\quiz_attempt;
  */
 class grade_submission extends adhoc_task {
     use stored_progress_task_trait;
+
+    /**
+     * How long to wait for a lock if another process is grading an attempt for the same user and quiz.
+     */
+    const LOCK_TIMEOUT = 0;
 
     /**
      * Return an instance of the task, with the attempt ID stored in custom data.
@@ -63,7 +71,38 @@ class grade_submission extends adhoc_task {
                 $attempt->get_quiz_name() . ' on course ' .
                 $attempt->get_course()->shortname
             );
+            $lockfactory = lock_config::get_lock_factory('quiz_grade_submission');
+            $lockkey = $attempt->get_quizid() . ':' . $attempt->get_userid();
+            $lock = $lockfactory->get_lock($lockkey, 0);
+            if (!$lock) {
+                $lock = lock_utils::wait_for_lock_with_progress(
+                    $lockfactory,
+                    $lockkey,
+                    $progress,
+                    self::LOCK_TIMEOUT,
+                    get_string('lockgradesubmission', 'quiz')
+                );
+                if (!$lock) {
+                    throw new moodle_exception(
+                        'lockgradesubmissionfailed',
+                        'quiz',
+                        a: (object) [
+                            'quizid' => $attempt->get_quizid(),
+                            'userid' => $attempt->get_userid(),
+                            'timeout' => self::LOCK_TIMEOUT,
+                        ],
+                    );
+                }
+                // Reload the attempt and check it still needs grading.
+                $attempt = quiz_attempt::create($data->attemptid);
+                if ($attempt->get_state() !== quiz_attempt::SUBMITTED) {
+                    mtrace('Attempt ID ' . $data->attemptid . ' no longer in submitted state, skipping grading.');
+                    $progress->end_progress();
+                    return;
+                }
+            }
             $attempt->process_grade_submission(time());
+            $lock->release();
         } else {
             mtrace('Attempt ID ' . $data->attemptid . ' not found, or not in submitted state.');
         }
