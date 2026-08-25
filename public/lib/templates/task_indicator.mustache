@@ -63,6 +63,6 @@
 
 {{#js}}
     require(['core/task_indicator'], function(TaskIndicator) {
-        TaskIndicator.init('{{progress.idnumber}}', '{{redirecturl}}');
+    TaskIndicator.init('{{progress.idnumber}}', {{#quote}}{{{redirecturl}}}{{/quote}});
     });
 {{/js}}

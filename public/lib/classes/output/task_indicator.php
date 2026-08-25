@@ -128,7 +128,7 @@ class task_indicator implements renderable, templatable {
             $export['heading'] = $this->heading;
             $export['message'] = $this->message;
             $export['icon'] = $this->icon ? $this->icon->export_for_template($output) : '';
-            $export['redirecturl'] = $this->redirecturl?->out();
+            $export['redirecturl'] = $this->redirecturl?->out(false);
             $export['extraclasses'] = implode(' ', $this->extraclasses);
             if ($this->compact) {
                 $export['extraclasses'] .= ' task-indicator-compact';
