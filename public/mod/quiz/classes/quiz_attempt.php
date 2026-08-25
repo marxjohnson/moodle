@@ -2774,11 +2774,12 @@ class quiz_attempt {
         } else {
             $review['attempt']->gradeitemmarks = [];
             foreach ($this->get_grade_item_totals() as $gradeitem) {
-                $review['attempt']->gradeitemmarks[] = [
-                    'name' => format_string($gradeitem->name, $this->get_context()),
-                    'grade' => $gradeitem->grade,
-                    'maxgrade' => $gradeitem->maxgrade,
-                ];
+                $review['attempt']->gradeitemmarks[] = new grade_out_of(
+                    $this->get_quiz(),
+                    $gradeitem->grade,
+                    $gradeitem->maxgrade,
+                    format_string($gradeitem->name, $this->get_context()),
+                );
             }
         }
 
