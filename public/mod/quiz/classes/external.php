@@ -1605,12 +1605,12 @@ class mod_quiz_external extends external_api {
      *
      * @return external_function_parameters
      * @since Moodle 3.1
-     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @deprecated Since Moodle 5.3 MDL-82654.
      * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
     #[\core\attribute\deprecated(
         'mod_quiz\route\api\attempts::get_review()',
-        since: '5.2',
+        since: '5.3',
         reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
         mdl: 'MDL-82654',
     )]
@@ -1633,12 +1633,12 @@ class mod_quiz_external extends external_api {
      * @param int $page page number, empty for all the questions in all the pages
      * @return array of warnings and the attempt data, feedback and questions
      * @since Moodle 3.1
-     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @deprecated Since Moodle 5.3 MDL-82654.
      * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
     #[\core\attribute\deprecated(
         'mod_quiz\route\api\attempts::get_review()',
-        since: '5.2',
+        since: '5.3',
         reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
         mdl: 'MDL-82654',
     )]
@@ -1724,12 +1724,12 @@ class mod_quiz_external extends external_api {
      *
      * @return external_single_structure
      * @since Moodle 3.1
-     * @deprecated Since Moodle 5.2 MDL-82654.
+     * @deprecated Since Moodle 5.3 MDL-82654.
      * @todo Final deprecation in Moodle 6.0 (MDL-80956)
      */
     #[\core\attribute\deprecated(
         'mod_quiz\route\api\attempts::get_review()',
-        since: '5.2',
+        since: '5.3',
         reason: 'The old API for fetching attempt reviews doesn\'t return the true state for SUBMITTED attempts',
         mdl: 'MDL-82654',
     )]
