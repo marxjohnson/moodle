@@ -665,7 +665,7 @@ class mod_quiz_external extends external_api {
                 }
             }
 
-            if ($canviewfeedback) {
+            if ($canviewfeedback && $attempt->state == quiz_attempt::FINISHED) {
                 $attemptgrade = quiz_rescale_grade($attemptsumgrades, $quiz, false);
                 $feedbackrecord = quiz_feedback_record_for_grade($attemptgrade, $quiz);
                 [$text, $format] = \core_external\util::format_text(
