@@ -409,4 +409,52 @@ class category_manager {
             $DB->update_record('question_categories', $categorytofix, true);
         }
     }
+
+    /**
+     * Upgrade step to find questions with no category and delete them.
+     *
+     * Due to MDL-86154, there may be questions left in the database after a restore, whose category has been deleted. This will
+     * find any questions like that and delete them. These questions will always be unused.
+     *
+     * Now that we have prevented this occurring, this function is used by the upgrade process to clean up these questions.
+     *
+     * @return int A count of deleted questions.
+     * @todo Deprecate in 6.0 MDL-87844 for Removal in 7.0 MDL-87845.
+     */
+    public static function cleanup_questions_without_categories(): int {
+        global $DB;
+        $questionids = $DB->get_fieldset_sql("
+            SELECT q.id
+              FROM {question_bank_entries} qbe
+              JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
+              JOIN {question} q ON qv.questionid = q.id
+         LEFT JOIN {question_categories} qc ON qbe.questioncategoryid = qc.id
+             WHERE qc.id IS NULL
+        ");
+        foreach ($questionids as $questionid) {
+            question_delete_question($questionid);
+        }
+        return count($questionids);
+    }
+
+    /**
+     * Create a category to move rescued questions to.
+     *
+     * @param int $newcontextid The context ID for the rescue category.
+     * @param string $oldplace The name of the place (context, category) the questions were rescued from.
+     * @return stdClass
+     */
+    public static function create_rescue_category(int $newcontextid, string $oldplace): stdClass {
+        global $DB;
+        $newcategory = new stdClass();
+        $newcategory->parent = question_get_top_category($newcontextid, true)->id;
+        $newcategory->contextid = $newcontextid;
+        // Max length of column name in question_categories is 255.
+        $newcategory->name = shorten_text(get_string('questionsrescuedfrom', 'question', $oldplace), 255);
+        $newcategory->info = get_string('questionsrescuedfrominfo', 'question', $oldplace);
+        $newcategory->sortorder = 999;
+        $newcategory->stamp = make_unique_id_code();
+        $newcategory->id = $DB->insert_record('question_categories', $newcategory);
+        return $newcategory;
+    }
 }
