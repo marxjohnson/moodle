@@ -225,6 +225,8 @@ class transfer_question_categories extends adhoc_task {
                 $data->idnumber = null;
             }
 
+            move_question_set_references($subcatid, $subcatid, $data->contextid, $newcontext->id);
+
             // Update the contextid and save the category.
             $data->contextid = $newcontext->id;
             $DB->update_record('question_categories', $data);

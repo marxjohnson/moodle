@@ -697,11 +697,12 @@ function move_question_set_references(int $oldcategoryid, int $newcatgoryid,
             if (isset($filter['questioncategoryid'])) {
                 $filter = question_reference_manager::convert_legacy_set_reference_filter_condition($filter);
             }
+            if ((int)$filter['filter']['category']['values'][0] !== $oldcategoryid) {
+                // Don't alter set references for other categories.
+                continue;
+            }
             $setreference->questionscontextid = $newcontextid;
-            if (
-                (int)$filter['filter']['category']['values'][0] === $oldcategoryid
-                && $oldcategoryid !== $newcatgoryid
-            ) {
+            if ($oldcategoryid !== $newcatgoryid) {
                 $filter['filter']['category']['values'][0] = $newcatgoryid;
             }
             $filter['cat'] = implode(',', [$filter['filter']['category']['values'][0], $newcontextid]);

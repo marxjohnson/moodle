@@ -1907,13 +1907,15 @@ final class questionlib_test extends \advanced_testcase {
      */
     public function test_move_question_set_references_category(): void {
         $this->setAdminUser();
-        // Create a course with a quiz containing a random question from a qbank context.
+        // Create a course with a quiz containing 2 random questions from a qbank context.
         $randomcourse = self::getDataGenerator()->create_course(['shortname' => 'Random']);
         $qbank1 = self::getDataGenerator()->get_plugin_generator('mod_qbank')->create_instance(['course' => $randomcourse->id]);
         $context1 = \context_module::instance($qbank1->cmid);
         $qbank2 = self::getDataGenerator()->get_plugin_generator('mod_qbank')->create_instance(['course' => $randomcourse->id]);
         $context2 = \context_module::instance($qbank2->cmid);
-        $topcategory1 = question_get_top_category($context1->id, true);
+        $qgen = self::getDataGenerator()->get_plugin_generator('core_question');
+        $childcategory1 = $qgen->create_question_category(['contextid' => $context1->id]);
+        $childcategory2 = $qgen->create_question_category(['contextid' => $context1->id]);
         $topcategory2 = question_get_top_category($context2->id, true);
         $randomquiz = self::getDataGenerator()->get_plugin_generator('mod_quiz')->create_instance(
             [
@@ -1927,29 +1929,44 @@ final class questionlib_test extends \advanced_testcase {
         $randomquizsettings = quiz_settings::create($randomquiz->id);
         $structure = $randomquizsettings->get_structure();
 
-        $filtercondition = [
+        $filtercondition1 = [
             'filter' => [
                 'category' => [
                     'jointype' => \core_question\local\bank\condition::JOINTYPE_DEFAULT,
-                    'values' => [$topcategory1->id],
+                    'values' => [$childcategory1->id],
                     'filteroptions' => ['includesubcategories' => true],
                 ],
             ],
         ];
-        $structure->add_random_questions(1, 1, $filtercondition);
+        $structure->add_random_questions(1, 1, $filtercondition1);
+        $filtercondition2 = [
+            'filter' => [
+                'category' => [
+                    'jointype' => \core_question\local\bank\condition::JOINTYPE_DEFAULT,
+                    'values' => [$childcategory2->id],
+                    'filteroptions' => ['includesubcategories' => true],
+                ],
+            ],
+        ];
+        $structure->add_random_questions(1, 1, $filtercondition2);
         $structure = $randomquizsettings->get_structure();
-        $randomquestion = $structure->get_question_in_slot(1);
+        $randomquestion1 = $structure->get_question_in_slot(1);
 
-        $this->assertEquals($randomquestion->contextid, $context1->id);
-        $this->assertEquals($randomquestion->filtercondition['filter']['category']['values'][0], $topcategory1->id);
+        $this->assertEquals($randomquestion1->contextid, $context1->id);
+        $this->assertEquals($randomquestion1->filtercondition['filter']['category']['values'][0], $childcategory1->id);
 
-        move_question_set_references($topcategory1->id, $topcategory2->id, $context1->id, $context2->id);
+        move_question_set_references($childcategory1->id, $topcategory2->id, $context1->id, $context2->id);
 
+        // The set reference for the first category now points a the new category and context.
         $structure = $randomquizsettings->get_structure();
-        $randomquestion = $structure->get_question_in_slot(1);
+        $randomquestion1 = $structure->get_question_in_slot(1);
+        $this->assertEquals($randomquestion1->contextid, $context2->id);
+        $this->assertEquals($randomquestion1->filtercondition['filter']['category']['values'][0], $topcategory2->id);
 
-        $this->assertEquals($randomquestion->contextid, $context2->id);
-        $this->assertEquals($randomquestion->filtercondition['filter']['category']['values'][0], $topcategory2->id);
+        // The set reference for the second category should not have been altered.
+        $randomquestion2 = $structure->get_question_in_slot(2);
+        $this->assertEquals($randomquestion2->contextid, $context1->id);
+        $this->assertEquals($randomquestion2->filtercondition['filter']['category']['values'][0], $childcategory2->id);
     }
 
     /**
