@@ -40,7 +40,7 @@ class grade_submission extends adhoc_task {
     /**
      * How long to wait for a lock if another process is grading an attempt for the same user and quiz.
      */
-    const LOCK_TIMEOUT = 0;
+    const LOCK_TIMEOUT = 60;
 
     /**
      * Return an instance of the task, with the attempt ID stored in custom data.
@@ -94,16 +94,20 @@ class grade_submission extends adhoc_task {
                             ],
                         );
                     }
+                }
+                try {
                     // Reload the attempt and check it still needs grading.
                     $attempt = quiz_attempt::create($data->attemptid);
                     if ($attempt->get_state() !== quiz_attempt::SUBMITTED) {
                         mtrace('Attempt ID ' . $data->attemptid . ' no longer in submitted state, skipping grading.');
+                        $lock->release();
                         $progress->end_progress();
                         return;
                     }
+                    $attempt->process_grade_submission(time());
+                } finally {
+                    $lock->release();
                 }
-                $attempt->process_grade_submission(time());
-                $lock->release();
             } else {
                 mtrace('Attempt ID ' . $data->attemptid . ' not found, or not in submitted state.');
             }
