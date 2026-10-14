@@ -301,11 +301,6 @@ class attempt_summary_information implements renderable, named_templatable {
             return $grade;
         }
 
-        if (!quiz_has_grades($quiz) || !in_array($attemptobj->get_state(), [quiz_attempt::FINISHED, quiz_attempt::SUBMITTED])) {
-            // No grades to show.
-            return $grade;
-        }
-
         if ($attemptobj->get_state() == quiz_attempt::SUBMITTED) {
             $task = grade_submission::instance($attemptobj->get_attemptid());
             $indicator = new task_indicator(
@@ -316,6 +311,11 @@ class attempt_summary_information implements renderable, named_templatable {
                 compact: true,
             );
             $this->add_item('grade', get_string('gradenoun'), $OUTPUT->render($indicator));
+            return $grade;
+        }
+
+        if (!quiz_has_grades($quiz) || !in_array($attemptobj->get_state(), [quiz_attempt::FINISHED, quiz_attempt::SUBMITTED])) {
+            // No grades to show.
             return $grade;
         }
 
