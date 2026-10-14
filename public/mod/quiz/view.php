@@ -28,6 +28,7 @@ use mod_quiz\access_manager;
 use mod_quiz\output\list_of_attempts;
 use mod_quiz\output\renderer;
 use mod_quiz\output\view_page;
+use mod_quiz\question\display_options;
 use mod_quiz\quiz_attempt;
 use mod_quiz\quiz_settings;
 
@@ -289,6 +290,36 @@ if (!$viewobj->quizhasquestions) {
     if (in_array('missingtype', $quizobj->get_all_question_types_used())) {
         $viewobj->preventmessages[] = $OUTPUT->notification(
             get_string('quizinvalidquestions', 'mod_quiz'), notification::NOTIFY_ERROR, false);
+        $viewobj->buttontext = '';
+    }
+
+    // If this quiz has incompatible settings, we cannot attempt it.
+    if (
+        get_config('quiz', 'asyncgrading')
+        && ($quiz->reviewmarks & display_options::IMMEDIATELY_AFTER) == display_options::IMMEDIATELY_AFTER
+        && ($quiz->reviewmarks & display_options::LATER_WHILE_OPEN) != display_options::LATER_WHILE_OPEN
+        && ($quiz->reviewmarks & display_options::AFTER_CLOSE) != display_options::AFTER_CLOSE
+    ) {
+        if (has_capability('mod/quiz:manage', $context)) {
+            // Specific details of the issue and how to resolve it.
+            $message = get_string(
+                'reviewoptionsasyncgrading',
+                'quiz',
+                (object) [
+                    'immediately' => get_string('reviewimmediately', 'quiz'),
+                    'open' => get_string('reviewopen', 'quiz'),
+                    'closed' => get_string('reviewclosed', 'quiz'),
+                ],
+            );
+        } else {
+            // A more general message for students explaining the problem.
+            $message = get_string('reviewoptionsinvalid', 'quiz');
+        }
+        $viewobj->preventmessages[] = $OUTPUT->notification(
+            $message,
+            notification::NOTIFY_ERROR,
+            false,
+        );
         $viewobj->buttontext = '';
     }
 }

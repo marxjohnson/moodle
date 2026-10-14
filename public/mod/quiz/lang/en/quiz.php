@@ -991,6 +991,10 @@ $string['reviewnever'] = 'Never allow review';
 $string['reviewofquestion'] = 'Review of question {$a->question} in {$a->quiz} by {$a->user}';
 $string['reviewopen'] = 'Later, while the quiz is still open';
 $string['reviewoptions'] = 'Students may review';
+$string['reviewoptionsasyncgrading'] = 'The current review options are incompatible with asynchronous grading, which is enabled.
+Marks are currently visible "{$a->immediately}" only. If grading is not complete within that time, students will miss the only
+opportunity to view their marks. Either enable marks "{$a->open}" or "{$a->closed}".';
+$string['reviewoptionsinvalid'] = 'The current review options for this quiz are incompatible, so it cannot be attempted.';
 $string['reviewoptionsheading'] = 'Review options';
 $string['reviewoptionsheading_help'] = 'These options control what information students can see when they review a quiz attempt or look at the quiz reports.
 

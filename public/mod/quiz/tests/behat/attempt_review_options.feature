@@ -29,10 +29,16 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
       | activity | name   | intro       | course | idnumber | maxmarksduring | marksduring | maxmarksimmediately | marksimmediately | preferredbehaviour |
       | quiz     | Quiz 1 | Quiz 1 test | C1     | quiz1    | 1              | 1           | 1                   | 1                | immediatefeedback  |
       | quiz     | Quiz 2 | Quiz 2 test | C1     | quiz2    | 0              | 0           | 1                   | 1                | immediatefeedback  |
+    And the following "activities" exist:
+      | activity | name   | intro       | course | idnumber | marksimmediately | marksopen | marksclosed | preferredbehaviour |
+      | quiz     | Quiz 3 | Quiz 3 test | C1     | quiz3    | 1                | 0         | 0           | immediatefeedback  |
     And quiz "Quiz 1" contains the following questions:
       | question | page | maxmark |
       | TF1      | 1    | 2.00    |
     And quiz "Quiz 2" contains the following questions:
+      | question | page | maxmark |
+      | TF1      | 1    | 2.00    |
+    And quiz "Quiz 3" contains the following questions:
       | question | page | maxmark |
       | TF1      | 1    | 2.00    |
 
@@ -74,7 +80,7 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
   @javascript
   Scenario: Review attempt before and after asynchronous grading
     Given the following config values are set as admin:
-     | asyncgrading | true  | quiz |
+     | asyncgrading | 1 | quiz |
     And I am on the "Quiz 1" "quiz activity" page logged in as "student1"
     And I click on "Attempt quiz" "button"
     And I click on "True" "radio" in the "First question" "question"
@@ -104,3 +110,32 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
     And I should see "Correct" in the ".info" "css_element"
     And I should see "Mark 2.00 out of 2.00" in the ".info" "css_element"
     And I should see "This is the right answer."
+
+  Scenario: A quiz cannot be attempted if asynchronous grading is enabled, and marks can only be viewed immediately.
+    Given I am on the "Quiz 1" "quiz activity" page logged in as "student1"
+    And "Attempt quiz" "button" should exist
+    And I am on the "Quiz 3" "quiz activity" page
+    And "Attempt quiz" "button" should exist
+    When the following config values are set as admin:
+      | asyncgrading | 1 | quiz |
+    And I am on the "Quiz 1" "quiz activity" page
+    And "Attempt quiz" "button" should exist
+    And I am on the "Quiz 3" "quiz activity" page
+    Then "Attempt quiz" "button" should not exist
+    And I should see "The current review options for this quiz are incompatible, so it cannot be attempted."
+    And I am on the "Quiz 3" "quiz activity" page logged in as "teacher"
+    And I should see "The current review options are incompatible with asynchronous grading, which is enabled."
+
+  Scenario: Quiz settings cannot be saved with incompatible review options when asynchronous grading is enabled.
+    Given I am on the "quiz3" "activity editing" page logged in as "teacher"
+    And I press "Save and return to course"
+    And "Course 1" "heading" should exist
+    When the following config values are set as admin:
+      | asyncgrading | 1 | quiz |
+    And I am on the "quiz3" "activity editing" page logged in as "teacher"
+    And I press "Save and return to course"
+    And "Course 1" "heading" should not exist
+    And I should see "The current review options are incompatible with asynchronous grading, which is enabled."
+    And I set the field "marksopen" to "1"
+    And I press "Save and return to course"
+    And "Course 1" "heading" should exist

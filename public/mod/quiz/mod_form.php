@@ -647,6 +647,22 @@ class mod_quiz_mod_form extends moodleform_mod {
         if (($data['preferredbehaviour'] == 'deferredcbm') OR ($data['preferredbehaviour'] == 'immediatecbm')) {
             unset($errors['gradepass']);
         }
+        if (
+            get_config('quiz', 'asyncgrading')
+            && $data['marksimmediately']
+            && empty($data['marksopen'])
+            && empty($data['marksclosed'])
+        ) {
+            $errors['openoptionsgrp'] = get_string(
+                'reviewoptionsasyncgrading',
+                'quiz',
+                (object) [
+                    'immediately' => get_string('reviewimmediately', 'quiz'),
+                    'open' => get_string('reviewopen', 'quiz'),
+                    'closed' => get_string('reviewclosed', 'quiz'),
+                ],
+            );
+        }
         // Any other rule plugins.
         $errors = access_manager::validate_settings_form_fields($errors, $data, $files, $this);
 
