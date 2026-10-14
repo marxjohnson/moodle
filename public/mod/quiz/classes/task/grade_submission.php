@@ -114,7 +114,7 @@ class grade_submission extends adhoc_task {
             $progress->end_progress();
         } catch (\Throwable $t) {
             // Re-initialise the progress bar for the next attempt.
-            $this->initialise_stored_progress();
+            $this->reset_stored_progress();
             throw $t;
         }
     }
