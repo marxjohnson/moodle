@@ -791,9 +791,19 @@ abstract class question_flags {
         if ($checksum != self::get_toggle_checksum($qubaid, $questionid, $qaid, $slot)) {
             throw new moodle_exception('errorsavingflags', 'question');
         }
+        // Check the flag is not locked.
+        $quba = question_engine::load_questions_usage_by_activity($qubaid);
+        $lock = $quba->get_question_flag_lock();
+        if (!$lock) {
+            throw new moodle_exception('errorlockedflags', 'question');
+        }
 
-        $dm = new question_engine_data_mapper();
-        $dm->update_question_attempt_flag($qubaid, $questionid, $qaid, $slot, $newstate);
+        try {
+            $dm = new question_engine_data_mapper();
+            $dm->update_question_attempt_flag($qubaid, $questionid, $qaid, $slot, $newstate);
+        } finally {
+            $lock->release();
+        }
     }
 
     public static function initialise_js() {

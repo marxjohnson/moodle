@@ -42,6 +42,9 @@ require_login();
 require_sesskey();
 
 // Check that the requested session really exists
-question_flags::update_flag($qubaid, $questionid, $qaid, $slot, $checksum, $newstate);
-
-echo 'OK';
+try {
+    question_flags::update_flag($qubaid, $questionid, $qaid, $slot, $checksum, $newstate);
+} catch (\Throwable $t) {
+    header('HTTP/1.1 500');
+    throw $t;
+}
