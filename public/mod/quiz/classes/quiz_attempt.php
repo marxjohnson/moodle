@@ -1920,35 +1920,41 @@ class quiz_attempt {
         global $DB;
 
         $transaction = $DB->start_delegated_transaction();
-        $this->quba->finish_all_questions($timestamp);
-        question_engine::save_questions_usage_by_activity($this->quba);
+        // Lock flags so they can't be toggled during review when the grading is being performed,
+        // otherwise they will be overwritten with the original values.
+        $lock = $this->quba->get_question_flag_lock(60);
+        try {
+            $this->quba->finish_all_questions($timestamp);
+            question_engine::save_questions_usage_by_activity($this->quba);
 
-        $originalattempt = clone $this->attempt;
+            $originalattempt = clone $this->attempt;
 
-        $this->attempt->timemodified = $timestamp;
+            $this->attempt->timemodified = $timestamp;
 
-        $this->attempt->sumgrades = $this->quba->get_total_mark();
-        $this->attempt->state = self::FINISHED;
+            $this->attempt->sumgrades = $this->quba->get_total_mark();
+            $this->attempt->state = self::FINISHED;
 
-        if (
-            !$this->requires_manual_grading() ||
-            !has_capability('mod/quiz:emailnotifyattemptgraded', $this->get_quizobj()->get_context(), $this->get_userid())
-        ) {
-            $this->attempt->gradednotificationsenttime = $timestamp;
+            if (
+                !$this->requires_manual_grading() ||
+                !has_capability('mod/quiz:emailnotifyattemptgraded', $this->get_quizobj()->get_context(), $this->get_userid())
+            ) {
+                $this->attempt->gradednotificationsenttime = $timestamp;
+            }
+
+            $DB->update_record('quiz_attempts', $this->attempt);
+
+            if (!$this->is_preview()) {
+                $this->recompute_final_grade();
+
+                // Trigger event.
+                $this->fire_state_transition_event('\mod_quiz\event\attempt_graded', $timestamp, false);
+
+                di::get(hook\manager::class)->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
+            }
+            $transaction->allow_commit();
+        } finally {
+            $lock->release();
         }
-
-        $DB->update_record('quiz_attempts', $this->attempt);
-
-        if (!$this->is_preview()) {
-            $this->recompute_final_grade();
-
-            // Trigger event.
-            $this->fire_state_transition_event('\mod_quiz\event\attempt_graded', $timestamp, false);
-
-            di::get(hook\manager::class)->dispatch(new attempt_state_changed($originalattempt, $this->attempt));
-        }
-
-        $transaction->allow_commit();
     }
 
     /**

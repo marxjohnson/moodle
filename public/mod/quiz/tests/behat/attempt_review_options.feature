@@ -139,3 +139,24 @@ Feature: Allow settings to show Max marks and Marks, Max marks only, or hide the
     And I set the field "marksopen" to "1"
     And I press "Save and return to course"
     And "Course 1" "heading" should exist
+
+  @javascript
+  Scenario: Question flags cannot be changed while locked.
+    Given the following config values are set as admin:
+      | asyncgrading | 1 | quiz |
+    And I am on the "Quiz 1" "quiz activity" page logged in as "student1"
+    And I click on "Attempt quiz" "button"
+    And I click on "True" "radio" in the "First question" "question"
+    And I click on "Finish attempt ..." "button" in the "region-main" "region"
+    And I press "Submit all and finish"
+    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I should see "Grading in progress" in the "Grade" "table_row"
+    And I should see "Flag question"
+    And I click on "Flag question" "text"
+    And I should not see "Flag question"
+    And I should see "Remove flag"
+    When I lock question flags for the latest attempt by "student1" in quiz "Quiz 1"
+    And I click on "Remove flag" "text"
+    Then I should see "This question's flag is currently locked."
+    And I should not see "Flag question"
+    And I should see "Remove flag"
