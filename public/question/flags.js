@@ -101,12 +101,31 @@ M.core_question_flags = {
     process: function(target) {
         var input = target.one('input.questionflagvalue');
         input.set('value', 1 - input.get('value'));
-        M.core_question_flags.update_flag(input, target.one('[aria-pressed]'));
         var postdata = target.one('input.questionflagpostdata').get('value') +
             input.get('value');
 
-        Y.io(M.core_question_flags.actionurl, {method: 'POST', 'data': postdata});
-        M.core_question_flags.fire_listeners(postdata);
+        Y.io(
+            M.core_question_flags.actionurl,
+            {
+                method: 'POST',
+                'data': postdata,
+                on: {
+                    success: () => {
+                        M.core_question_flags.update_flag(input, target.one('[aria-pressed]'));
+                        M.core_question_flags.fire_listeners(postdata);
+                    },
+                    failure: (id, response) => {
+                        window.console.log(response);
+                        var responsetext = Y.JSON.parse(response.responseText);
+                        if (responsetext.error) {
+                            Y.use('moodle-core-notification-alert', () => {
+                                new M.core.alert({message: responsetext.error});
+                            });
+                        }
+                    }
+                }
+            },
+        );
     },
 
     add_listener: function(listener) {

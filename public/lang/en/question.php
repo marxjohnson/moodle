@@ -374,6 +374,7 @@ $string['correctfeedbackdefault'] = 'Your answer is correct.';
 $string['courserestore'] = 'Course restore';
 $string['decimalplacesingrades'] = 'Decimal places in grades';
 $string['defaultmark'] = 'Default mark';
+$string['errorlockedflags'] = 'This question\'s flag is currently locked.';
 $string['errorsavingflags'] = 'Error saving the flag state.';
 $string['feedback'] = 'Feedback';
 $string['fieldinquestion'] = '{$a->fieldname} {$a->questionindentifier}';

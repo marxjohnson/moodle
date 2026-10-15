@@ -23,6 +23,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\lock\lock;
+use core\lock\lock_config;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -881,6 +883,18 @@ class question_usage_by_activity {
             $qa->finish($timestamp);
             $this->observer->notify_attempt_modified($qa);
         }
+    }
+
+    /**
+     * Lock the flags of all question attempts so they cannot be changed temporarily.
+     *
+     * @param int $timeout How long to wait for the lock.
+     * @return lock|null If the lock was achieved.
+     */
+    public function get_question_flag_lock($timeout = 0): ?lock {
+        $lockfactory = lock_config::get_lock_factory('quba_flags');
+        $lock = $lockfactory->get_lock($this->get_id(), $timeout, HOURSECS);
+        return $lock ?: null;
     }
 
     /**
