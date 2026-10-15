@@ -17,7 +17,9 @@
 namespace mod_quiz\route\api;
 
 use core\context\course;
+use core\router\route;
 use core\router\route_loader_interface;
+use core\router\schema\specification;
 use core\tests\router\route_testcase;
 use mod_quiz\output\grades\grade_out_of;
 use mod_quiz\quiz_attempt;
@@ -227,7 +229,6 @@ final class attempts_test extends route_testcase {
         $this->assertCount(2, $review['questions']);
         $this->assertEquals(1, $review['questions'][0]['slot']);
         $this->assertEquals(2, $review['questions'][1]['slot']);
-
 
         $response = $this->process_api_request('GET', "/attempts/{$attemptobj->get_attemptid()}/review?page=1");
         $this->assert_valid_response($response);

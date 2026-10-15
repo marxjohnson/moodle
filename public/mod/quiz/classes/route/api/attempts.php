@@ -20,7 +20,6 @@ use core\exception\moodle_exception;
 use core\param;
 use core\router\require_login;
 use core\router\route;
-use core\router\schema\objects\array_of_things;
 use core\router\schema\objects\scalar_type;
 use core\router\schema\objects\schema_object;
 use core\router\schema\parameters\path_parameter;
@@ -29,10 +28,8 @@ use core\router\schema\response\content\json_media_type;
 use core\router\schema\response\payload_response;
 use core\router\schema\response\response;
 use dml_exception;
-use mod_quiz\output\grades\grade_out_of;
+use mod_quiz\router\schema\objects\array_of_items;
 use mod_quiz\quiz_attempt;
-use mod_quiz\quiz_attempt_datum;
-use mod_quiz\quiz_attempt_question;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -98,11 +95,71 @@ class attempts {
                                         'timecheckstate' => new scalar_type(param::INT),
                                         'sumgrades' => new scalar_type(param::FLOAT),
                                         'gradednotificationsenttime' => new scalar_type(param::INT),
-                                        'gradeitemmarks' => new array_of_things(grade_out_of::class),
+                                        'gradeitemmarks' => new array_of_items(
+                                            new schema_object(
+                                                content: [
+                                                    'quiz' => new schema_object(content: []),
+                                                    'grade' => new scalar_type(param::FLOAT),
+                                                    'maxgrade' => new scalar_type(param::FLOAT),
+                                                    'name' => new scalar_type(param::RAW),
+                                                    'style' => new scalar_type(param::TEXT),
+                                                ],
+                                            ),
+                                        ),
                                     ],
                                 ),
-                                'questions' => new array_of_things(quiz_attempt_question::class),
-                                'additionaldata' => new array_of_things(quiz_attempt_datum::class),
+                                'questions' => new array_of_items(
+                                    new schema_object(
+                                        content: [
+                                            'slot' => new scalar_type(param::INT),
+                                            'page' => new scalar_type(param::INT),
+                                            'questionnumber' => new scalar_type(param::TEXT),
+                                            'flagged' => new scalar_type(param::BOOL),
+                                            'sequencecheck' => new scalar_type(param::INT),
+                                            'lastactiontime' => new scalar_type(param::INT),
+                                            'hasautosavedstep' => new scalar_type(param::BOOL),
+                                            'number' => new scalar_type(param::INT),
+                                            'state' => new scalar_type(param::TEXT),
+                                            'stateclass' => new scalar_type(param::TEXT),
+                                            'status' => new scalar_type(param::TEXT),
+                                            'blockedbyprevious' => new scalar_type(param::BOOL),
+                                            'maxmark' => new scalar_type(param::FLOAT),
+                                            'mark' => new scalar_type(param::TEXT),
+                                            'type' => new scalar_type(param::TEXT),
+                                            'html' => new scalar_type(param::RAW),
+                                            'responsefileareas' => new array_of_items(
+                                                items: new schema_object(
+                                                    content: [
+                                                        'area' => new scalar_type(param::TEXT),
+                                                        'files' => new array_of_items(
+                                                            new schema_object(
+                                                                content: [
+                                                                    'filename' => new scalar_type(param::TEXT),
+                                                                    'fileurl' => new scalar_type(param::URL),
+                                                                    'filesize' => new scalar_type(param::INT),
+                                                                    'filepath' => new scalar_type(param::TEXT),
+                                                                    'mimetype' => new scalar_type(param::TEXT),
+                                                                    'timemodified' => new scalar_type(param::INT),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    ],
+                                                ),
+                                                keyed: true,
+                                            ),
+                                            'settings' => new scalar_type(param::RAW),
+                                        ],
+                                    ),
+                                ),
+                                'additionaldata' => new array_of_items(
+                                    new schema_object(
+                                        content: [
+                                            'id' => new scalar_type(param::TEXT),
+                                            'title' => new scalar_type(param::RAW),
+                                            'content' => new scalar_type(param::RAW),
+                                        ],
+                                    ),
+                                ),
                                 'grade' => new scalar_type(param::FLOAT),
                             ],
                         ),
@@ -192,7 +249,7 @@ class attempts {
         } catch (moodle_exception $e) {
             $statuscode = match ($e->errorcode) {
                 'attemptclosed' => 400,
-                'noreview', 'noreviewattempt', 'nopermissions' => 403,
+                'noreview', 'noreviewattempt', 'nopermissions', 'requireloginerror' => 403,
                 default => 500,
             };
             return new payload_response(

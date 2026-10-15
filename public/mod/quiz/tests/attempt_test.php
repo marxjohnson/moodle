@@ -19,6 +19,7 @@ namespace mod_quiz;
 use core_question\local\bank\condition;
 use core_question\local\bank\question_version_status;
 use core_question_generator;
+use mod_quiz\output\grades\grade_out_of;
 use mod_quiz\tests\attempt_helper_test_trait;
 use mod_quiz_generator;
 use question_engine;
@@ -834,8 +835,16 @@ final class attempt_test extends \advanced_testcase {
         $this->assertEquals(1, $result['questions'][0]->slot);
 
         // Verify additional grades.
-        $this->assertEquals(['name' => 'Listening', 'grade' => 1, 'maxgrade' => 1], $result['attempt']->gradeitemmarks[0]);
-        $this->assertEquals(['name' => 'Reading', 'grade' => 0, 'maxgrade' => 1], $result['attempt']->gradeitemmarks[1]);
+        $grade1 = $result['attempt']->gradeitemmarks[0];
+        $this->assertInstanceOf(grade_out_of::class, $grade1);
+        $this->assertSame('Listening', $grade1->name);
+        $this->assertEquals(1, $grade1->grade);
+        $this->assertEquals(1, $grade1->maxgrade);
+        $grade2 = $result['attempt']->gradeitemmarks[1];
+        $this->assertInstanceOf(grade_out_of::class, $grade2);
+        $this->assertSame('Reading', $grade2->name);
+        $this->assertEquals(0, $grade2->grade);
+        $this->assertEquals(1, $grade2->maxgrade);
 
         // Now change the review options, so marks are not displayed, and check the result.
         $DB->set_field('quiz', 'reviewmarks', 0, ['id' => $attemptobj->get_quizid()]);
