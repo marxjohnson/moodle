@@ -27,7 +27,9 @@ use core\router\schema\parameters\query_parameter;
 use core\router\schema\response\content\json_media_type;
 use core\router\schema\response\payload_response;
 use core\router\schema\response\response;
+use core\router\scope\scopeset;
 use dml_exception;
+use mod_quiz\route\scope\quiz\attempt\read;
 use mod_quiz\router\schema\objects\array_of_items;
 use mod_quiz\quiz_attempt;
 use Psr\Http\Message\ResponseInterface;
@@ -220,6 +222,9 @@ class attempts {
             ),
         ],
         requirelogin: new require_login(true, autologinguest: false)
+    )]
+    #[scopeset(
+        new read(),
     )]
     public function get_review(
         ServerRequestInterface $request,
